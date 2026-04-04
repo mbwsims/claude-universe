@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "testkit": {
+      "command": "node",
+      "args": ["mcp/testkit/dist/mcp/server.js"]
+    },
+    "shieldkit": {
+      "command": "node",
+      "args": ["mcp/shieldkit/dist/mcp/server.js"]
+    },
+    "lenskit": {
+      "command": "node",
+      "args": ["mcp/lenskit/dist/mcp/server.js"]
+    },
+    "timewarp": {
+      "command": "node",
+      "args": ["mcp/timewarp/dist/mcp/server.js"]
+    },
+    "alignkit": {
+      "command": "npx",
+      "args": ["-y", "alignkit-mcp"]
+    }
+  }
+}

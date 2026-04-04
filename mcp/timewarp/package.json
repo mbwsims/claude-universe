@@ -1,0 +1,45 @@
+{
+  "name": "timewarp-mcp",
+  "version": "0.2.0",
+  "description": "MCP server for temporal code analysis",
+  "type": "module",
+  "bin": {
+    "timewarp-mcp": "./bin/mcp-server.mjs"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "author": {
+    "name": "Matt Sims",
+    "url": "https://github.com/mbwsims"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/mbwsims/timewarp-mcp",
+  "keywords": [
+    "mcp",
+    "temporal-analysis",
+    "git-history",
+    "code-trends",
+    "claude-code"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "globby": "^14.1.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.2"
+  }
+}
