@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@db/*": ["src/db/*"],
+      "@services/*": ["src/services/*"]
+    },
+    "outDir": "dist",
+    "rootDir": ".",
+    "strict": true
+  },
+  "include": ["src/**/*.ts"]
+}
