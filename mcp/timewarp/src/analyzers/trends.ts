@@ -356,11 +356,19 @@ export async function analyzeTrends(
     }
   }
 
+  // Process files in parallel batches of 5
+  const BATCH_SIZE = 5;
   const results: FileTrend[] = [];
-  for (const file of filesToAnalyze) {
-    const trend = await analyzeFileTrend(file, months, cwd);
-    if (trend) {
-      results.push(trend);
+
+  for (let i = 0; i < filesToAnalyze.length; i += BATCH_SIZE) {
+    const batch = filesToAnalyze.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map((file) => analyzeFileTrend(file, months, cwd)),
+    );
+    for (const trend of batchResults) {
+      if (trend) {
+        results.push(trend);
+      }
     }
   }
 

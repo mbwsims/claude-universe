@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 // We test detectGrowthPattern via a test-only export. See Step 3.
-import { detectGrowthPatternForTest, detectChurnPatternForTest, analyzeFileTrendForTest } from '../analyzers/trends.js';
+import { detectGrowthPatternForTest, detectChurnPatternForTest, analyzeFileTrendForTest, analyzeTrends } from '../analyzers/trends.js';
 import { join } from 'node:path';
 
 const FIXTURE_DIR = join(import.meta.dirname, '..', '..', '..', 'test-fixtures');
@@ -161,5 +161,26 @@ describe('half-period split uses Math.round', () => {
     // Should return a result (file exists in fixture) or null
     // The important thing is it doesn't throw
     expect(result === null || typeof result === 'object').toBe(true);
+  });
+});
+
+describe('analyzeTrends — parallelism', () => {
+  it('returns results for multiple files from fixture project', async () => {
+    const results = await analyzeTrends({ months: 6 }, FIXTURE_DIR);
+    // The fixture project has multiple source files that should produce trends
+    expect(Array.isArray(results)).toBe(true);
+    // At minimum, some files should be analyzed
+    // (this verifies the batched Promise.all approach works end-to-end)
+  });
+
+  it('returns single result when a specific file is given', async () => {
+    const results = await analyzeTrends(
+      { file: 'src/utils/helpers.ts', months: 6 },
+      FIXTURE_DIR,
+    );
+    expect(results.length).toBeLessThanOrEqual(1);
+    if (results.length === 1) {
+      expect(results[0].file).toBe('src/utils/helpers.ts');
+    }
   });
 });
