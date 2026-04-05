@@ -229,6 +229,36 @@ describe('ORDERING diagnostic — cross-file scoping', () => {
   });
 });
 
+describe('LINTER_JOB diagnostic', () => {
+  it('flags rules about indentation', () => {
+    const rules = [makeRule('Indentation must use 2 spaces')];
+    const diags = runDiagnostics(rules, []);
+    const linterJob = diags.filter(d => d.code === 'LINTER_JOB');
+    expect(linterJob).toHaveLength(1);
+  });
+
+  it('flags rules about semicolons', () => {
+    const rules = [makeRule('Always add semicolons at end of statements')];
+    const diags = runDiagnostics(rules, []);
+    const linterJob = diags.filter(d => d.code === 'LINTER_JOB');
+    expect(linterJob).toHaveLength(1);
+  });
+
+  it('flags rules about import sorting', () => {
+    const rules = [makeRule('Sort imports alphabetically')];
+    const diags = runDiagnostics(rules, []);
+    const linterJob = diags.filter(d => d.code === 'LINTER_JOB');
+    expect(linterJob).toHaveLength(1);
+  });
+
+  it('does not flag non-formatting rules', () => {
+    const rules = [makeRule('Run vitest before committing')];
+    const diags = runDiagnostics(rules, []);
+    const linterJob = diags.filter(d => d.code === 'LINTER_JOB');
+    expect(linterJob).toHaveLength(0);
+  });
+});
+
 describe('runDiagnostics summary', () => {
   it('returns structured summary with totals by code and severity', () => {
     const rules = [
