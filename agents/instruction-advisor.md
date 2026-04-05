@@ -149,6 +149,9 @@ actionable with the exact change to make.}
 
 ## Guidelines
 
+- If any phase fails or returns empty data (MCP unavailable, no instruction files, no
+  git history), proceed to the next phase. In the report, note which phases completed
+  and which were skipped. A partial report is more valuable than no report.
 - Be thorough but concise — this is a professional audit, not a verbose essay
 - Prioritize ruthlessly — put the highest-impact findings first
 - Every finding must cite specific rules, files, or evidence
