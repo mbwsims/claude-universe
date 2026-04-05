@@ -84,7 +84,27 @@ For each identified threat, assess:
   - Medium: limited data exposure, partial service impact
   - Low: minor information disclosure, no data modification
 
-- **Priority** = Likelihood x Impact (focus on High-High and High-Critical first)
+**Priority Matrix (Likelihood x Impact):**
+
+|               | Impact: Critical | Impact: High | Impact: Medium | Impact: Low |
+|---------------|-----------------|-------------|---------------|------------|
+| **Likelihood: High**   | P0 | P0 | P1 | P2 |
+| **Likelihood: Medium** | P0 | P1 | P2 | P3 |
+| **Likelihood: Low**    | P1 | P2 | P3 | P3 |
+
+- **P0 -- Immediate:** Fix before next deploy. Active exploitation likely.
+- **P1 -- Urgent:** Fix this sprint. High-value target for attackers.
+- **P2 -- Standard:** Schedule for next cycle. Real but lower-probability risk.
+- **P3 -- Monitor:** Track but deprioritize. Low likelihood or low impact.
+
+**Documenting skipped categories:** For each STRIDE category that does NOT apply to a given
+entry point, include a one-line note explaining why. Example:
+
+```
+| - | Repudiation | N/A -- read-only endpoint, no state mutations to log | /api/health | - | - | - |
+```
+
+This prevents reviewers from wondering whether a category was overlooked vs. intentionally skipped.
 
 ### 5. Recommend Mitigations
 
