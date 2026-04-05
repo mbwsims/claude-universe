@@ -197,25 +197,34 @@ function isStyleRule(text: string): boolean {
 function detectOrdering(rules: ParsedRule[]): Diagnostic[] {
   const results: Diagnostic[] = [];
 
-  // Find tool constraints that appear after style rules
-  let firstStyleLine = Infinity;
+  // Group rules by source file — ordering only matters within a single file
+  const rulesByFile = new Map<string, ParsedRule[]>();
   for (const rule of rules) {
-    if (isStyleRule(rule.text) && rule.line < firstStyleLine) {
-      firstStyleLine = rule.line;
-    }
+    const file = rule.sourceFile ?? '__unknown__';
+    if (!rulesByFile.has(file)) rulesByFile.set(file, []);
+    rulesByFile.get(file)!.push(rule);
   }
 
-  for (const rule of rules) {
-    if (isToolConstraint(rule.text) && rule.line > firstStyleLine) {
-      results.push({
-        code: 'ORDERING',
-        severity: 'warning',
-        message: `Tool constraint rule appears after style rules (line ${rule.line}). Move it earlier for higher priority.`,
-        ruleText: rule.text,
-        line: rule.line,
-        sourceFile: rule.sourceFile,
-        suggestion: 'Move tool constraints and process ordering rules to the top of the file',
-      });
+  for (const [, fileRules] of rulesByFile) {
+    let firstStyleLine = Infinity;
+    for (const rule of fileRules) {
+      if (isStyleRule(rule.text) && rule.line < firstStyleLine) {
+        firstStyleLine = rule.line;
+      }
+    }
+
+    for (const rule of fileRules) {
+      if (isToolConstraint(rule.text) && rule.line > firstStyleLine) {
+        results.push({
+          code: 'ORDERING',
+          severity: 'warning',
+          message: `Tool constraint rule appears after style rules (line ${rule.line}). Move it earlier for higher priority.`,
+          ruleText: rule.text,
+          line: rule.line,
+          sourceFile: rule.sourceFile,
+          suggestion: 'Move tool constraints and process ordering rules to the top of the file',
+        });
+      }
     }
   }
 

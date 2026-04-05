@@ -207,6 +207,28 @@ describe('METADATA diagnostic', () => {
   });
 });
 
+describe('ORDERING diagnostic — cross-file scoping', () => {
+  it('does not flag tool constraint in file B when style rule is in file A', () => {
+    const rules = [
+      makeRule('Use camelCase for variables', { line: 5, sourceFile: 'CLAUDE.md' }),
+      makeRule('Run vitest before committing', { line: 10, sourceFile: '.claude/rules/testing.md' }),
+    ];
+    const diags = runDiagnostics(rules, []);
+    const ordering = diags.filter(d => d.code === 'ORDERING');
+    expect(ordering).toHaveLength(0);
+  });
+
+  it('still flags tool constraint after style rule within same file', () => {
+    const rules = [
+      makeRule('Use camelCase for variables', { line: 5, sourceFile: 'CLAUDE.md' }),
+      makeRule('Run vitest before committing', { line: 10, sourceFile: 'CLAUDE.md' }),
+    ];
+    const diags = runDiagnostics(rules, []);
+    const ordering = diags.filter(d => d.code === 'ORDERING');
+    expect(ordering).toHaveLength(1);
+  });
+});
+
 describe('runDiagnostics summary', () => {
   it('returns structured summary with totals by code and severity', () => {
     const rules = [
