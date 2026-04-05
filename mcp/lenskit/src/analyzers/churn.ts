@@ -6,10 +6,7 @@
  * - batchAnalyzeChurn(cwd): runs 1 git command and parses results for all files
  */
 
-import { execFile as execFileCb } from 'node:child_process';
-import { promisify } from 'node:util';
-
-const execFile = promisify(execFileCb);
+import { gitRun } from '../../../shared/git-utils.js';
 
 /**
  * Normalize a file path by stripping leading ./ and converting backslashes.
@@ -37,27 +34,21 @@ export async function analyzeChurn(filePath: string, cwd: string): Promise<Churn
   let changes = 0;
   let authors = 0;
 
-  try {
-    const { stdout: logOutput } = await execFile(
-      'git',
-      ['log', '--oneline', '--since=6 months ago', '--', filePath],
-      { cwd }
-    );
-    changes = logOutput.trim() === '' ? 0 : logOutput.trim().split('\n').length;
-  } catch {
-    changes = 0;
+  const logResult = await gitRun(
+    ['log', '--oneline', '--since=6 months ago', '--', filePath],
+    cwd,
+  );
+  if (logResult.ok) {
+    changes = logResult.stdout.trim() === '' ? 0 : logResult.stdout.trim().split('\n').length;
   }
 
-  try {
-    const { stdout: authorOutput } = await execFile(
-      'git',
-      ['log', '--format=%an', '--since=6 months ago', '--', filePath],
-      { cwd }
-    );
-    const authorLines = authorOutput.trim() === '' ? [] : authorOutput.trim().split('\n');
+  const authorResult = await gitRun(
+    ['log', '--format=%an', '--since=6 months ago', '--', filePath],
+    cwd,
+  );
+  if (authorResult.ok) {
+    const authorLines = authorResult.stdout.trim() === '' ? [] : authorResult.stdout.trim().split('\n');
     authors = new Set(authorLines).size;
-  } catch {
-    authors = 0;
   }
 
   return { changes, authors, period: '6 months' };
@@ -72,32 +63,30 @@ export async function batchAnalyzeChurn(cwd: string): Promise<Map<string, ChurnR
   const results = new Map<string, ChurnResult>() as Map<string, ChurnResult> & { __zeroChurnWarning?: string };
 
   // One git log for all file change counts
-  let changesByFile = new Map<string, number>();
-  try {
-    const { stdout } = await execFile(
-      'git',
-      ['log', '--format=format:', '--name-only', '--since=6 months ago'],
-      { cwd, maxBuffer: 50 * 1024 * 1024 }
-    );
-    for (const line of stdout.split('\n')) {
+  const changesByFile = new Map<string, number>();
+  const changesResult = await gitRun(
+    ['log', '--format=format:', '--name-only', '--since=6 months ago'],
+    cwd,
+    50 * 1024 * 1024,
+  );
+  if (changesResult.ok) {
+    for (const line of changesResult.stdout.split('\n')) {
       const trimmed = normalizePath(line.trim());
       if (trimmed === '') continue;
       changesByFile.set(trimmed, (changesByFile.get(trimmed) ?? 0) + 1);
     }
-  } catch {
-    // Not a git repo
   }
 
   // One git log for all author counts per file
-  let authorsByFile = new Map<string, Set<string>>();
-  try {
-    const { stdout } = await execFile(
-      'git',
-      ['log', '--format=COMMIT_SEP %an', '--name-only', '--since=6 months ago'],
-      { cwd, maxBuffer: 50 * 1024 * 1024 }
-    );
+  const authorsByFile = new Map<string, Set<string>>();
+  const authorsResult = await gitRun(
+    ['log', '--format=COMMIT_SEP %an', '--name-only', '--since=6 months ago'],
+    cwd,
+    50 * 1024 * 1024,
+  );
+  if (authorsResult.ok) {
     let currentAuthor = '';
-    for (const line of stdout.split('\n')) {
+    for (const line of authorsResult.stdout.split('\n')) {
       const trimmed = line.trim();
       if (trimmed === '') continue;
       if (trimmed.startsWith('COMMIT_SEP ')) {
@@ -112,8 +101,6 @@ export async function batchAnalyzeChurn(cwd: string): Promise<Map<string, ChurnR
         authorsByFile.get(normalized)!.add(currentAuthor);
       }
     }
-  } catch {
-    // Not a git repo
   }
 
   // Merge into results
