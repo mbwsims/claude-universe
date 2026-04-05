@@ -15,12 +15,18 @@ import { analyzeDangerousFunctions, type DangerousFunctionsResult } from '../../
 import { analyzeCorsConfig, type CorsConfigResult } from '../../analyzers/cors-config.js';
 import { buildScoringResult, type ScoringResult } from '../../analyzers/scoring.js';
 
+interface FileMissingAuth {
+  isRouteFile: boolean;
+  hasAuth: boolean;
+}
+
 interface FileFindings {
   path: string;
   sqlInjection: SqlInjectionResult;
   hardcodedSecrets: HardcodedSecretsResult;
   dangerousFunctions: DangerousFunctionsResult;
   corsConfig: CorsConfigResult;
+  missingAuth?: FileMissingAuth;
 }
 
 interface ScanResult {
@@ -38,21 +44,43 @@ async function scanFile(filePath: string, cwd: string): Promise<FileFindings> {
   const fullPath = join(cwd, filePath);
   const content = await readFile(fullPath, 'utf-8');
 
-  return {
+  const findings: FileFindings = {
     path: filePath,
-    sqlInjection: analyzeSqlInjection(content),
+    sqlInjection: analyzeSqlInjection(content, filePath),
     hardcodedSecrets: analyzeHardcodedSecrets(content, filePath),
     dangerousFunctions: analyzeDangerousFunctions(content),
     corsConfig: analyzeCorsConfig(content),
   };
+
+  // Add auth info for route files
+  if (isRouteFile(filePath)) {
+    findings.missingAuth = {
+      isRouteFile: true,
+      hasAuth: analyzeAuth(content),
+    };
+  }
+
+  return findings;
 }
 
 export async function scanTool(args: { file?: string }, cwd: string): Promise<ScanResult> {
   let filePaths: string[];
+
   if (args.file) {
     filePaths = [args.file];
   } else {
-    filePaths = await discoverSourceFiles(cwd);
+    // Discover source files and route files in parallel
+    const [sourceFiles, discoveredRouteFiles] = await Promise.all([
+      discoverSourceFiles(cwd),
+      discoverRouteFiles(cwd),
+    ]);
+
+    // Merge route files into source files (avoid duplicates)
+    const sourceSet = new Set(sourceFiles);
+    for (const rf of discoveredRouteFiles) {
+      sourceSet.add(rf);
+    }
+    filePaths = [...sourceSet];
   }
 
   if (filePaths.length === 0) {
@@ -70,23 +98,16 @@ export async function scanTool(args: { file?: string }, cwd: string): Promise<Sc
     };
   }
 
-  // Scan all files
+  // Scan all files (each file is read once, not twice)
   const files = await Promise.all(
     filePaths.map(p => scanFile(p, cwd))
   );
 
-  // Run missing auth analysis on route files
-  const routeFiles = args.file
-    ? filePaths.filter(isRouteFile)
-    : await discoverRouteFiles(cwd);
-
+  // Build missing auth result from the per-file auth info
   const authResults: Array<{ path: string; hasAuth: boolean }> = [];
-  for (const routeFile of routeFiles) {
-    try {
-      const content = await readFile(join(cwd, routeFile), 'utf-8');
-      authResults.push({ path: routeFile, hasAuth: analyzeAuth(content) });
-    } catch {
-      authResults.push({ path: routeFile, hasAuth: false });
+  for (const f of files) {
+    if (f.missingAuth) {
+      authResults.push({ path: f.path, hasAuth: f.missingAuth.hasAuth });
     }
   }
   const missingAuth = buildMissingAuthResult(authResults);
@@ -102,11 +123,13 @@ export async function scanTool(args: { file?: string }, cwd: string): Promise<Sc
 
   const scoring = buildScoringResult(analyzerCounts);
 
+  // Count files with findings -- includes missing auth
   const filesWithFindings = files.filter(f =>
     f.sqlInjection.count > 0 ||
     f.hardcodedSecrets.count > 0 ||
     f.dangerousFunctions.count > 0 ||
-    f.corsConfig.count > 0
+    f.corsConfig.count > 0 ||
+    (f.missingAuth && !f.missingAuth.hasAuth)
   ).length;
 
   return {
