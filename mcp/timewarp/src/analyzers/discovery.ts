@@ -20,6 +20,7 @@ const IGNORE_PATTERNS = [
   '**/target/**',
   '**/.venv/**',
   '**/venv/**',
+  '**/test-fixtures/**',
 ];
 
 const SOURCE_EXTENSIONS = new Set([

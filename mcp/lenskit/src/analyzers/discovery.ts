@@ -28,6 +28,7 @@ const IGNORE_PATTERNS = [
   '**/coverage/**',
   // Type declaration files (moved from TEST_PATTERNS -- these are not tests)
   '**/*.d.ts',
+  '**/test-fixtures/**',
 ];
 
 const TEST_PATTERNS = [

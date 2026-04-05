@@ -17,6 +17,7 @@ const IGNORE_PATTERNS = [
   '**/vendor/**',
   '**/.next/**',
   '**/.nuxt/**',
+  '**/test-fixtures/**',
 ];
 
 const SOURCE_EXTENSIONS = new Set([
