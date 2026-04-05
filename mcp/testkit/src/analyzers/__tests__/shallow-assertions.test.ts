@@ -73,9 +73,10 @@ describe('analyzeShallowAssertions', () => {
       expect(d).toEqual('real value');
     `;
     const result = analyzeShallowAssertions(content);
-    expect(result.count).toBe(3);
+    // toBeNull is NOT shallow -- only toBeDefined and toBeTruthy are
+    expect(result.count).toBe(2);
     expect(result.total).toBe(4);
-    expect(result.locations.map(l => l.line)).toEqual([2, 3, 4]);
+    expect(result.locations.map(l => l.line)).toEqual([2, 3]);
   });
 
   it('reports correct line numbers', () => {
@@ -87,5 +88,45 @@ expect(y).toBeTruthy();`;
     const result = analyzeShallowAssertions(content);
     expect(result.locations[0].line).toBe(3);
     expect(result.locations[1].line).toBe(5);
+  });
+
+  it('does not flag toBeNull as shallow since it tests a specific value', () => {
+    const content = `
+      expect(result).toBeNull();
+      expect(other).toBe(42);
+    `;
+    const result = analyzeShallowAssertions(content);
+    expect(result.count).toBe(0);
+    expect(result.total).toBe(2);
+  });
+
+  it('does not flag toBeUndefined as shallow since it tests a specific value', () => {
+    const content = `
+      expect(result).toBeUndefined();
+      expect(other).toBe('hello');
+    `;
+    const result = analyzeShallowAssertions(content);
+    expect(result.count).toBe(0);
+    expect(result.total).toBe(2);
+  });
+
+  it('ignores assertions inside single-line comments', () => {
+    const content = `
+      // expect(result).toBeDefined(); -- this is a comment
+      expect(value).toBe(42);
+    `;
+    const result = analyzeShallowAssertions(content);
+    expect(result.count).toBe(0);
+    expect(result.total).toBe(1);
+  });
+
+  it('ignores assertions inside multi-line block comments', () => {
+    const content = `
+      /* expect(result).toBeTruthy(); */
+      expect(value).toEqual({ id: '1' });
+    `;
+    const result = analyzeShallowAssertions(content);
+    expect(result.count).toBe(0);
+    expect(result.total).toBe(1);
   });
 });

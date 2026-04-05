@@ -20,11 +20,11 @@ describe('analyzeNameQuality', () => {
     expect(result.vague).toBe(0);
   });
 
-  it('flags names with fewer than 4 words', () => {
+  it('flags names with fewer than 3 words', () => {
     const content = `test('it works', () => {});`;
     const result = analyzeNameQuality(content);
     expect(result.vague).toBe(1);
-    expect(result.vagueNames[0].reason).toBe('fewer than 4 words');
+    expect(result.vagueNames[0].reason).toBe('fewer than 3 words');
   });
 
   it('flags names with only generic terms', () => {
@@ -74,6 +74,41 @@ test('also works', () => {});`;
     const content = "test(`returns correct value for input`, () => {});";
     const result = analyzeNameQuality(content);
     expect(result.total).toBe(1);
+    expect(result.vague).toBe(0);
+  });
+
+  it('does not flag 3-word test names that contain domain-specific terms', () => {
+    const content = `
+      test('rejects empty email', () => {});
+      test('validates OAuth token', () => {});
+      test('handles ConnectionError gracefully', () => {});
+    `;
+    const result = analyzeNameQuality(content);
+    expect(result.total).toBe(3);
+    expect(result.vague).toBe(0);
+  });
+
+  it('does not treat handles as a generic term', () => {
+    const content = `test('handles concurrent requests without data loss', () => {});`;
+    const result = analyzeNameQuality(content);
+    expect(result.total).toBe(1);
+    expect(result.vague).toBe(0);
+  });
+
+  it('still flags 2-word names as too short', () => {
+    const content = `test('it works', () => {});`;
+    const result = analyzeNameQuality(content);
+    expect(result.vague).toBe(1);
+    expect(result.vagueNames[0].reason).toBe('fewer than 3 words');
+  });
+
+  it('considers camelCase words as domain-specific and does not flag short names with them', () => {
+    const content = `
+      test('returns userId correctly', () => {});
+      test('throws ValidationError', () => {});
+    `;
+    const result = analyzeNameQuality(content);
+    expect(result.total).toBe(2);
     expect(result.vague).toBe(0);
   });
 });

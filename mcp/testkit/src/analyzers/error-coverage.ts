@@ -16,7 +16,7 @@ const THROWABLE_PATTERNS = [
   /\bthrow\s+new\b/,
   /\bthrow\s+\w/,
   /Promise\.reject\(/,
-  /\.reject\(/,
+  /\.reject\(/,        // escaped dot -- only matches .reject(, not onReject(
 ];
 
 // Patterns that indicate an error is being tested
@@ -28,12 +28,24 @@ const ERROR_TEST_PATTERNS = [
   /\.toThrow\(\)/,
 ];
 
+/** Strip single-line (//) and multi-line block comments from source text. */
+function stripComments(content: string): string {
+  // Remove block comments (non-greedy, handles multi-line)
+  let stripped = content.replace(/\/\*[\s\S]*?\*\//g, (match) => {
+    const newlines = match.split('\n').length - 1;
+    return '\n'.repeat(newlines);
+  });
+  // Remove single-line comments
+  stripped = stripped.replace(/\/\/.*$/gm, '');
+  return stripped;
+}
+
 export function analyzeErrorCoverage(
   sourceContent: string,
   testContent: string
 ): ErrorCoverageResult {
-  const sourceLines = sourceContent.split('\n');
-  const testLines = testContent.split('\n');
+  const sourceLines = stripComments(sourceContent).split('\n');
+  const testLines = stripComments(testContent).split('\n');
 
   const throwableLocations: ErrorCoverageResult['throwableLocations'] = [];
   const errorTestLocations: ErrorCoverageResult['errorTestLocations'] = [];

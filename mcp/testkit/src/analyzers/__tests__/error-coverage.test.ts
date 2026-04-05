@@ -83,4 +83,38 @@ describe('analyzeErrorCoverage', () => {
     // Only .reject( and Promise.reject( should count
     expect(result.throwable).toBe(0);
   });
+
+  it('does not flag methods ending in reject like onReject as throwable', () => {
+    const source = `
+      function onReject(reason) {
+        console.log(reason);
+      }
+      onReject('something');
+    `;
+    const test = `test('x', () => {});`;
+    const result = analyzeErrorCoverage(source, test);
+    expect(result.throwable).toBe(0);
+  });
+
+  it('ignores throwable operations inside comments', () => {
+    const source = `
+      // throw new Error('old code');
+      /* throw new Error('disabled'); */
+      return 'ok';
+    `;
+    const test = `test('x', () => {});`;
+    const result = analyzeErrorCoverage(source, test);
+    expect(result.throwable).toBe(0);
+  });
+
+  it('ignores error test patterns inside comments in test file', () => {
+    const source = `throw new Error('fail');`;
+    const test = `
+      // expect(() => fn()).toThrow('old');
+      /* .rejects.toThrow() */
+      test('x', () => {});
+    `;
+    const result = analyzeErrorCoverage(source, test);
+    expect(result.tested).toBe(0);
+  });
 });
