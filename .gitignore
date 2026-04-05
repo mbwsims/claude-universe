@@ -1,4 +1,5 @@
 node_modules/
 .timewarp/
 .DS_Store
-mcp/*/dist/
+mcp/*/dist/**
+!mcp/*/dist/server.bundle.mjs

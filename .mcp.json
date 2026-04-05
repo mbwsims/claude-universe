@@ -2,23 +2,23 @@
   "mcpServers": {
     "alignkit-local": {
       "command": "node",
-      "args": ["mcp/alignkit/dist/mcp/server.js"]
+      "args": ["mcp/alignkit/dist/server.bundle.mjs"]
     },
     "testkit": {
       "command": "node",
-      "args": ["mcp/testkit/dist/mcp/server.js"]
+      "args": ["mcp/testkit/dist/server.bundle.mjs"]
     },
     "shieldkit": {
       "command": "node",
-      "args": ["mcp/shieldkit/dist/mcp/server.js"]
+      "args": ["mcp/shieldkit/dist/server.bundle.mjs"]
     },
     "lenskit": {
       "command": "node",
-      "args": ["mcp/lenskit/dist/lenskit/src/mcp/server.js"]
+      "args": ["mcp/lenskit/dist/server.bundle.mjs"]
     },
     "timewarp": {
       "command": "node",
-      "args": ["mcp/timewarp/dist/timewarp/src/mcp/server.js"]
+      "args": ["mcp/timewarp/dist/server.bundle.mjs"]
     },
     "alignkit": {
       "command": "npx",

@@ -14,7 +14,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && esbuild dist/mcp/server.js --bundle --platform=node --format=esm --outfile=dist/server.bundle.mjs",
     "dev": "tsc --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "esbuild": "^0.28.0",
     "typescript": "^5.7.0",
     "vitest": "~3.2.4"
   }
