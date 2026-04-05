@@ -47,15 +47,33 @@ export interface HistoryResult {
 function classifyMessage(message: string): keyof CommitClassification {
   const lower = message.toLowerCase().trim();
 
-  if (lower.startsWith('feat') || /\b(add|implement|introduce|create)\b/.test(lower)) {
+  // Feature patterns — word-boundary guards prevent mid-word matches
+  if (
+    lower.startsWith('feat') ||
+    /\b(add|implement|introduce|create|new|support|enable|allow)\b/.test(lower)
+  ) {
     return 'feature';
   }
-  if (lower.startsWith('fix') || /\b(fix|bug|resolve|patch)\b/.test(lower)) {
+
+  // Fix patterns — includes issue-closing references
+  if (
+    lower.startsWith('fix') ||
+    /\b(bug|resolve|patch|correct|repair)\b/.test(lower) ||
+    /\b(closes|fixes)\s+#\d+/.test(lower)
+  ) {
     return 'fix';
   }
-  if (lower.startsWith('refactor') || /\b(refactor|restructure|simplify|extract)\b/.test(lower)) {
+
+  // Refactor patterns — includes "clean up" as two words and "optimize"
+  if (
+    lower.startsWith('refactor') ||
+    /\b(refactor|restructure|simplify|extract|reorganize|optimize)\b/.test(lower) ||
+    /\bclean\s*up\b/.test(lower)
+  ) {
     return 'refactor';
   }
+
+  // Chore patterns
   if (
     lower.startsWith('chore') ||
     lower.startsWith('build') ||
@@ -65,7 +83,9 @@ function classifyMessage(message: string): keyof CommitClassification {
   ) {
     return 'chore';
   }
-  if (lower.startsWith('docs') || /\b(readme|documentation|changelog)\b/.test(lower)) {
+
+  // Docs patterns
+  if (lower.startsWith('docs') || lower.startsWith('doc:') || /\b(readme|documentation|changelog)\b/.test(lower)) {
     return 'docs';
   }
 
@@ -269,3 +289,7 @@ export async function analyzeHistory(
 
   return result;
 }
+
+// Test-only export — allows unit tests to exercise classifyMessage directly.
+// Not part of the public API.
+export const classifyMessageForTest = classifyMessage;
