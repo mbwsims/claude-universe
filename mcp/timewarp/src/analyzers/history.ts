@@ -8,6 +8,7 @@
 
 import { execFile as execFileCb } from 'node:child_process';
 import { promisify } from 'node:util';
+import { gitRun, type GitResult } from '../../../shared/git-utils.js';
 
 const execFile = promisify(execFileCb);
 
@@ -110,18 +111,6 @@ function computeMonthsDiff(sinceDate: string, untilDate: string): number {
   return Math.max(months, 1);
 }
 
-async function gitRun(
-  args: string[],
-  cwd: string,
-): Promise<string> {
-  try {
-    const { stdout } = await execFile('git', args, { cwd, maxBuffer: 10 * 1024 * 1024 });
-    return stdout;
-  } catch {
-    return '';
-  }
-}
-
 async function getCommitMessages(
   since: string,
   cwd: string,
@@ -131,8 +120,9 @@ async function getCommitMessages(
   if (file) {
     args.push('--', file);
   }
-  const stdout = await gitRun(args, cwd);
-  return stdout.trim().split('\n').filter(Boolean);
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return [];
+  return result.stdout.trim().split('\n').filter(Boolean);
 }
 
 async function getCommitCount(
@@ -144,8 +134,9 @@ async function getCommitCount(
   if (file) {
     args.push('--', file);
   }
-  const stdout = await gitRun(args, cwd);
-  return stdout.trim().split('\n').filter(Boolean).length;
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return 0;
+  return result.stdout.trim().split('\n').filter(Boolean).length;
 }
 
 async function getAuthors(
@@ -157,8 +148,9 @@ async function getAuthors(
   if (file) {
     args.push('--', file);
   }
-  const stdout = await gitRun(args, cwd);
-  const names = stdout.trim().split('\n').filter(Boolean);
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return [];
+  const names = result.stdout.trim().split('\n').filter(Boolean);
 
   const counts = new Map<string, number>();
   for (const name of names) {
@@ -175,8 +167,9 @@ async function getMostChangedFiles(
   cwd: string,
 ): Promise<FileChangeInfo[]> {
   const args = ['log', '--format=format:', '--name-only', `--since=${since}`];
-  const stdout = await gitRun(args, cwd);
-  const files = stdout.trim().split('\n').filter(Boolean);
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return [];
+  const files = result.stdout.trim().split('\n').filter(Boolean);
 
   const counts = new Map<string, number>();
   for (const file of files) {
@@ -202,8 +195,9 @@ async function getSizeOverTime(
     '--',
     file,
   ];
-  const stdout = await gitRun(args, cwd);
-  const entries = stdout
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return [];
+  const entries = result.stdout
     .trim()
     .split('\n')
     .filter(Boolean)
@@ -251,20 +245,21 @@ export async function analyzeHistory(
   const since = args.since ?? '6 months ago';
 
   // Resolve the "since" date for the output period
-  const sinceOutput = await gitRun(
+  const sinceResult = await gitRun(
     ['log', '--format=%aI', `--since=${since}`, '--reverse', '-1'],
     cwd,
   );
-  const sinceDate = sinceOutput.trim().split('T')[0] || new Date(
+  const sinceDate = (sinceResult.ok ? sinceResult.stdout.trim().split('T')[0] : '') || new Date(
     Date.now() - 6 * 30 * 24 * 60 * 60 * 1000,
   ).toISOString().split('T')[0];
   const untilDate = new Date().toISOString().split('T')[0];
 
+  // Skip expensive whole-project getMostChangedFiles when analyzing a single file
   const [total, authors, messages, mostChanged] = await Promise.all([
     getCommitCount(since, cwd, args.file),
     getAuthors(since, cwd, args.file),
     getCommitMessages(since, cwd, args.file),
-    getMostChangedFiles(since, cwd),
+    args.file ? Promise.resolve([] as FileChangeInfo[]) : getMostChangedFiles(since, cwd),
   ]);
 
   // Classification
