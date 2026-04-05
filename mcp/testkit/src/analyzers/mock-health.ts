@@ -54,10 +54,21 @@ const MOCK_SETUP_PATTERNS = [
   /\.mockRejectedValueOnce\(/,
   /jest\.spyOn\(/,
   /vi\.spyOn\(/,
+  // Python mock patterns
+  /mock\.patch\(/,
+  /@mock\.patch/,
+  /@patch\(/,
+  /MagicMock\(/,
+  /Mock\(\)/,
+  /mock\.Mock\(/,
+  /patch\.object\(/,
 ];
 
 // Extract module path from jest.mock('path') or vi.mock('path')
 const MOCK_CALL_REGEX = /(?:jest|vi)\.mock\(\s*['"`]([^'"`]+)['"`]/;
+
+// Extract module path from Python mock.patch('path')
+const PYTHON_MOCK_REGEX = /(?:mock\.)?patch\(\s*['"]([^'"]+)['"]/;
 
 function isBoundaryModule(modulePath: string): boolean {
   return BOUNDARY_PATTERNS.some(pattern => pattern.test(modulePath));
@@ -95,6 +106,22 @@ export function analyzeMockHealth(content: string): MockHealthResult {
         ? 'internal'
         : 'boundary';
       mocks.push({ line: i + 1, path: modulePath, type });
+    }
+
+    // Extract Python mock module paths
+    if (!match) {
+      const pyMatch = PYTHON_MOCK_REGEX.exec(line);
+      if (pyMatch) {
+        const modulePath = pyMatch[1];
+        const isLocal = !modulePath.startsWith('unittest') &&
+          !modulePath.startsWith('os.') &&
+          !modulePath.startsWith('sys.') &&
+          !modulePath.startsWith('http') &&
+          !modulePath.includes('boto3') &&
+          !modulePath.includes('requests');
+        const type = isLocal ? 'internal' : 'boundary';
+        mocks.push({ line: i + 1, path: modulePath, type });
+      }
     }
   }
 
