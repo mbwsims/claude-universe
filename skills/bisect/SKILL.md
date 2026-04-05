@@ -63,6 +63,11 @@ For the 5-8 most significant structural commits, read the file at each point:
 git show {commit}:{file}
 ```
 
+**History bound:** If the file has more than 50 structural commits, focus on the 5 most
+recent plus the initial creation. Note: "Full archaeology would require deeper analysis —
+focused on the most recent evolution." For files older than 2 years, consider narrowing
+the analysis window to the last 12 months unless the user specifically wants full history.
+
 See `references/complexity-archaeology.md` for methodology on identifying structural vs
 cosmetic commits.
 
