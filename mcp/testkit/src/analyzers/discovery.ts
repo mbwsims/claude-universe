@@ -120,14 +120,14 @@ export function inferSourcePath(testPath: string, cwd?: string): string | null {
 
   const candidates: string[] = [];
 
-  // Same directory
-  candidates.push(join(dir, sourceName));
-
-  // If in __tests__, try parent directory
+  // If in __tests__, try parent directory FIRST (most common convention)
   if (dir.includes('__tests__')) {
     const parentDir = dir.replace(/__tests__\/?/, '');
     candidates.push(join(parentDir, sourceName));
   }
+
+  // Same directory
+  candidates.push(join(dir, sourceName));
 
   // Try tests/ -> src/ directory mirror
   if (dir.startsWith('test') || dir.startsWith('tests')) {

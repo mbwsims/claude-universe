@@ -14,7 +14,7 @@ describe('inferSourcePath', () => {
 
   it('infers source from __tests__ directory to parent', () => {
     const result = inferSourcePath('src/utils/__tests__/helper.test.ts');
-    expect(result).toBe('src/utils/__tests__/helper.ts');
+    expect(result).toBe('src/utils/helper.ts');
   });
 
   it('returns null for files that do not match test naming patterns', () => {
