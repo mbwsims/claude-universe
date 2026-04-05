@@ -274,6 +274,31 @@ async function getSizeOverTime(
   return snapshots.reverse();
 }
 
+async function getCommitMessagesWithFiles(
+  since: string,
+  cwd: string,
+  file?: string,
+): Promise<Array<{ message: string; files: string[] }>> {
+  const args = ['log', '--format=---COMMIT---%n%s', '--name-only', `--since=${since}`];
+  if (file) {
+    args.push('--', file);
+  }
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return [];
+
+  const commits: Array<{ message: string; files: string[] }> = [];
+  const chunks = result.stdout.split('---COMMIT---').filter(Boolean);
+  for (const chunk of chunks) {
+    const lines = chunk.trim().split('\n').filter(Boolean);
+    if (lines.length === 0) continue;
+    commits.push({
+      message: lines[0],
+      files: lines.slice(1),
+    });
+  }
+  return commits;
+}
+
 export async function analyzeHistory(
   args: { file?: string; since?: string },
   cwd: string,
@@ -291,14 +316,14 @@ export async function analyzeHistory(
   const untilDate = new Date().toISOString().split('T')[0];
 
   // Skip expensive whole-project getMostChangedFiles when analyzing a single file
-  const [total, authors, messages, mostChanged] = await Promise.all([
+  const [total, authors, commitsWithFiles, mostChanged] = await Promise.all([
     getCommitCount(since, cwd, args.file),
     getAuthors(since, cwd, args.file),
-    getCommitMessages(since, cwd, args.file),
+    getCommitMessagesWithFiles(since, cwd, args.file),
     args.file ? Promise.resolve([] as FileChangeInfo[]) : getMostChangedFiles(since, cwd),
   ]);
 
-  // Classification
+  // Classification with file-based fallback for ambiguous messages
   const classification: CommitClassification = {
     feature: 0,
     fix: 0,
@@ -307,8 +332,8 @@ export async function analyzeHistory(
     docs: 0,
     other: 0,
   };
-  for (const msg of messages) {
-    classification[classifyMessage(msg)]++;
+  for (const commit of commitsWithFiles) {
+    classification[classifyWithFileFallback(commit.message, commit.files)]++;
   }
 
   const months = computeMonthsDiff(sinceDate, untilDate);
