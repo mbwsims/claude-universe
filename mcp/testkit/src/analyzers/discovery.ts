@@ -37,6 +37,7 @@ const IGNORE_PATTERNS = [
   '**/vendor/**',
   '**/.next/**',
   '**/.nuxt/**',
+  '**/test-fixtures/**',
 ];
 
 const SOURCE_EXTENSIONS = new Set([
@@ -171,7 +172,6 @@ export async function detectFramework(cwd: string): Promise<string | null> {
     'vitest.config.*': 'vitest',
     'jest.config.*': 'jest',
     'pytest.ini': 'pytest',
-    'setup.cfg': 'pytest',       // setup.cfg can contain [tool:pytest]
     'Cargo.toml': 'cargo-test',
     'go.mod': 'go-test',
   };
@@ -189,6 +189,16 @@ export async function detectFramework(cwd: string): Promise<string | null> {
     }
   } catch {
     // no pyproject.toml
+  }
+
+  // Check setup.cfg for actual pytest config
+  try {
+    const setupCfgContent = await readFile(join(cwd, 'setup.cfg'), 'utf-8');
+    if (setupCfgContent.includes('[tool:pytest]')) {
+      return 'pytest';
+    }
+  } catch {
+    // no setup.cfg
   }
 
   // Check package.json for test framework deps
