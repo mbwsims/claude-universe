@@ -15,18 +15,12 @@ describe('discoverSourceFiles — Python detection', () => {
     expect(pyFiles.length).toBeGreaterThan(0);
   });
 
-  it('excludes Python test files (test_*.py, *_test.py)', async () => {
+  it('excludes Python test files (test_*.py)', async () => {
     const files = await discoverSourceFiles(FIXTURE_DIR);
-    const testPyFiles = files.filter(
-      (f) => f.endsWith('.py') && (f.includes('test_') || f.includes('_test.')),
+    const testPrefixFiles = files.filter(
+      (f) => f.endsWith('.py') && /(?:^|\/)test_\w+\.py$/.test(f),
     );
-    // test_utils.py in fixtures should be excluded by the isTestFile check
-    // (it matches __tests__ or .test. pattern — actually test_utils.py doesn't match
-    // the current regex /\.(test|spec)\./ — it uses a different naming convention.
-    // So we need to verify the current behavior and note this.)
-    // The current isTestFile checks for .test. or .spec. or __tests__ — Python test_
-    // prefix is not caught. This is acceptable for now.
-    expect(true).toBe(true); // Document the behavior
+    expect(testPrefixFiles).toHaveLength(0);
   });
 
   it('excludes .d.ts files', async () => {
