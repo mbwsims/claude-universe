@@ -17,10 +17,18 @@ export interface HandlerAuthResult {
   startLine: number;
 }
 
+export interface HandlerAuthLocation {
+  file: string;
+  handler: string;
+  hasAuth: boolean;
+  line?: number;
+}
+
 export interface MissingAuthResult {
   total: number;
   unprotected: number;
   locations: MissingAuthLocation[];
+  handlers: HandlerAuthLocation[];
 }
 
 const AUTH_PATTERNS = [
@@ -211,12 +219,16 @@ function extractFunctionBody(lines: string[], startIndex: number): string {
   return bodyLines.join('\n');
 }
 
-export function buildMissingAuthResult(files: Array<{ path: string; hasAuth: boolean }>): MissingAuthResult {
+export function buildMissingAuthResult(
+  files: Array<{ path: string; hasAuth: boolean }>,
+  handlers: HandlerAuthLocation[] = [],
+): MissingAuthResult {
   const unprotected = files.filter(f => !f.hasAuth).length;
 
   return {
     total: files.length,
     unprotected,
     locations: files.map(f => ({ file: f.path, hasAuth: f.hasAuth })),
+    handlers,
   };
 }

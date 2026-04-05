@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { discoverSourceFiles, discoverRouteFiles } from '../../analyzers/discovery.js';
 import { analyzeSqlInjection, type SqlInjectionResult } from '../../analyzers/sql-injection.js';
-import { isRouteFile, analyzeAuth, buildMissingAuthResult, type MissingAuthResult } from '../../analyzers/missing-auth.js';
+import { isRouteFile, analyzeAuth, analyzeHandlerAuth, buildMissingAuthResult, type MissingAuthResult, type HandlerAuthLocation } from '../../analyzers/missing-auth.js';
 import { analyzeHardcodedSecrets, type HardcodedSecretsResult } from '../../analyzers/hardcoded-secrets.js';
 import { analyzeDangerousFunctions, type DangerousFunctionsResult } from '../../analyzers/dangerous-functions.js';
 import { analyzeCorsConfig, type CorsConfigResult } from '../../analyzers/cors-config.js';
@@ -18,6 +18,7 @@ import { buildScoringResult, type ScoringResult } from '../../analyzers/scoring.
 interface FileMissingAuth {
   isRouteFile: boolean;
   hasAuth: boolean;
+  handlers: HandlerAuthLocation[];
 }
 
 interface FileFindings {
@@ -54,9 +55,16 @@ async function scanFile(filePath: string, cwd: string): Promise<FileFindings> {
 
   // Add auth info for route files
   if (isRouteFile(filePath)) {
+    const handlerResults = analyzeHandlerAuth(content);
     findings.missingAuth = {
       isRouteFile: true,
       hasAuth: analyzeAuth(content),
+      handlers: handlerResults.map(h => ({
+        file: filePath,
+        handler: h.name,
+        hasAuth: h.hasAuth,
+        line: h.startLine,
+      })),
     };
   }
 
@@ -105,12 +113,14 @@ export async function scanTool(args: { file?: string }, cwd: string): Promise<Sc
 
   // Build missing auth result from the per-file auth info
   const authResults: Array<{ path: string; hasAuth: boolean }> = [];
+  const allHandlers: HandlerAuthLocation[] = [];
   for (const f of files) {
     if (f.missingAuth) {
       authResults.push({ path: f.path, hasAuth: f.missingAuth.hasAuth });
+      allHandlers.push(...f.missingAuth.handlers);
     }
   }
-  const missingAuth = buildMissingAuthResult(authResults);
+  const missingAuth = buildMissingAuthResult(authResults, allHandlers);
 
   // Aggregate counts for scoring
   const analyzerCounts: Record<string, number> = {
