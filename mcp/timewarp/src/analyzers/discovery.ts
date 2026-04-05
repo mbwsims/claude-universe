@@ -15,6 +15,11 @@ const IGNORE_PATTERNS = [
   '**/vendor/**',
   '**/.next/**',
   '**/.nuxt/**',
+  '**/__pycache__/**',
+  '**/*.egg-info/**',
+  '**/target/**',
+  '**/.venv/**',
+  '**/venv/**',
 ];
 
 const SOURCE_EXTENSIONS = new Set([
