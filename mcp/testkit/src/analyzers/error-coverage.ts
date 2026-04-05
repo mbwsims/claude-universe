@@ -35,6 +35,7 @@ const ERROR_TEST_PATTERNS = [
   /assertRaises\(/,
 ];
 
+// Canonical version: mcp/shared/strip-comments.ts
 /** Strip single-line (//) and multi-line block comments from source text. */
 function stripComments(content: string): string {
   // Remove block comments (non-greedy, handles multi-line)

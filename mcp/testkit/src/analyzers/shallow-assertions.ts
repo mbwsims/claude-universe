@@ -33,6 +33,7 @@ const PYTHON_SHALLOW_PATTERNS: Array<{ regex: RegExp; kind: string }> = [
 // Python total assertion count: any line starting with `assert `
 const PYTHON_ASSERT_REGEX = /^\s*assert\s+/g;
 
+// Canonical version: mcp/shared/strip-comments.ts
 /** Strip single-line (//) and multi-line block comments from source text. */
 function stripComments(content: string): string {
   // Remove block comments (non-greedy, handles multi-line)

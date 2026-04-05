@@ -40,6 +40,7 @@ function isTestFile(filePath: string): boolean {
  * Strip comments from source content.
  * Handles: // single-line, multi-line comment blocks, # Python single-line
  */
+// Canonical version: mcp/shared/strip-comments.ts
 function stripComments(content: string): string {
   // Remove multi-line comments
   let result = content.replace(/\/\*[\s\S]*?\*\//g, (match) => {
