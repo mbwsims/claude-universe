@@ -95,9 +95,18 @@ function classifyMessage(message: string): keyof CommitClassification {
 function computeMonthsDiff(sinceDate: string, untilDate: string): number {
   const since = new Date(sinceDate);
   const until = new Date(untilDate);
-  const months =
+
+  // Whole calendar months between the two dates
+  let months =
     (until.getFullYear() - since.getFullYear()) * 12 +
     (until.getMonth() - since.getMonth());
+
+  // Subtract 1 if the day-of-month hasn't been reached yet in the final month.
+  // E.g. Jan 31 -> Feb 1: months=1 calendar, but day 1 < day 31, so subtract 1 => 0.
+  if (until.getDate() < since.getDate()) {
+    months -= 1;
+  }
+
   return Math.max(months, 1);
 }
 
@@ -293,3 +302,4 @@ export async function analyzeHistory(
 // Test-only export — allows unit tests to exercise classifyMessage directly.
 // Not part of the public API.
 export const classifyMessageForTest = classifyMessage;
+export const computeMonthsDiffForTest = computeMonthsDiff;

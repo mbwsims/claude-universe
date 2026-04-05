@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 // classifyMessage is not exported, so we test it indirectly by exporting a test helper.
 // We add a named export for testing only. See Step 3.
-import { classifyMessageForTest } from '../analyzers/history.js';
+import { classifyMessageForTest, computeMonthsDiffForTest } from '../analyzers/history.js';
 
 describe('classifyMessage', () => {
   describe('feature classification', () => {
@@ -145,5 +145,34 @@ describe('classifyMessage', () => {
     it('classifies "fix: correct type hints in models.py" as fix', () => {
       expect(classifyMessageForTest('fix: correct type hints in models.py')).toBe('fix');
     });
+  });
+});
+
+describe('computeMonthsDiff', () => {
+  it('returns 6 for a 6-month span (same day)', () => {
+    expect(computeMonthsDiffForTest('2025-01-15', '2025-07-15')).toBe(6);
+  });
+
+  it('returns 1 (minimum) for dates within the same month', () => {
+    expect(computeMonthsDiffForTest('2025-06-01', '2025-06-28')).toBe(1);
+  });
+
+  it('accounts for day-of-month: Jan 31 to Feb 1 is less than 1 month', () => {
+    // Jan 31 to Feb 1 is 1 day. Day-aware: fractional < 1, clamped to 1.
+    expect(computeMonthsDiffForTest('2025-01-31', '2025-02-01')).toBe(1);
+  });
+
+  it('accounts for day-of-month: Jan 1 to Jan 31 is ~1 month', () => {
+    expect(computeMonthsDiffForTest('2025-01-01', '2025-01-31')).toBe(1);
+  });
+
+  it('returns correct months for cross-year span', () => {
+    expect(computeMonthsDiffForTest('2024-11-15', '2025-05-15')).toBe(6);
+  });
+
+  it('handles partial month at end: Mar 1 to May 15 is ~2.5, rounds to 2', () => {
+    const result = computeMonthsDiffForTest('2025-03-01', '2025-05-15');
+    expect(result).toBeGreaterThanOrEqual(2);
+    expect(result).toBeLessThanOrEqual(3);
   });
 });
