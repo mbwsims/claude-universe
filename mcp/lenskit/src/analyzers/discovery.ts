@@ -26,15 +26,22 @@ const IGNORE_PATTERNS = [
   '**/.git/**',
   '**/vendor/**',
   '**/coverage/**',
+  // Type declaration files (moved from TEST_PATTERNS -- these are not tests)
+  '**/*.d.ts',
 ];
 
 const TEST_PATTERNS = [
+  // JS/TS test patterns
   /\.test\.\w+$/,
   /\.spec\.\w+$/,
   /_test\.\w+$/,
   /_spec\.\w+$/,
   /__tests__\//,
-  /\.d\.ts$/,
+  // Python test patterns
+  /(?:^|\/)test_\w+\.py$/,
+  /(?:^|\/)conftest\.py$/,
+  // Go test pattern
+  /_test\.go$/,
 ];
 
 export async function discoverSourceFiles(cwd: string): Promise<string[]> {
