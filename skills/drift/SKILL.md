@@ -26,8 +26,11 @@ obvious when you compare the first version to the current one.
 ### 1. Identify Target
 
 - **No argument:** Auto-detect. Use `timewarp_history` (if available) or git log to find
-  files whose scope has changed the most — large increases in line count, export count,
-  or import count relative to their original size. Analyze the top 3 most-drifted modules.
+  files whose scope has changed the most — large increases in line count and commit
+  frequency relative to their original size. Analyze the top 3 most-drifted modules.
+  Note: `timewarp_history` returns commit counts, authors, and file change frequency —
+  it does NOT return export or import counts. You must read the file directly to count
+  exports and imports.
   If MCP is unavailable, pick the 3 largest files in core source directories and analyze
   those.
 - **With argument:** Analyze the specified module or directory.
@@ -125,6 +128,16 @@ strong signal that intervention is needed.
 ```
 
 **Save results** to `.timewarp/drift-{module}-{date}.json`.
+
+### Cross-Kit Degradation
+
+When `timewarp_history` is unavailable, degrade gracefully:
+1. Use `git log --oneline --stat` to identify files with the most commits
+2. Use `git log --reverse --follow -- {file}` to find the first version
+3. Read the file at the earliest commit via `git show {hash}:{file}`
+4. Count exports, imports, lines, and responsibilities manually from the file content
+5. All drift classification and quantification works identically — only the data
+   gathering step changes
 
 ## Guidelines
 
