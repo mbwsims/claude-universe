@@ -216,6 +216,15 @@ This table goes into the report and gives the executive summary real substance â
 - Estimated remediation effort: {brief assessment}
 ```
 
+## Progress Reporting
+
+Report progress between phases. After each phase, output a brief status line
+before proceeding:
+- "Phase 1 complete: found {n} endpoints, {n} route files, framework: {name}"
+- "Phase 2 complete: {n} findings ({n} critical, {n} high)"
+- "Phase 3 complete: traced {n} endpoints, {n} unvalidated data flows"
+This helps the user know work is progressing during long audits.
+
 ## Guidelines
 
 - Scan systematically â€” don't skip files because they "look safe"
