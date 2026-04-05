@@ -9,6 +9,7 @@
  * - PLACEMENT: rules that belong in a different mechanism
  * - WEAK_EMPHASIS: critical rules missing emphasis markers
  * - METADATA: malformed frontmatter in agent/skill files
+ * - LINTER_JOB: formatting rules better enforced by a linter/formatter
  */
 
 import type { ParsedRule, InstructionFile } from './discovery.js';
@@ -20,7 +21,8 @@ export type DiagnosticCode =
   | 'ORDERING'
   | 'PLACEMENT'
   | 'WEAK_EMPHASIS'
-  | 'METADATA';
+  | 'METADATA'
+  | 'LINTER_JOB';
 
 export type Severity = 'warning' | 'error';
 
@@ -397,6 +399,43 @@ function detectMetadata(files: InstructionFile[]): Diagnostic[] {
   return results;
 }
 
+// --- LINTER_JOB detection ---
+
+const LINTER_PATTERNS: RegExp[] = [
+  /\b(indentation|indent)\b.*\b(spaces?|tabs?)\b/i,
+  /\b(semicolons?)\b/i,
+  /\bsort\s+(imports?|exports?)\b/i,
+  /\btrailing\s+(comma|whitespace|spaces?)\b/i,
+  /\bline\s+length\b/i,
+  /\b(single|double)\s+quotes?\b/i,
+  /\bprettier\b/i,
+  /\bformatting\b/i,
+  /\bconsistent\s+spacing\b/i,
+  /\bmax.*(line|col|length)\b/i,
+];
+
+function detectLinterJob(rules: ParsedRule[]): Diagnostic[] {
+  const results: Diagnostic[] = [];
+
+  for (const rule of rules) {
+    for (const pattern of LINTER_PATTERNS) {
+      if (pattern.test(rule.text)) {
+        results.push({
+          code: 'LINTER_JOB',
+          severity: 'warning',
+          message: `"${rule.text.slice(0, 80)}" describes formatting better enforced by a linter/formatter (ESLint, Prettier, rustfmt). Tool enforcement is faster and more reliable.`,
+          ruleText: rule.text,
+          line: rule.line,
+          sourceFile: rule.sourceFile,
+        });
+        break;
+      }
+    }
+  }
+
+  return results;
+}
+
 // --- Main entry point ---
 
 export function runDiagnostics(rules: ParsedRule[], files: InstructionFile[]): Diagnostic[] {
@@ -408,5 +447,6 @@ export function runDiagnostics(rules: ParsedRule[], files: InstructionFile[]): D
     ...detectPlacement(rules),
     ...detectWeakEmphasis(rules),
     ...detectMetadata(files),
+    ...detectLinterJob(rules),
   ];
 }
