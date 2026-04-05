@@ -2,9 +2,12 @@
  * testkit_status -- Quick project test health summary.
  *
  * Combines analyze + map results into a scannable overview.
+ * Runs discovery once and shares results with both analyze and map tools
+ * to avoid redundant filesystem scanning.
  */
 
-import { analyzeTool } from './analyze.js';
+import { discoverTestFiles, detectFramework } from '../../analyzers/discovery.js';
+import { analyzeTool, type DiscoveryCache } from './analyze.js';
 import { mapTool } from './map.js';
 
 export interface StatusResult {
@@ -19,9 +22,17 @@ export interface StatusResult {
 }
 
 export async function statusTool(cwd: string): Promise<StatusResult> {
+  // Run discovery once and share results with both tools
+  const [testPaths, framework] = await Promise.all([
+    discoverTestFiles(cwd),
+    detectFramework(cwd),
+  ]);
+
+  const discoveryCache: DiscoveryCache = { testPaths, framework };
+
   const [analyzeResult, mapResult] = await Promise.all([
-    analyzeTool({}, cwd),
-    mapTool(cwd),
+    analyzeTool({}, cwd, discoveryCache),
+    mapTool(cwd, discoveryCache),
   ]);
 
   const untestedHighPriority = mapResult.untested.filter(u => u.priority === 'high').length;
@@ -41,7 +52,7 @@ export async function statusTool(cwd: string): Promise<StatusResult> {
   }
 
   return {
-    framework: mapResult.framework,
+    framework: mapResult.framework ?? framework,
     overallGrade: analyzeResult.summary.avgGrade,
     testFiles: mapResult.testFiles,
     sourceFiles: mapResult.sourceFiles,

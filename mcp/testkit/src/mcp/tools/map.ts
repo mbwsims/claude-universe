@@ -6,6 +6,7 @@
  */
 
 import { buildSourceMapping, type SourceMapping } from '../../analyzers/discovery.js';
+import type { DiscoveryCache } from './analyze.js';
 
 export interface MapResult {
   framework: string | null;
@@ -16,7 +17,7 @@ export interface MapResult {
   untested: Array<{ path: string; priority: 'high' | 'medium' | 'low'; reason: string }>;
 }
 
-export async function mapTool(cwd: string): Promise<MapResult> {
+export async function mapTool(cwd: string, _discoveryCache?: DiscoveryCache): Promise<MapResult> {
   const mapping = await buildSourceMapping(cwd);
 
   return {

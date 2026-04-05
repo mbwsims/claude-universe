@@ -129,14 +129,23 @@ async function analyzeFile(testPath: string, cwd: string, framework: string | nu
   };
 }
 
-export async function analyzeTool(args: { file?: string }, cwd: string): Promise<AnalyzeResult> {
-  const framework = await detectFramework(cwd);
+export interface DiscoveryCache {
+  testPaths: string[];
+  framework: string | null;
+}
+
+export async function analyzeTool(
+  args: { file?: string },
+  cwd: string,
+  discoveryCache?: DiscoveryCache,
+): Promise<AnalyzeResult> {
+  const framework = discoveryCache?.framework ?? await detectFramework(cwd);
 
   let testPaths: string[];
   if (args.file) {
     testPaths = [args.file];
   } else {
-    testPaths = await discoverTestFiles(cwd);
+    testPaths = discoveryCache?.testPaths ?? await discoverTestFiles(cwd);
   }
 
   if (testPaths.length === 0) {
