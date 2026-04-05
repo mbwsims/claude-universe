@@ -38,6 +38,10 @@ Map the project's temporal shape:
 **With timewarp-mcp:** Call `timewarp_history` for structured commit data.
 **Without:** Run git log analysis manually.
 
+**Save intermediate results** to `.timewarp/evolution-phase1-{date}.json` with:
+`{ totalCommits, age, frequency, contributors, activityPeriods, growthTrajectory }`.
+This allows resuming if the analysis is interrupted and prevents redundant MCP calls.
+
 ### Phase 2: Trend Analysis
 
 Compute growth trends for the top 20 most-active source files:
@@ -50,9 +54,21 @@ Compute growth trends for the top 20 most-active source files:
 
 Identify files on concerning trajectories (accelerating growth or churn).
 
+**Save intermediate results** to `.timewarp/evolution-phase2-{date}.json` with:
+`{ files: [{ file, growth, churn, projection }], concerningFiles: [...] }`.
+
 ### Phase 3: Drift Detection
 
-For the top 3-5 most important modules (by size, centrality, or change frequency):
+Identify the top 3-5 most important modules using these criteria (check in order):
+1. **High centrality:** Files imported by the most other files (check with `grep -r "from.*{file}" --include="*.ts" | wc -l` across the source tree)
+2. **High change frequency:** Files with the most commits in the last 6 months (from Phase 1 data)
+3. **Large size:** Files with the highest line count among source files
+4. **Accelerating growth:** Files flagged as "accelerating" in Phase 2 trend data
+
+Select the top 3-5 files that score highest across multiple criteria. A file that is both
+large AND frequently changed is more important than one that is only large.
+
+For these modules:
 - Compare current state against original purpose (earliest commits)
 - Classify drift type (scope creep, layer violation, god module, purpose shift)
 - Assess severity (minimal, moderate, significant)
@@ -116,6 +132,14 @@ Save all results to `.timewarp/evolution-report-{date}.json`.
 ## Guidelines
 
 - Read `.timewarp/` first — don't recompute what skills have already analyzed.
+- **Large repo guidance (>500 files):** For repositories with more than 500 source files,
+  limit scope to prevent timeout:
+  - Phase 1: Analyze only the last 6 months of history (not full project lifetime)
+  - Phase 2: Analyze only the top 20 most-changed files (not all source files)
+  - Phase 3: Analyze only the top 3 modules (not 5)
+  - Phase 4: Project only the top 5 concerning files
+  - Note the scope limitation in the report header: "Scoped analysis — repo has {n} files,
+    focused on top 20 most-active"
 - This is a temporal audit, not a code review. Focus on HOW things changed, not WHETHER
   the code is good. That's alignkit/testkit/shieldkit territory.
 - Be honest about the project's age. A 2-month-old project doesn't have meaningful
@@ -124,3 +148,10 @@ Save all results to `.timewarp/evolution-report-{date}.json`.
   fundamentally changed the project's direction — the "before and after" moments.
 - If the codebase is healthy and stable, say so. A report that says "no concerning trends,
   minimal drift, steady growth" is a positive result.
+- **Temporal scope discipline:** Stay focused on temporal analysis. Do not drift into:
+  - Code quality review (that's alignkit/lenskit territory)
+  - Test coverage assessment (that's testkit territory)
+  - Security audit (that's shieldkit territory)
+  If you notice issues in these areas during temporal analysis, mention them briefly in
+  the Recommendations section ("security concern noted in X — run shieldkit for details")
+  but do not investigate them. Your job is time-based evolution analysis only.
