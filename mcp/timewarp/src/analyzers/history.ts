@@ -93,6 +93,43 @@ function classifyMessage(message: string): keyof CommitClassification {
   return 'other';
 }
 
+const CONFIG_FILE_PATTERNS = [
+  /^package\.json$/,
+  /^package-lock\.json$/,
+  /^yarn\.lock$/,
+  /^\.eslintrc/,
+  /^\.prettierrc/,
+  /^tsconfig.*\.json$/,
+  /^\.github\//,
+  /^Cargo\.lock$/,
+  /^go\.sum$/,
+];
+
+const DOC_FILE_PATTERNS = [
+  /\.md$/,
+  /^docs\//,
+  /^CHANGELOG/,
+];
+
+function classifyWithFileFallback(
+  message: string,
+  files: string[],
+): keyof CommitClassification {
+  const messageResult = classifyMessage(message);
+  if (messageResult !== 'other') return messageResult;
+
+  // File-based fallback when message is ambiguous
+  if (files.length === 0) return 'other';
+
+  const allConfig = files.every((f) => CONFIG_FILE_PATTERNS.some((p) => p.test(f)));
+  if (allConfig) return 'chore';
+
+  const allDocs = files.every((f) => DOC_FILE_PATTERNS.some((p) => p.test(f)));
+  if (allDocs) return 'docs';
+
+  return 'other';
+}
+
 function computeMonthsDiff(sinceDate: string, untilDate: string): number {
   const since = new Date(sinceDate);
   const until = new Date(untilDate);
@@ -298,3 +335,4 @@ export async function analyzeHistory(
 // Not part of the public API.
 export const classifyMessageForTest = classifyMessage;
 export const computeMonthsDiffForTest = computeMonthsDiff;
+export const classifyWithFileFallbackForTest = classifyWithFileFallback;

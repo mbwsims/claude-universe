@@ -130,3 +130,71 @@ expect(y).toBeTruthy();`;
     expect(result.total).toBe(1);
   });
 });
+
+describe('analyzeShallowAssertions — Python patterns', () => {
+  it('detects bare assert as shallow', () => {
+    const content = `
+      def test_user_creation():
+          result = create_user("alice")
+          assert result
+    `;
+    const result = analyzeShallowAssertions(content);
+    expect(result.count).toBe(1);
+    expect(result.locations[0].kind).toBe('bareAssert');
+  });
+
+  it('does not flag assert with comparison as shallow', () => {
+    const content = `
+      def test_user_creation():
+          result = create_user("alice")
+          assert result == {"name": "alice"}
+          assert result.name == "alice"
+          assert len(result) == 1
+    `;
+    const result = analyzeShallowAssertions(content);
+    expect(result.count).toBe(0);
+  });
+
+  it('detects assert is not None as shallow', () => {
+    const content = `
+      def test_user_exists():
+          user = get_user("alice")
+          assert user is not None
+    `;
+    const result = analyzeShallowAssertions(content);
+    expect(result.count).toBe(1);
+    expect(result.locations[0].kind).toBe('assertIsNotNone');
+  });
+
+  it('counts Python assert statements in total assertion count', () => {
+    const content = `
+      def test_example():
+          assert result
+          assert value == 42
+          assert name == "alice"
+    `;
+    const result = analyzeShallowAssertions(content);
+    expect(result.total).toBeGreaterThanOrEqual(3);
+    expect(result.count).toBe(1);  // only 'assert result' is shallow
+  });
+
+  it('does not flag assert with in operator as shallow', () => {
+    const content = `
+      def test_membership():
+          assert "alice" in users
+          assert key in config
+    `;
+    const result = analyzeShallowAssertions(content);
+    expect(result.count).toBe(0);
+  });
+
+  it('does not flag assert with not or negation as shallow', () => {
+    const content = `
+      def test_not_equal():
+          assert result != "error"
+          assert not is_empty(data)
+    `;
+    const result = analyzeShallowAssertions(content);
+    expect(result.count).toBe(0);
+  });
+});

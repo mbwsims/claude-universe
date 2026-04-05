@@ -24,6 +24,8 @@ const TEST_PATTERNS = [
   '**/*.test.*',
   '**/*.spec.*',
   '**/__tests__/**/*.*',
+  '**/test_*.py',
+  '**/*_test.py',
 ];
 
 const IGNORE_PATTERNS = [
@@ -51,6 +53,7 @@ const HIGH_CRITICALITY_PATTERNS = [
   /password/i, /credential/i, /secret/i,
   /encrypt/i, /decrypt/i, /hash/i,
   /webhook/i,
+  /admin/i,
 ];
 
 const MEDIUM_CRITICALITY_PATTERNS = [
@@ -59,9 +62,10 @@ const MEDIUM_CRITICALITY_PATTERNS = [
   /api/i, /route/i, /endpoint/i,
   /database/i, /db/i, /query/i,
   /cache/i,
+  /queue/i, /worker/i, /job/i,
 ];
 
-function classifyCriticality(filePath: string): { priority: 'high' | 'medium' | 'low'; reason: string } {
+export function classifyCriticality(filePath: string): { priority: 'high' | 'medium' | 'low'; reason: string } {
   const name = basename(filePath);
   const dir = dirname(filePath);
   const combined = `${dir}/${name}`;
@@ -81,19 +85,37 @@ function classifyCriticality(filePath: string): { priority: 'high' | 'medium' | 
   return { priority: 'low', reason: 'utility or helper file' };
 }
 
-function isTestFile(filePath: string): boolean {
+export function isTestFile(filePath: string): boolean {
   const name = basename(filePath);
-  return /\.(test|spec)\./.test(name) || filePath.includes('__tests__');
+  return /\.(test|spec)\./.test(name)
+    || filePath.includes('__tests__')
+    || /^test_.*\.py$/.test(name)
+    || /.*_test\.py$/.test(name);
 }
 
 export function inferSourcePath(testPath: string, cwd?: string): string | null {
   const dir = dirname(testPath);
   const name = basename(testPath);
 
-  const match = name.match(/^(.+)\.(test|spec)(\.[^.]+)$/);
-  if (!match) return null;
+  // Standard JS/TS test naming: foo.test.ts -> foo.ts, foo.spec.tsx -> foo.tsx
+  const jsMatch = name.match(/^(.+)\.(test|spec)(\.[^.]+)$/);
 
-  const sourceName = `${match[1]}${match[3]}`;
+  // Python test naming: test_foo.py -> foo.py, foo_test.py -> foo.py
+  const pyTestPrefixMatch = name.match(/^test_(.+\.py)$/);
+  const pyTestSuffixMatch = name.match(/^(.+)_test(\.py)$/);
+
+  let sourceName: string | null = null;
+
+  if (jsMatch) {
+    sourceName = `${jsMatch[1]}${jsMatch[3]}`;
+  } else if (pyTestPrefixMatch) {
+    sourceName = pyTestPrefixMatch[1];
+  } else if (pyTestSuffixMatch) {
+    sourceName = `${pyTestSuffixMatch[1]}${pyTestSuffixMatch[2]}`;
+  }
+
+  if (!sourceName) return null;
+
   const candidates: string[] = [];
 
   // Same directory
@@ -136,7 +158,8 @@ export async function discoverTestFiles(cwd: string): Promise<string[]> {
 export async function discoverSourceFiles(cwd: string): Promise<string[]> {
   const allFiles = await globby(['**/*'], {
     cwd,
-    ignore: [...IGNORE_PATTERNS, ...TEST_PATTERNS, '**/*.d.ts', '**/types/**'],
+    // Note: **/types/** removed -- type files may contain runtime code
+    ignore: [...IGNORE_PATTERNS, ...TEST_PATTERNS, '**/*.d.ts'],
     absolute: false,
   });
 
@@ -148,7 +171,7 @@ export async function detectFramework(cwd: string): Promise<string | null> {
     'vitest.config.*': 'vitest',
     'jest.config.*': 'jest',
     'pytest.ini': 'pytest',
-    'pyproject.toml': 'pytest',
+    'setup.cfg': 'pytest',       // setup.cfg can contain [tool:pytest]
     'Cargo.toml': 'cargo-test',
     'go.mod': 'go-test',
   };
@@ -156,6 +179,16 @@ export async function detectFramework(cwd: string): Promise<string | null> {
   for (const [pattern, framework] of Object.entries(configPatterns)) {
     const matches = await globby(pattern, { cwd, ignore: IGNORE_PATTERNS });
     if (matches.length > 0) return framework;
+  }
+
+  // Check pyproject.toml for pytest or unittest config
+  try {
+    const pyprojectContent = await readFile(join(cwd, 'pyproject.toml'), 'utf-8');
+    if (pyprojectContent.includes('[tool.pytest') || pyprojectContent.includes('pytest')) {
+      return 'pytest';
+    }
+  } catch {
+    // no pyproject.toml
   }
 
   // Check package.json for test framework deps
@@ -171,6 +204,26 @@ export async function detectFramework(cwd: string): Promise<string | null> {
     if (allDeps.tap) return 'tap';
   } catch {
     // no package.json
+  }
+
+  // Check for Python test files as a fallback for pytest detection
+  const pyTestFiles = await globby(['**/test_*.py', '**/*_test.py'], {
+    cwd,
+    ignore: IGNORE_PATTERNS,
+  });
+  if (pyTestFiles.length > 0) {
+    // Check if any test file imports unittest
+    try {
+      for (const testFile of pyTestFiles.slice(0, 5)) {
+        const content = await readFile(join(cwd, testFile), 'utf-8');
+        if (content.includes('import unittest') || content.includes('from unittest')) {
+          return 'unittest';
+        }
+      }
+    } catch {
+      // file read error
+    }
+    return 'pytest'; // default Python test framework
   }
 
   return null;

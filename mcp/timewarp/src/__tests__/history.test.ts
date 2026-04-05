@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 // classifyMessage is not exported, so we test it indirectly by exporting a test helper.
 // We add a named export for testing only. See Step 3.
-import { classifyMessageForTest, computeMonthsDiffForTest, analyzeHistory } from '../analyzers/history.js';
+import { classifyMessageForTest, computeMonthsDiffForTest, analyzeHistory, classifyWithFileFallbackForTest } from '../analyzers/history.js';
 import { join } from 'node:path';
 
 const FIXTURE_DIR = join(import.meta.dirname, '..', '..', '..', 'test-fixtures');
@@ -212,5 +212,33 @@ describe('analyzeHistory — single-file optimization', () => {
   it('returns mostChanged when analyzing the whole project', async () => {
     const result = await analyzeHistory({ since: '12 months ago' }, FIXTURE_DIR);
     expect(result.mostChanged.length).toBeGreaterThan(0);
+  });
+});
+
+describe('classifyWithFileFallback', () => {
+  it('uses message classification when message matches a known pattern', () => {
+    expect(classifyWithFileFallbackForTest('fix: broken login', [])).toBe('fix');
+  });
+
+  it('falls back to chore when message is ambiguous and only config files changed', () => {
+    expect(
+      classifyWithFileFallbackForTest('update settings', ['package.json', '.eslintrc.js']),
+    ).toBe('chore');
+  });
+
+  it('falls back to docs when message is ambiguous and only markdown files changed', () => {
+    expect(
+      classifyWithFileFallbackForTest('update guide', ['README.md', 'docs/api.md']),
+    ).toBe('docs');
+  });
+
+  it('returns other when message is ambiguous and files are mixed source', () => {
+    expect(
+      classifyWithFileFallbackForTest('tweaks', ['src/index.ts', 'src/lib/auth.ts']),
+    ).toBe('other');
+  });
+
+  it('returns other when message is ambiguous and no files provided', () => {
+    expect(classifyWithFileFallbackForTest('misc changes', [])).toBe('other');
   });
 });

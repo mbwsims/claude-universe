@@ -118,3 +118,71 @@ describe('analyzeErrorCoverage', () => {
     expect(result.tested).toBe(0);
   });
 });
+
+describe('analyzeErrorCoverage — Python patterns', () => {
+  it('detects raise as throwable', () => {
+    const source = `
+      def validate(email):
+          if not email:
+              raise ValueError("Email required")
+    `;
+    const test = `def test_x(): pass`;
+    const result = analyzeErrorCoverage(source, test);
+    expect(result.throwable).toBe(1);
+    expect(result.throwableLocations[0].text).toContain('raise');
+  });
+
+  it('detects bare raise (re-raise) as throwable', () => {
+    const source = `
+      try:
+          do_something()
+      except Exception:
+          raise
+    `;
+    const test = `def test_x(): pass`;
+    const result = analyzeErrorCoverage(source, test);
+    expect(result.throwable).toBe(1);
+  });
+
+  it('detects pytest.raises in test as error test', () => {
+    const source = `raise ValueError("bad")`;
+    const test = `
+      def test_validation():
+          with pytest.raises(ValueError):
+              validate("")
+    `;
+    const result = analyzeErrorCoverage(source, test);
+    expect(result.tested).toBe(1);
+  });
+
+  it('detects self.assertRaises in test as error test', () => {
+    const source = `raise ValueError("bad")`;
+    const test = `
+      def test_validation(self):
+          with self.assertRaises(ValueError):
+              validate("")
+    `;
+    const result = analyzeErrorCoverage(source, test);
+    expect(result.tested).toBe(1);
+  });
+
+  it('calculates correct ratio for Python code', () => {
+    const source = `
+      def process(data):
+          if not data:
+              raise ValueError("empty data")
+          if data.get("type") not in ["a", "b"]:
+              raise TypeError("invalid type")
+          return transform(data)
+    `;
+    const test = `
+      def test_empty_data():
+          with pytest.raises(ValueError):
+              process({})
+    `;
+    const result = analyzeErrorCoverage(source, test);
+    expect(result.throwable).toBe(2);
+    expect(result.tested).toBe(1);
+    expect(result.ratio).toBe(0.5);
+  });
+});

@@ -19,6 +19,9 @@ const GENERIC_TERMS = new Set([
 // Match test('...') or it('...') or test(`...`) or it(`...`)
 const TEST_NAME_REGEX = /(?:test|it)\s*\(\s*['"`]([^'"`]+)['"`]/g;
 
+// Match Python test functions: def test_something_descriptive(self?):
+const PYTHON_TEST_NAME_REGEX = /def\s+(test_\w+)\s*\(/g;
+
 /**
  * Heuristic: a word is "domain-specific" if it contains camelCase, PascalCase,
  * or is a known technical term pattern (e.g., contains uppercase mid-word,
@@ -85,15 +88,29 @@ export function analyzeNameQuality(content: string): NameQualityResult {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+
+    // JS/TS: test('name') or it('name')
     TEST_NAME_REGEX.lastIndex = 0;
     let match;
-
     while ((match = TEST_NAME_REGEX.exec(line)) !== null) {
       total++;
       const name = match[1];
-      const result = isVagueName(name);
-      if (result.vague) {
-        vagueNames.push({ line: i + 1, name, reason: result.reason });
+      const nameResult = isVagueName(name);
+      if (nameResult.vague) {
+        vagueNames.push({ line: i + 1, name, reason: nameResult.reason });
+      }
+    }
+
+    // Python: def test_name_with_underscores(
+    PYTHON_TEST_NAME_REGEX.lastIndex = 0;
+    while ((match = PYTHON_TEST_NAME_REGEX.exec(line)) !== null) {
+      total++;
+      // Convert test_name_with_underscores to "name with underscores" for quality check
+      const rawName = match[1];
+      const name = rawName.replace(/^test_/, '').replace(/_/g, ' ');
+      const nameResult = isVagueName(name);
+      if (nameResult.vague) {
+        vagueNames.push({ line: i + 1, name: rawName, reason: nameResult.reason });
       }
     }
   }

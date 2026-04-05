@@ -112,3 +112,62 @@ test('also works', () => {});`;
     expect(result.vague).toBe(0);
   });
 });
+
+describe('analyzeNameQuality — Python patterns', () => {
+  it('extracts Python test names from def test_ prefix', () => {
+    const content = `
+      def test_rejects_empty_email_with_validation_error():
+          pass
+
+      def test_returns_empty_list_when_no_results():
+          pass
+    `;
+    const result = analyzeNameQuality(content);
+    expect(result.total).toBe(2);
+    expect(result.vague).toBe(0);
+  });
+
+  it('flags short Python test names', () => {
+    const content = `
+      def test_it():
+          pass
+    `;
+    const result = analyzeNameQuality(content);
+    expect(result.total).toBe(1);
+    expect(result.vague).toBe(1);
+  });
+
+  it('flags generic Python test names', () => {
+    const content = `
+      def test_works_correctly():
+          pass
+    `;
+    const result = analyzeNameQuality(content);
+    expect(result.total).toBe(1);
+    expect(result.vague).toBe(1);
+  });
+
+  it('does not flag descriptive Python test names', () => {
+    const content = `
+      def test_create_user_returns_valid_id():
+          pass
+
+      def test_delete_user_raises_not_found_error():
+          pass
+    `;
+    const result = analyzeNameQuality(content);
+    expect(result.total).toBe(2);
+    expect(result.vague).toBe(0);
+  });
+
+  it('handles Python test class methods', () => {
+    const content = `
+    class TestUserService:
+        def test_creates_user_with_valid_email(self):
+            pass
+    `;
+    const result = analyzeNameQuality(content);
+    expect(result.total).toBe(1);
+    expect(result.vague).toBe(0);
+  });
+});

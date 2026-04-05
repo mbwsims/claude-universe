@@ -17,6 +17,9 @@ const THROWABLE_PATTERNS = [
   /\bthrow\s+\w/,
   /Promise\.reject\(/,
   /\.reject\(/,        // escaped dot -- only matches .reject(, not onReject(
+  // Python: raise SomeError(...) or bare raise (re-raise)
+  /\braise\s+\w/,
+  /\braise\s*$/,
 ];
 
 // Patterns that indicate an error is being tested
@@ -26,6 +29,10 @@ const ERROR_TEST_PATTERNS = [
   /\.rejects\./,
   /expect\.unreachable/,
   /\.toThrow\(\)/,
+  // Python: pytest.raises(ExceptionType) or self.assertRaises(ExceptionType)
+  /pytest\.raises\(/,
+  /self\.assertRaises\(/,
+  /assertRaises\(/,
 ];
 
 /** Strip single-line (//) and multi-line block comments from source text. */
