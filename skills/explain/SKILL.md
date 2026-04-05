@@ -71,6 +71,11 @@ Look for:
 - **Feature additions**: How the module grew over time
 - **Author patterns**: Who owns this code? Multiple authors = potential inconsistency
 
+**Calibration:** A file with >15 changes in 6 months is high-churn. >3 authors means
+shared ownership (potential knowledge fragmentation). >10 importers means it is a hub.
+Focus git history reading on the 3 most recent structural changes and any change that
+modified >30% of the file. Skip trivial formatting or rename commits.
+
 **Files with no git history:** If `git log` returns nothing (file was just created, or
 the repo was initialized with a single commit containing all files), note this. For new
 files, focus entirely on code structure and design decisions visible in the code itself.
@@ -93,6 +98,19 @@ Combine code reading + history + context into a structured explanation.
 
 ```
 ## Explanation — {file}
+
+### File Profile
+
+| Metric | Value | Interpretation |
+|--------|-------|----------------|
+| Lines | {n} | {small (<100) / medium (100-300) / large (300-500) / critical (>500)} |
+| Functions | {n} | {what they do at a glance} |
+| Churn (6mo) | {n} changes | {stable (<5) / moderate (5-15) / high (>15)} |
+| Authors (6mo) | {n} | {single owner / shared (2-3) / fragmented (>3)} |
+| Dependents | {n} importers | {leaf (0) / moderate (1-10) / hub (>10)} |
+| Test coverage | {yes/no/partial} | {tested functions or "no tests found"} |
+
+Use `lenskit_analyze` data if available. Otherwise, compute from git log and grep.
 
 ### Purpose
 {1-2 sentences: what this module does and why it exists}
