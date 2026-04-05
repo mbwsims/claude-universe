@@ -36,6 +36,10 @@ Use this data throughout the trace to:
 
 This step takes seconds and saves minutes of manual grep work.
 
+If `lenskit_graph` is unavailable, build the import chain manually: for each file in
+the trace, use Grep to find `import.*from` statements and follow them forward. This is
+slower but produces the same trace. Skip the hub/cycle annotations.
+
 ### 1. Identify the Entry Point
 
 Find where the feature begins:

@@ -12,6 +12,7 @@ allowed-tools:
   - Bash
   - mcp__lenskit__lenskit_analyze
   - mcp__lenskit__lenskit_status
+  - mcp__lenskit__lenskit_graph
 argument-hint: "[directory]"
 ---
 
@@ -99,6 +100,11 @@ Combine the signals into a risk score:
 | Authors (distinct contributors) | Low | Many authors = inconsistent patterns |
 
 Rank files by combined risk. The top 5-10 are the hotspots.
+
+**Amplify with graph data:** If `lenskit_graph` is available, check whether any hotspot
+is also a hub file (high importer count) or part of a circular dependency. Hub status
+amplifies risk — a complex, high-churn file that 15 other files depend on is a higher
+priority than one with zero importers.
 
 ### 5. Present Findings
 
