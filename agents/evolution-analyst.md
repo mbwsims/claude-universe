@@ -60,7 +60,7 @@ Identify files on concerning trajectories (accelerating growth or churn).
 ### Phase 3: Drift Detection
 
 Identify the top 3-5 most important modules using these criteria (check in order):
-1. **High centrality:** Files imported by the most other files (check with `grep -r "from.*{file}" --include="*.ts" | wc -l` across the source tree)
+1. **High centrality:** Files imported by the most other files (check with `grep -r "from.*{file}" --include="*.ts" --include="*.js" --include="*.tsx" --include="*.jsx" --include="*.py" --include="*.go" --include="*.rs" --include="*.java" | wc -l` across the source tree)
 2. **High change frequency:** Files with the most commits in the last 6 months (from Phase 1 data)
 3. **Large size:** Files with the highest line count among source files
 4. **Accelerating growth:** Files flagged as "accelerating" in Phase 2 trend data
