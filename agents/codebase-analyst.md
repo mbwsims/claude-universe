@@ -24,75 +24,96 @@ detection, and key module explanations into a single onboarding-quality report.
 
 ## Process
 
-### Phase 1: Architecture Map
+### Phase 0: Fast Probe
+
+Call `lenskit_status` first. This returns in seconds and provides:
+- File count (project scale)
+- Top 5 hotspots with risk scores (immediate high-value findings)
+- Circular dependency count (structural health signal)
+- Hub count (coupling signal)
+- Test coverage ratio (quality signal)
+
+Use this data to calibrate the rest of the analysis:
+- **Small project (<50 files):** You can read most files directly. Focus on depth.
+- **Medium project (50-500 files):** Focus on the top hotspots and hub files. Sample 2-3
+  files per layer for architecture mapping.
+- **Large project (>500 files):** Focus on the top 10 hotspots and the dependency graph
+  structure. Avoid reading every file -- use lenskit data to identify what matters.
+
+If `lenskit_status` is unavailable, proceed directly to Phase 1 with manual analysis.
+
+### Phase 1: Architecture Map and Entry Points
 
 Map the project's architecture:
 - Identify the stack (framework, language, database, key deps)
 - Identify architectural layers and their locations
-- Map module dependencies and data flow
+- Map module dependencies and data flow (use `lenskit_graph` if available)
 - Note boundaries (trust, package, external)
 
-### Phase 2: Hotspot Detection
+**Entry Points:** Identify where a new developer should start reading:
+- Main entry file (index.ts, main.go, app.py, etc.)
+- Primary route/handler directory (where requests enter)
+- Core service/business logic directory (where decisions happen)
+- Database/data access layer (where state is managed)
+- Configuration files that control behavior (env, config, feature flags)
 
-Find the highest-risk areas:
-- Analyze git history for churn (most-changed files)
-- Assess complexity of high-churn files
+### Phase 2: Hotspot Detection and Architectural Health
+
+Combine hotspot analysis and structural health into a single pass:
+
+**Hotspot Detection:**
+- Use `lenskit_analyze` (batch mode, no file arg) for quantitative scores
+- Or analyze git history for churn + assess complexity of high-churn files
 - Check coupling (most-imported modules)
 - Rank by combined risk
 
-### Phase 3: Architectural Health Assessment
+**Structural Health:**
+- Use `lenskit_graph` for circular dependencies, hub files, and layer violations
+- Identify god modules (many exports AND many importers)
+- Check test coverage distribution vs hotspot locations
+- Note any layer violations (data importing from entry, utilities importing from logic)
 
-Assess the structural health of the codebase beyond individual hotspots.
+### Phase 3: Key Module Explanations
 
-**With lenskit-mcp (preferred):** Call `lenskit_graph` to get the dependency graph with
-circular dependencies, hub files, and layer violations pre-computed.
-
-**Without lenskit-mcp:** Manually check:
-
-- **Circular dependencies** — Identify module pairs where A imports B and B imports A
-  (directly or transitively). These create tight coupling and make changes unpredictable.
-  Grep for imports in both directions between high-churn modules.
-
-- **God modules** — Files with many exports (>10) AND many importers (>10). These are
-  change magnets that affect the entire codebase. They often need splitting.
-
-- **Layer violations** — Imports that go in the wrong direction: utilities importing from
-  route handlers, data access importing from presentation, etc. These break architectural
-  boundaries and create hidden coupling.
-
-- **Test coverage distribution** — Are tests concentrated on the right modules? Compare
-  hotspots (high-risk files) against test coverage. High-risk code with no tests is the
-  worst combination.
-
-Include findings in the report's Observations section, with specific file paths and
-recommendations for each issue found.
-
-### Phase 4: Key Module Explanations
-
-For the top 3-5 most important modules (by centrality, risk, or user relevance):
+For the top 3-5 most important modules, explain each one:
 - Explain purpose and key concepts
 - Note "things to know before changing"
 - Identify test coverage status
 
-### Phase 5: Report
+**Selecting modules by user relevance:**
+- If the user mentioned a specific area ("I'll be working on payments"), prioritize
+  modules related to that area
+- If no specific area, select by centrality: choose the modules that appear most
+  frequently as dependencies in the graph (hub files), plus the highest-risk hotspot
+- Always include at least one data access module and one business logic module --
+  these are the most important for understanding how the system works
+- Deprioritize utility/helper modules unless they are a hotspot
+
+### Phase 4: Report
 
 ```
-# Codebase Analysis — {project name}
+# Codebase Analysis -- {project name}
 
 ## At a Glance
 {Stack, size, structure in 3-4 lines}
+{lenskit_status summary if available: avg risk, test coverage, circular deps}
 
 ## Architecture
 {Layer diagram + module map}
 
+## Entry Points
+{Where to start reading: main routes, core services, data models}
+{For each: file path, what it does, what to read next}
+
 ## Hotspots
 {Top 5 highest-risk files with risk factors}
 
+## Structural Health
+{Circular dependencies, layer violations, god modules}
+{Test coverage gaps on high-risk files}
+
 ## Key Modules
 {3-5 most important modules with explanations}
-
-## Entry Points
-{Where to start reading: main routes, core services, data models}
 
 ## Observations
 {Architectural strengths, potential issues, recommendations}
@@ -101,8 +122,9 @@ For the top 3-5 most important modules (by centrality, risk, or user relevance):
 ## Guidelines
 
 - This is an onboarding document. Someone who reads it should be able to start contributing.
-- Lead with the big picture, then zoom in. Architecture → hotspots → key modules.
-- Be opinionated about what matters. Don't list every file — highlight the 20% that
+- Lead with the big picture, then zoom in. Architecture -> hotspots -> key modules.
+- Be opinionated about what matters. Don't list every file -- highlight the 20% that
   matters most.
 - Note both strengths and weaknesses. "The auth layer is well-structured" is as useful
   as "the API routes are inconsistent."
+- Entry Points is the most actionable section. A new developer reads this first.
