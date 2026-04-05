@@ -11,6 +11,18 @@ const server = new McpServer({
 
 const cwd = process.cwd();
 
+function validateFilePath(file: string | undefined): string | undefined {
+  if (!file) return undefined;
+  // Reject path traversal attempts
+  const normalized = file.replace(/\\/g, '/');
+  if (normalized.includes('..') || normalized.startsWith('/')) {
+    throw new Error(
+      `Invalid file path: "${file}". Path must be relative and cannot contain ".." or start with "/".`,
+    );
+  }
+  return file;
+}
+
 server.tool(
   'timewarp_history',
   'Git history analysis for a file or the whole project. Returns commit frequency, authors, commit classification (feature/fix/refactor/chore/docs), most-changed files, and optional size-over-time tracking.',
@@ -24,7 +36,8 @@ server.tool(
   },
   async (args) => {
     try {
-      const result = await analyzeHistory({ file: args.file, since: args.since }, cwd);
+      const file = validateFilePath(args.file);
+      const result = await analyzeHistory({ file, since: args.since }, cwd);
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
       };
@@ -51,7 +64,8 @@ server.tool(
   },
   async (args) => {
     try {
-      const result = await analyzeTrends({ file: args.file, months: args.months }, cwd);
+      const file = validateFilePath(args.file);
+      const result = await analyzeTrends({ file, months: args.months }, cwd);
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
       };
