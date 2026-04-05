@@ -155,3 +155,29 @@ at current rate."
 - Whether the trend is linear or accelerating
 - Whether there were spikes that might distort the trend
 - A specific recommendation (split, refactor, monitor, or no action)
+
+## Rewrite Event Detection
+
+A rewrite is a special case that can distort trend data. Detect and handle:
+
+### What is a Rewrite?
+
+A commit (or small set of commits) that replaces >50% of a file's content. Indicators:
+- `git log --stat` shows deletions close to the previous file size
+- The file's line count drops significantly then grows from the new baseline
+- The commit message references "rewrite", "v2", "redesign", or "from scratch"
+
+### Impact on Forecasting
+
+Rewrites break trend continuity. The growth rate BEFORE the rewrite is irrelevant to the
+growth rate AFTER. When a rewrite is detected:
+1. Use the rewrite commit as the new baseline for trend computation
+2. Only compute growth rates from the post-rewrite period
+3. Note the rewrite in the forecast output — it explains why history is short
+4. If the rewrite was recent (< 2 months ago), flag the forecast as low-confidence
+
+### Detection Method
+
+For each file's time-series samples, check for a drop of >30% between any two consecutive
+samples. If found, treat the later sample as the effective start of the file's history
+for forecasting purposes.
