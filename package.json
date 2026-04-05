@@ -1,9 +1,10 @@
 {
   "name": "claude-universe-plugin",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
-    "test": "npm run test:testkit && npm run test:shieldkit && npm run test:lenskit && npm run test:timewarp",
+    "test": "npm run test:alignkit && npm run test:testkit && npm run test:shieldkit && npm run test:lenskit && npm run test:timewarp",
+    "test:alignkit": "cd mcp/alignkit && npx vitest run --passWithNoTests",
     "test:testkit": "cd mcp/testkit && npx vitest run --passWithNoTests",
     "test:shieldkit": "cd mcp/shieldkit && npx vitest run --passWithNoTests",
     "test:lenskit": "cd mcp/lenskit && npx vitest run --passWithNoTests",
