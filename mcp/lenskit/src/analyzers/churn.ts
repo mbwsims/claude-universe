@@ -11,6 +11,18 @@ import { promisify } from 'node:util';
 
 const execFile = promisify(execFileCb);
 
+/**
+ * Normalize a file path by stripping leading ./ and converting backslashes.
+ * Git and globby can return paths in different formats.
+ */
+export function normalizePath(p: string): string {
+  let result = p.replace(/\\/g, '/');
+  while (result.startsWith('./')) {
+    result = result.slice(2);
+  }
+  return result;
+}
+
 export interface ChurnResult {
   changes: number;
   authors: number;
@@ -54,9 +66,10 @@ export async function analyzeChurn(filePath: string, cwd: string): Promise<Churn
 /**
  * Batch churn analysis. Runs 2 git commands total (not 2N), then indexes results.
  * Returns a map: filePath -> ChurnResult.
+ * Attaches __zeroChurnWarning to the map if >80% of files show zero churn.
  */
 export async function batchAnalyzeChurn(cwd: string): Promise<Map<string, ChurnResult>> {
-  const results = new Map<string, ChurnResult>();
+  const results = new Map<string, ChurnResult>() as Map<string, ChurnResult> & { __zeroChurnWarning?: string };
 
   // One git log for all file change counts
   let changesByFile = new Map<string, number>();
@@ -67,7 +80,7 @@ export async function batchAnalyzeChurn(cwd: string): Promise<Map<string, ChurnR
       { cwd, maxBuffer: 50 * 1024 * 1024 }
     );
     for (const line of stdout.split('\n')) {
-      const trimmed = line.trim();
+      const trimmed = normalizePath(line.trim());
       if (trimmed === '') continue;
       changesByFile.set(trimmed, (changesByFile.get(trimmed) ?? 0) + 1);
     }
@@ -92,10 +105,11 @@ export async function batchAnalyzeChurn(cwd: string): Promise<Map<string, ChurnR
         continue;
       }
       if (currentAuthor && trimmed !== '') {
-        if (!authorsByFile.has(trimmed)) {
-          authorsByFile.set(trimmed, new Set());
+        const normalized = normalizePath(trimmed);
+        if (!authorsByFile.has(normalized)) {
+          authorsByFile.set(normalized, new Set());
         }
-        authorsByFile.get(trimmed)!.add(currentAuthor);
+        authorsByFile.get(normalized)!.add(currentAuthor);
       }
     }
   } catch {
@@ -110,6 +124,17 @@ export async function batchAnalyzeChurn(cwd: string): Promise<Map<string, ChurnR
       authors: authorsByFile.get(file)?.size ?? 0,
       period: '6 months',
     });
+  }
+
+  // Sanity check: warn if >80% files show zero churn
+  const totalFiles = results.size;
+  if (totalFiles > 0) {
+    const zeroChurnCount = Array.from(results.values()).filter(r => r.changes === 0).length;
+    if (zeroChurnCount / totalFiles > 0.8) {
+      (results as any).__zeroChurnWarning =
+        `Warning: ${Math.round((zeroChurnCount / totalFiles) * 100)}% of files show zero churn. ` +
+        `This may indicate git history is not being parsed correctly, or the project is very new.`;
+    }
   }
 
   return results;
