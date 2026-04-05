@@ -48,45 +48,44 @@ export interface HistoryResult {
 function classifyMessage(message: string): keyof CommitClassification {
   const lower = message.toLowerCase().trim();
 
-  // Feature patterns — word-boundary guards prevent mid-word matches
+  // 1. Check conventional-commit prefixes first — these are unambiguous
+  if (lower.startsWith('feat')) return 'feature';
+  if (lower.startsWith('fix')) return 'fix';
+  if (lower.startsWith('refactor')) return 'refactor';
   if (
-    lower.startsWith('feat') ||
-    /\b(add|implement|introduce|create|new|support|enable|allow)\b/.test(lower)
+    lower.startsWith('chore') ||
+    lower.startsWith('build') ||
+    lower.startsWith('ci') ||
+    lower.startsWith('deps')
   ) {
+    return 'chore';
+  }
+  if (lower.startsWith('docs') || lower.startsWith('doc:')) return 'docs';
+
+  // 2. Keyword-based patterns — word-boundary guards prevent mid-word matches
+  if (/\b(add|implement|introduce|create|new|support|enable|allow)\b/.test(lower)) {
     return 'feature';
   }
 
-  // Fix patterns — includes issue-closing references
   if (
-    lower.startsWith('fix') ||
     /\b(bug|resolve|patch|correct|repair)\b/.test(lower) ||
     /\b(closes|fixes)\s+#\d+/.test(lower)
   ) {
     return 'fix';
   }
 
-  // Refactor patterns — includes "clean up" as two words and "optimize"
   if (
-    lower.startsWith('refactor') ||
     /\b(refactor|restructure|simplify|extract|reorganize|optimize)\b/.test(lower) ||
     /\bclean\s*up\b/.test(lower)
   ) {
     return 'refactor';
   }
 
-  // Chore patterns
-  if (
-    lower.startsWith('chore') ||
-    lower.startsWith('build') ||
-    lower.startsWith('ci') ||
-    lower.startsWith('deps') ||
-    /\b(update dep|upgrade|bump)\b/.test(lower)
-  ) {
+  if (/\b(update dep|upgrade|bump)\b/.test(lower)) {
     return 'chore';
   }
 
-  // Docs patterns
-  if (lower.startsWith('docs') || lower.startsWith('doc:') || /\b(readme|documentation|changelog)\b/.test(lower)) {
+  if (/\b(readme|documentation|changelog)\b/.test(lower)) {
     return 'docs';
   }
 
