@@ -35,6 +35,19 @@ map architecture, and understand impact before changing code.
 **Timewarp** — Trace the evolution. Detect architectural drift, forecast which files
 are about to become problems, and recap recent changes across the codebase.
 
+## Language support
+
+**MCP server analysis** (deterministic pattern matching, dependency graphs, trend computation):
+- **JavaScript / TypeScript** — full support including tsconfig path alias resolution
+- **Python** — function detection, import parsing, test frameworks (pytest, unittest), security patterns (f-string injection, dangerous functions)
+
+**Skill-guided analysis** (Claude reads and reasons about code):
+- **Any language** — all 19 commands work with any language Claude can read
+
+The MCP servers provide structured data that skills use to guide analysis. When MCP
+servers aren't available (e.g., in restricted environments), every skill falls back
+to manual analysis using Glob, Grep, and Read.
+
 ## Agents
 
 Each system includes an autonomous agent for comprehensive analysis:
@@ -46,6 +59,26 @@ Each system includes an autonomous agent for comprehensive analysis:
 | security-auditor | Shield | Comprehensive security audit with data flow tracing |
 | codebase-analyst | Survey | Architecture mapping with health assessment |
 | evolution-analyst | Timewarp | Temporal health report with drift and forecasting |
+
+## MCP servers
+
+Six MCP servers provide deterministic analysis and activate automatically:
+
+| Server | Type | Tools |
+|--------|------|-------|
+| alignkit-local | Bundled | `alignkit_local_lint`, `alignkit_local_check`, `alignkit_local_status` |
+| testkit | Bundled | `testkit_analyze`, `testkit_map`, `testkit_status` |
+| shieldkit | Bundled | `shieldkit_scan`, `shieldkit_surface`, `shieldkit_status` |
+| lenskit | Bundled | `lenskit_analyze`, `lenskit_graph`, `lenskit_status` |
+| timewarp | Bundled | `timewarp_history`, `timewarp_trends` |
+| alignkit | External | `alignkit_lint`, `alignkit_check`, `alignkit_status` |
+
+The five bundled servers run locally with zero setup. The external `alignkit` server
+provides session-based adherence tracking across conversations (requires npm).
+
+When MCP servers are unavailable, every command gracefully falls back to manual
+analysis. A single availability probe in the post-edit hook prevents cascading
+failures.
 
 ## Automatic checks
 
@@ -62,12 +95,13 @@ All checks are 1-2 sentences. They nudge, not nag.
 
 ## How it works
 
-Every command works immediately with no setup. Four bundled MCP servers provide
+Every command works immediately with no setup. Five bundled MCP servers provide
 deterministic analysis (pattern matching, dependency graphs, trend computation) and
 activate automatically when the plugin is installed.
 
-For enhanced instruction tracking across sessions, optionally install the `alignkit`
-npm package: `npm install -g alignkit`.
+For enhanced instruction tracking across sessions, the external `alignkit` MCP
+server provides session-based adherence data. It activates automatically via the
+plugin's `.mcp.json` configuration.
 
 ## Individual systems
 
