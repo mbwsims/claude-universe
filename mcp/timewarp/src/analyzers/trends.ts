@@ -9,6 +9,7 @@
 import { execFile as execFileCb } from 'node:child_process';
 import { promisify } from 'node:util';
 import { discoverSourceFiles } from './discovery.js';
+import { gitRun, type GitResult } from '../../../shared/git-utils.js';
 
 const execFile = promisify(execFileCb);
 
@@ -82,26 +83,15 @@ function countFunctions(content: string): number {
   return count;
 }
 
-async function gitRun(
-  args: string[],
-  cwd: string,
-): Promise<string> {
-  try {
-    const { stdout } = await execFile('git', args, { cwd, maxBuffer: 10 * 1024 * 1024 });
-    return stdout;
-  } catch {
-    return '';
-  }
-}
-
 async function getTopChangedFiles(
   months: number,
   cwd: string,
 ): Promise<string[]> {
   const since = `${months} months ago`;
   const args = ['log', '--format=format:', '--name-only', `--since=${since}`];
-  const stdout = await gitRun(args, cwd);
-  const files = stdout.trim().split('\n').filter(Boolean);
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return [];
+  const files = result.stdout.trim().split('\n').filter(Boolean);
 
   const counts = new Map<string, number>();
   for (const file of files) {
@@ -127,8 +117,9 @@ async function getCommitAtDate(
     '--',
     file,
   ];
-  const stdout = await gitRun(args, cwd);
-  const hash = stdout.trim();
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return null;
+  const hash = result.stdout.trim();
   return hash || null;
 }
 
@@ -163,8 +154,9 @@ async function getCommitCountInRange(
     '--',
     file,
   ];
-  const stdout = await gitRun(args, cwd);
-  return stdout.trim().split('\n').filter(Boolean).length;
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return 0;
+  return result.stdout.trim().split('\n').filter(Boolean).length;
 }
 
 function computeSampleDates(months: number): string[] {
