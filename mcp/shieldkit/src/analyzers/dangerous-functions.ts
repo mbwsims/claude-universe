@@ -81,7 +81,11 @@ const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { regex: /\bpickle\.loads\s*\(/, name: 'python-pickle-loads', severity: 'critical' },
 ];
 
-export function analyzeDangerousFunctions(content: string): DangerousFunctionsResult {
+export function analyzeDangerousFunctions(content: string, filePath?: string): DangerousFunctionsResult {
+  if (filePath && (/\.(test|spec)\./.test(filePath) || filePath.includes('__tests__') || /test_\w+\.py$/.test(filePath))) {
+    return { count: 0, locations: [] };
+  }
+
   const lines = content.split('\n');
   const locations: DangerousFunctionLocation[] = [];
 

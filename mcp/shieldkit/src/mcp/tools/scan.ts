@@ -49,7 +49,7 @@ async function scanFile(filePath: string, cwd: string): Promise<FileFindings> {
     path: filePath,
     sqlInjection: analyzeSqlInjection(content, filePath),
     hardcodedSecrets: analyzeHardcodedSecrets(content, filePath),
-    dangerousFunctions: analyzeDangerousFunctions(content),
+    dangerousFunctions: analyzeDangerousFunctions(content, filePath),
     corsConfig: analyzeCorsConfig(content),
   };
 
