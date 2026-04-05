@@ -14,11 +14,12 @@ failures. These files MUST have thorough tests.
 - `**/auth/**`, `**/login/**`, `**/session/**`, `**/token/**`
 - `**/payment/**`, `**/billing/**`, `**/checkout/**`, `**/charge/**`, `**/invoice/**`
 - `**/security/**`, `**/permission/**`, `**/access/**`, `**/rbac/**`, `**/acl/**`
-- `**/middleware/**` (request pipeline — affects all routes)
-- `**/migrat**` (database migrations — irreversible in production)
+- `**/middleware/**` (request pipeline -- affects all routes)
+- `**/migrat**` (database migrations -- irreversible in production)
 - `**/password/**`, `**/credential/**`, `**/secret/**`
 - `**/encrypt**`, `**/decrypt**`, `**/hash**`
 - `**/webhook**` (public-facing, adversarial input)
+- `**/admin/**` (elevated privileges, dangerous operations)
 
 **Keyword detection in filenames:**
 `auth`, `login`, `session`, `token`, `payment`, `billing`, `checkout`, `charge`,

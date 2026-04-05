@@ -72,20 +72,32 @@ Tests give false confidence. They pass but prove almost nothing.
 
 The overall grade is NOT a simple average. Weight by importance:
 
-1. **Error testing** (highest weight) — Missing error tests is the most common cause of
-   production bugs. A test suite with no error tests cannot score above C overall.
-2. **Assertion depth** — Shallow assertions give false confidence. Many shallow assertions
-   pulls the grade down significantly.
-3. **Input coverage** — Happy-path-only coverage misses the bugs that matter.
-4. **Mock health** — Over-mocking means tests prove nothing about real behavior.
-5. **Specification clarity** — Important for maintainability but doesn't directly affect
-   bug-catching ability.
-6. **Independence** — Important for reliability but rarely causes production bugs directly.
+| Dimension | Weight | Rationale |
+|-----------|--------|-----------|
+| Error testing | 3.0 | Missing error tests is the #1 cause of production bugs |
+| Assertion depth | 2.5 | Shallow assertions give false confidence |
+| Mock health | 1.5 | Over-mocking means tests prove nothing about real behavior |
+| Specification clarity | 1.0 | Important for maintainability, less for bug-catching |
+| Input coverage | -- | Semantic only (not measured by testkit_analyze) |
+| Independence | -- | Semantic only (not measured by testkit_analyze) |
 
-**Grade caps:**
-- No error tests at all → overall capped at C
-- More than 50% shallow assertions → overall capped at C+
-- Everything mocked (>50% mock setup) → overall capped at C
+The weighted GPA is computed as: `sum(grade_value * weight) / sum(weights)` where grade
+values are: A=4.0, A-=3.7, B+=3.3, B=3.0, B-=2.7, C+=2.3, C=2.0, C-=1.7, D=1.0, F=0.0.
+
+**Null dimensions:** When the testkit analyzer cannot measure a dimension (e.g., no
+throwable operations means error testing is null, no test names means spec clarity is
+null), that dimension is EXCLUDED from the weighted average -- it does not count as zero.
+This means a project where error testing is not applicable (no throwable code) will be
+graded on the remaining dimensions, not penalized for the unmeasurable one.
+
+Input coverage and independence are ALWAYS null in the deterministic analyzer because they
+require semantic analysis. When reviewing manually, score these dimensions and factor them
+into the overall grade using professional judgment.
+
+**Grade caps (hard limits that override the weighted average):**
+- No error tests at all (error testing = F) -> overall capped at C
+- More than 50% shallow assertions (assertion depth <= C) -> overall capped at C+
+- Everything mocked (>50% mock setup, mock health = D or worse) -> overall capped at C
 
 ## One-Line Summaries by Grade
 

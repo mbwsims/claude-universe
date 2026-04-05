@@ -78,13 +78,15 @@ under test, enumerate applicable categories from the relevant type section below
 | Category | Test Values |
 |----------|-------------|
 | Canonical | Valid recent date |
-| Epoch | `new Date(0)` — January 1, 1970 |
-| Far future | `new Date("9999-12-31")` — overflow potential |
+| Epoch | `new Date(0)` -- January 1, 1970 |
+| Far future | `new Date("9999-12-31")` -- overflow potential |
 | Far past | `new Date("0001-01-01")` |
-| Invalid date | `new Date("not-a-date")` — produces `Invalid Date` |
-| Timezone boundary | Midnight UTC vs local time |
-| DST transition | Dates during daylight saving time changes |
+| Invalid date | `new Date("not-a-date")` -- produces `Invalid Date` |
+| Timezone boundary | Midnight UTC vs local time -- a date that is "today" in one timezone and "yesterday" in another |
+| DST spring forward | `2024-03-10T02:30:00` US Eastern -- this time does not exist (clocks skip from 2:00 to 3:00). Functions computing duration across this boundary lose an hour. |
+| DST fall back | `2024-11-03T01:30:00` US Eastern -- this time occurs TWICE. Ambiguous without explicit offset. |
 | Leap year | February 29 on leap year, invalid Feb 29 on non-leap year |
+| Leap second | `2016-12-31T23:59:60Z` -- most parsers reject this but some APIs return it |
 | ISO string vs Date object | `"2024-01-15"` vs `new Date("2024-01-15")` |
 
 ## Async Code
@@ -100,6 +102,21 @@ under test, enumerate applicable categories from the relevant type section below
 | Sequential dependency | Second call depends on first completing |
 | Retry after failure | First call fails, retry succeeds |
 | Double resolve | Promise resolved twice (should be no-op) |
+
+## Files / Buffers
+
+| Category | Test Values |
+|----------|-------------|
+| Canonical | Valid file of expected type and reasonable size |
+| Empty file | 0-byte file or empty Buffer -- triggers different code paths |
+| Very large | File exceeding expected max size (e.g., 100MB+) -- memory/performance |
+| Wrong type | PDF when image expected, text when binary expected |
+| Corrupted | Valid header but truncated or corrupted body |
+| Malicious filename | `../../etc/passwd`, `file.jpg.exe`, `file\x00.txt` |
+| Binary with BOM | UTF-8 BOM (`\xEF\xBB\xBF`) at start -- breaks naive text parsing |
+| No extension | File without extension -- type detection from content |
+| Symlink | Symlink to valid file, symlink to missing file, circular symlink |
+| Permissions | File exists but is not readable (EACCES) |
 
 ## Stateful Code
 

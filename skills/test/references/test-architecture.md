@@ -138,6 +138,61 @@ middleware in isolation misses ordering bugs and interaction effects.
 **Mock boundary:** Mock the final handler that the middleware chain protects. Verify the
 middleware chain produces the expected request transformations and response modifications.
 
+### GraphQL Resolvers
+
+**Test approach:** Test resolvers as functions with parent, args, and context. For complex
+queries, integration test through the full GraphQL schema.
+
+**Why:** Resolvers are the business logic layer of a GraphQL API. Testing through HTTP adds
+unnecessary complexity -- test the resolver function directly for unit tests, and use
+`graphql()` for integration tests of query composition.
+
+**Mock boundary:** Mock data sources in context (database, REST APIs). For integration tests,
+use a real schema with test data sources.
+
+**Example structure:**
+```
+describe("User resolver", () => {
+  test("resolves user by ID", async () => {
+    const user = await resolvers.Query.user(
+      null,
+      { id: "123" },
+      { dataSources: { users: mockUserDS } }
+    )
+    expect(user).toEqual({ id: "123", name: "Alice", email: "alice@example.com" })
+  })
+
+  test("returns null for non-existent user", async () => {
+    const user = await resolvers.Query.user(
+      null,
+      { id: "nonexistent" },
+      { dataSources: { users: mockUserDS } }
+    )
+    expect(user).toBeNull()
+  })
+
+  test("nested field resolver loads related data", async () => {
+    const result = await graphql({
+      schema,
+      source: '{ user(id: "123") { name posts { title } } }',
+      contextValue: { dataSources: testSources },
+    })
+    expect(result.errors).toBeUndefined()
+    expect(result.data.user.posts).toHaveLength(2)
+    expect(result.data.user.posts[0].title).toBe("First Post")
+  })
+
+  test("authorization check on admin-only field", async () => {
+    const result = await graphql({
+      schema,
+      source: '{ user(id: "123") { email secretField } }',
+      contextValue: { dataSources: testSources, viewer: regularUser },
+    })
+    expect(result.errors[0].message).toContain("Not authorized")
+  })
+})
+```
+
 ### CLI Commands
 
 **Test approach:** Test the command handler with parsed arguments.
@@ -146,6 +201,35 @@ middleware chain produces the expected request transformations and response modi
 various argument combinations and verify output + side effects.
 
 **Mock boundary:** Mock filesystem operations and network calls. Use real argument objects.
+
+**Example structure:**
+```
+describe("deploy command", () => {
+  test("deploys to staging with default options", async () => {
+    const output = await runCommand("deploy", { env: "staging" })
+    expect(output.exitCode).toBe(0)
+    expect(output.stdout).toContain("Deployed to staging")
+  })
+
+  test("rejects unknown environment", async () => {
+    const output = await runCommand("deploy", { env: "invalid" })
+    expect(output.exitCode).toBe(1)
+    expect(output.stderr).toContain("Unknown environment: invalid")
+  })
+
+  test("requires --force for production deploy", async () => {
+    const output = await runCommand("deploy", { env: "production" })
+    expect(output.exitCode).toBe(1)
+    expect(output.stderr).toContain("Use --force for production")
+  })
+
+  test("dry-run prints plan without deploying", async () => {
+    const output = await runCommand("deploy", { env: "staging", dryRun: true })
+    expect(output.stdout).toContain("DRY RUN")
+    expect(mockDeploy).not.toHaveBeenCalled()
+  })
+})
+```
 
 ## When to Write Both Unit and Integration Tests
 
