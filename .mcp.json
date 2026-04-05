@@ -14,11 +14,11 @@
     },
     "lenskit": {
       "command": "node",
-      "args": ["mcp/lenskit/dist/mcp/server.js"]
+      "args": ["mcp/lenskit/dist/lenskit/src/mcp/server.js"]
     },
     "timewarp": {
       "command": "node",
-      "args": ["mcp/timewarp/dist/mcp/server.js"]
+      "args": ["mcp/timewarp/dist/timewarp/src/mcp/server.js"]
     },
     "alignkit": {
       "command": "npx",
