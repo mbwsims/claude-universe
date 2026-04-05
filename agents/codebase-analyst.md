@@ -42,6 +42,12 @@ Use this data to calibrate the rest of the analysis:
 
 If `lenskit_status` is unavailable, proceed directly to Phase 1 with manual analysis.
 
+**Without lenskit-mcp (any phase):** All phases have manual alternatives:
+- Phase 0: Skip — proceed to Phase 1 with `ls`, `find`, and `wc -l`
+- Phase 1: Use Grep to find `import` and `from` patterns to manually trace dependencies
+- Phase 2: Use `git log --format=format: --name-only` for churn, `wc -l` for complexity
+- Phase 3: Read files directly — focus on the most-imported and largest files
+
 ### Phase 1: Architecture Map and Entry Points
 
 Map the project's architecture:
