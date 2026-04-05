@@ -10,6 +10,7 @@ allowed-tools:
   - Glob
   - Grep
   - mcp__testkit__testkit_map
+  - mcp__testkit__testkit_analyze
 argument-hint: "[file-or-function]"
 ---
 

@@ -12,6 +12,7 @@ allowed-tools:
   - Read
   - Glob
   - Grep
+  - Bash
 argument-hint: "[file]"
 ---
 
