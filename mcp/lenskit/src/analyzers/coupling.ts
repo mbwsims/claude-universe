@@ -9,6 +9,7 @@
 import { readFile } from 'node:fs/promises';
 import { join, relative, dirname, basename, extname } from 'node:path';
 import { discoverSourceFiles } from './discovery.js';
+import { resolveAliasedImport, type TsconfigPaths } from '../../../shared/tsconfig-resolver.js';
 
 export interface CouplingResult {
   importerCount: number;
@@ -69,36 +70,77 @@ export async function buildImportIndex(
 /**
  * Look up coupling for a file using a pre-built import index.
  * O(N) where N is the number of files (just scanning the index).
+ *
+ * Optional tsconfigPaths enables resolution of aliased imports (e.g., @/utils/helpers).
  */
 export function lookupCoupling(
   filePath: string,
-  importIndex: Map<string, string[]>
+  importIndex: Map<string, string[]>,
+  tsconfigPaths?: TsconfigPaths | null,
 ): CouplingResult {
   const targetModuleName = getModuleName(filePath);
   const targetModuleNoExt = targetModuleName.replace(/\.[^.]+$/, '');
-  const targetBaseName = basename(targetModuleNoExt);
   const importers: string[] = [];
 
   for (const [otherFile, importPaths] of importIndex) {
     if (otherFile === filePath) continue;
 
     const importerDir = dirname(otherFile);
-    const relPath = relative(importerDir, targetModuleName);
-    const normalizedRel = relPath.startsWith('.') ? relPath : './' + relPath;
-    const normalizedRelNoExt = normalizedRel.replace(/\.[^.]+$/, '');
-
-    const patterns = [normalizedRelNoExt, targetModuleNoExt].filter(p => p.length > 0);
 
     for (const importPath of importPaths) {
-      const importPathNoExt = importPath.replace(/\.[^.]+$/, '');
-      let found = false;
-      for (const pattern of patterns) {
-        if (importPathNoExt === pattern || importPathNoExt.endsWith('/' + basename(pattern))) {
-          found = true;
-          break;
+      let resolved = false;
+
+      // 1. Try tsconfig alias resolution
+      if (tsconfigPaths && tsconfigPaths.paths) {
+        const aliasResolved = resolveAliasedImport(
+          importPath,
+          tsconfigPaths.paths,
+          tsconfigPaths.baseUrl,
+        );
+        if (aliasResolved) {
+          const aliasNoExt = aliasResolved.replace(/\.[^.]+$/, '');
+          if (aliasNoExt === targetModuleNoExt) {
+            resolved = true;
+          }
         }
       }
-      if (found) {
+
+      // 2. Try relative import resolution
+      if (!resolved) {
+        // Only strip known file extensions, not parts of identifiers like "-service"
+        const importPathNoExt = importPath.replace(/\.(ts|tsx|js|jsx|py|go|rs|rb|java|mjs|cjs)$/, '');
+
+        // Resolve relative imports to absolute project paths
+        if (importPath.startsWith('.') || importPath.startsWith('/')) {
+          const resolvedPath = join(importerDir, importPathNoExt);
+          const normalizedResolved = resolvedPath.replace(/\\/g, '/');
+          if (normalizedResolved === targetModuleNoExt) {
+            resolved = true;
+          }
+        }
+
+        // 3. Try Python relative imports (dot notation)
+        if (!resolved && importPath.startsWith('.') && !importPath.startsWith('./') && !importPath.startsWith('../')) {
+          // Python: .models means ./models, ..utils means ../utils
+          const dots = importPath.match(/^(\.+)/);
+          if (dots) {
+            const dotCount = dots[1].length;
+            const modulePart = importPath.slice(dotCount);
+            // One dot = same directory, two dots = parent directory, etc.
+            let pythonDir = importerDir;
+            for (let i = 1; i < dotCount; i++) {
+              pythonDir = dirname(pythonDir);
+            }
+            const pythonResolved = join(pythonDir, modulePart).replace(/\\/g, '/');
+            const targetNoExtNoPy = targetModuleNoExt.replace(/\.py$/, '');
+            if (pythonResolved === targetNoExtNoPy || pythonResolved === targetModuleNoExt) {
+              resolved = true;
+            }
+          }
+        }
+      }
+
+      if (resolved) {
         importers.push(otherFile);
         break;
       }
@@ -115,7 +157,11 @@ export function lookupCoupling(
  * Single-file coupling analysis (discovers + reads all files).
  * Use for single-file analysis only. For batch, use buildImportIndex + lookupCoupling.
  */
-export async function analyzeCoupling(filePath: string, cwd: string): Promise<CouplingResult> {
+export async function analyzeCoupling(
+  filePath: string,
+  cwd: string,
+  tsconfigPaths?: TsconfigPaths | null,
+): Promise<CouplingResult> {
   const index = await buildImportIndex(cwd);
-  return lookupCoupling(filePath, index);
+  return lookupCoupling(filePath, index, tsconfigPaths);
 }
