@@ -87,6 +87,8 @@ As you trace, identify which architectural layer each step belongs to:
 | **External** | API clients, email services, queue publishers | Communicates with external systems |
 | **Response** | Serializers, formatters, view models | Shapes output for the caller |
 
+For framework-specific layer identification, see `references/layer-patterns.md`.
+
 ### 4. Note Observations
 
 While tracing, flag:

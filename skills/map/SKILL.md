@@ -40,18 +40,17 @@ Gather structural data:
 
 Read representative files from each major directory to understand the layer:
 
-| Directory pattern | Likely layer |
-|-------------------|-------------|
-| `app/`, `pages/`, `routes/` | Entry / Routing |
-| `api/`, `handlers/`, `controllers/` | Request handling |
-| `services/`, `use-cases/`, `domain/` | Business logic |
-| `lib/`, `utils/`, `helpers/` | Shared utilities |
-| `db/`, `repositories/`, `models/` | Data access |
-| `components/`, `ui/`, `views/` | Presentation |
-| `types/`, `interfaces/`, `schemas/` | Type definitions |
-| `config/`, `env/` | Configuration |
-| `middleware/`, `plugins/` | Cross-cutting concerns |
-| `test/`, `__tests__/`, `spec/` | Tests |
+Use the layer classification from `skills/trace/references/layer-patterns.md` to identify
+which directory maps to which architectural layer. Common patterns:
+
+- **Entry/Routing:** `app/`, `pages/`, `routes/`, `api/`, `handlers/`, `controllers/`
+- **Business logic:** `services/`, `use-cases/`, `domain/`
+- **Data access:** `db/`, `repositories/`, `models/`
+- **Utilities:** `lib/`, `utils/`, `helpers/`
+- **Presentation:** `components/`, `ui/`, `views/`
+- **Cross-cutting:** `middleware/`, `plugins/`, `config/`
+
+For framework-specific patterns (Django, FastAPI, Spring Boot, etc.), see the reference file.
 
 ### 3. Map Dependencies
 
