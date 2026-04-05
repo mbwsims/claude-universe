@@ -374,3 +374,4 @@ export async function analyzeTrends(
 export const detectGrowthPatternForTest = detectGrowthPattern;
 export const detectChurnPatternForTest = detectChurnPattern;
 export const analyzeFileTrendForTest = analyzeFileTrend;
+export const countFunctionsForTest = countFunctions;

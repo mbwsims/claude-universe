@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 // We test detectGrowthPattern via a test-only export. See Step 3.
-import { detectGrowthPatternForTest, detectChurnPatternForTest, analyzeFileTrendForTest, analyzeTrends } from '../analyzers/trends.js';
+import { detectGrowthPatternForTest, detectChurnPatternForTest, analyzeFileTrendForTest, analyzeTrends, countFunctionsForTest } from '../analyzers/trends.js';
 import { join } from 'node:path';
 
 const FIXTURE_DIR = join(import.meta.dirname, '..', '..', '..', 'test-fixtures');
@@ -182,5 +182,31 @@ describe('analyzeTrends — parallelism', () => {
     if (results.length === 1) {
       expect(results[0].file).toBe('src/utils/helpers.ts');
     }
+  });
+});
+
+describe('countFunctions — Python patterns', () => {
+  it('counts standalone Python def', () => {
+    const code = `def hello():\n    return "hello"\n\ndef world():\n    return "world"`;
+    expect(countFunctionsForTest(code)).toBe(2);
+  });
+
+  it('counts Python async def', () => {
+    const code = `async def fetch_data():\n    return await get()\n\ndef sync_fn():\n    pass`;
+    // async def should match \bdef\s+\w+ (the "def" after "async " is still "def")
+    // Actually "async def" — the pattern /\bdef\s+\w+/g should match "def fetch_data"
+    expect(countFunctionsForTest(code)).toBeGreaterThanOrEqual(2);
+  });
+
+  it('counts Python class methods', () => {
+    const code = `class MyClass:\n    def __init__(self):\n        pass\n\n    def method(self):\n        pass`;
+    expect(countFunctionsForTest(code)).toBe(2);
+  });
+
+  it('does not double-count a function that matches multiple patterns', () => {
+    const code = `def hello():\n    pass`;
+    // The Python /\bdef\s+\w+/g and Ruby /\bdef\s+\w+/g are identical.
+    // The seen set should prevent double-counting.
+    expect(countFunctionsForTest(code)).toBe(1);
   });
 });
