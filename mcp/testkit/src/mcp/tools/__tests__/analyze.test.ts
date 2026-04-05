@@ -11,15 +11,16 @@ describe.skipIf(!hasFixtures)('analyzeTool', () => {
     const result = await analyzeTool({ file: 'tests/helpers.test.ts' }, FIXTURE_DIR);
     expect(result.files).toHaveLength(1);
     expect(result.files[0].path).toBe('tests/helpers.test.ts');
-    expect(result.files[0].dimensions).toBeDefined();
-    expect(result.files[0].grade).toBeDefined();
+    expect(typeof result.files[0].dimensions).toBe('object');
+    expect(result.files[0].dimensions).toHaveProperty('assertionDepth');
+    expect(result.files[0].grade).toMatch(/^[A-F][+-]?$/);
   });
 
   it('analyzes all test files in batch mode', async () => {
     const result = await analyzeTool({}, FIXTURE_DIR);
     expect(result.files.length).toBeGreaterThanOrEqual(2);
-    expect(result.summary).toBeDefined();
-    expect(result.summary.avgGrade).toBeDefined();
+    expect(typeof result.summary).toBe('object');
+    expect(result.summary.avgGrade).toMatch(/^[A-F][+-]?$/);
     expect(result.summary.totalFiles).toBeGreaterThanOrEqual(2);
   });
 
@@ -53,7 +54,7 @@ describe.skipIf(!hasFixtures)('analyzeTool', () => {
     const result = await analyzeTool({ file: 'tests/user-service.test.ts' }, FIXTURE_DIR);
     const file = result.files[0];
     // user-service.test.ts has no error tests — errorCoverage may be non-null
-    expect(file.dimensions).toBeDefined();
-    expect(file.grade).toBeDefined();
+    expect(typeof file.dimensions).toBe('object');
+    expect(file.grade).toMatch(/^[A-F][+-]?$/);
   });
 });

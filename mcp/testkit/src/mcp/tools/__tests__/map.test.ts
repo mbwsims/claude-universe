@@ -18,7 +18,8 @@ describe.skipIf(!hasFixtures)('mapTool', () => {
     expect(result.mapped.length).toBeGreaterThanOrEqual(2);
     // helpers.test.ts should map to a source file
     const helpersMapping = result.mapped.find(m => m.test.includes('helpers'));
-    expect(helpersMapping).toBeDefined();
+    expect(helpersMapping).not.toBeUndefined();
+    expect(helpersMapping!.test).toContain('helpers');
   });
 
   it('identifies untested files with priority', async () => {
@@ -26,7 +27,8 @@ describe.skipIf(!hasFixtures)('mapTool', () => {
     expect(result.untested.length).toBeGreaterThan(0);
     for (const u of result.untested) {
       expect(['high', 'medium', 'low']).toContain(u.priority);
-      expect(u.path).toBeTruthy();
+      expect(typeof u.path).toBe('string');
+      expect(u.path.length).toBeGreaterThan(0);
     }
   });
 
@@ -39,7 +41,7 @@ describe.skipIf(!hasFixtures)('mapTool', () => {
   it('returns framework detection result', async () => {
     const result = await mapTool(FIXTURE_DIR);
     // The fixture project uses vitest
-    expect(result.framework).toBeDefined();
+    expect(typeof result.framework).toBe('string');
   });
 
   it('uses discoveryCache when provided', async () => {

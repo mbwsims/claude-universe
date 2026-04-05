@@ -9,7 +9,7 @@ const hasFixtures = existsSync(FIXTURE_DIR);
 describe.skipIf(!hasFixtures)('statusTool', () => {
   it('returns overall grade and file counts', async () => {
     const result = await statusTool(FIXTURE_DIR);
-    expect(result.overallGrade).toBeDefined();
+    expect(result.overallGrade).toMatch(/^[A-F][+-]?$/);
     expect(result.testFiles).toBeGreaterThanOrEqual(2);
     expect(result.sourceFiles).toBeGreaterThanOrEqual(5);
   });
@@ -40,7 +40,7 @@ describe.skipIf(!hasFixtures)('statusTool', () => {
 
   it('returns framework detection result', async () => {
     const result = await statusTool(FIXTURE_DIR);
-    expect(result.framework).toBeDefined();
+    expect(typeof result.framework).toBe('string');
   });
 
   it('quickSummary includes coverage ratio', async () => {

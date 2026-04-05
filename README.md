@@ -1,6 +1,6 @@
 # Claude Universe
 
-Five systems. One plugin. 19 commands, 5 agents, zero dependencies.
+5 systems, 19 commands, 1 universe.
 
 [claudeuniverse.com](https://claudeuniverse.com)
 

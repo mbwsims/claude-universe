@@ -50,7 +50,7 @@ that requires understanding business rules, race conditions).
 
 **Without shieldkit-mcp:** For each file in scope, manually check against the vulnerability
 categories in `references/vulnerability-catalog.md`. Note to the user: "Running without
-shieldkit-mcp — install it (`npm install -g shieldkit-mcp`) for precise pattern detection."
+shieldkit-mcp — analysis will use manual pattern matching."
 
 For each vulnerability found:
 1. Identify the specific code location (file + line)
