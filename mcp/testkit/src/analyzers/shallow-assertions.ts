@@ -2,6 +2,8 @@
  * Detects shallow assertions that pass for wrong values.
  */
 
+import { stripComments } from './strip-comments.js';
+
 export interface ShallowAssertionResult {
   count: number;
   total: number;
@@ -32,20 +34,6 @@ const PYTHON_SHALLOW_PATTERNS: Array<{ regex: RegExp; kind: string }> = [
 
 // Python total assertion count: any line starting with `assert `
 const PYTHON_ASSERT_REGEX = /^\s*assert\s+/g;
-
-// Canonical version: mcp/shared/strip-comments.ts
-/** Strip single-line (//) and multi-line block comments from source text. */
-function stripComments(content: string): string {
-  // Remove block comments (non-greedy, handles multi-line)
-  let stripped = content.replace(/\/\*[\s\S]*?\*\//g, (match) => {
-    // Preserve line count by replacing with same number of newlines
-    const newlines = match.split('\n').length - 1;
-    return '\n'.repeat(newlines);
-  });
-  // Remove single-line comments
-  stripped = stripped.replace(/\/\/.*$/gm, '');
-  return stripped;
-}
 
 export function analyzeShallowAssertions(content: string): ShallowAssertionResult {
   const lines = stripComments(content).split('\n');

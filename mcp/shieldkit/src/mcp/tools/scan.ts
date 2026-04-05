@@ -13,7 +13,7 @@ import { isRouteFile, analyzeAuth, analyzeHandlerAuth, buildMissingAuthResult, t
 import { analyzeHardcodedSecrets, type HardcodedSecretsResult } from '../../analyzers/hardcoded-secrets.js';
 import { analyzeDangerousFunctions, type DangerousFunctionsResult } from '../../analyzers/dangerous-functions.js';
 import { analyzeCorsConfig, type CorsConfigResult } from '../../analyzers/cors-config.js';
-import { buildScoringResult, type ScoringResult } from '../../analyzers/scoring.js';
+import { buildScoringResultFromFindings, type FindingSeverity, type Severity, type ScoringResult } from '../../analyzers/scoring.js';
 
 interface FileMissingAuth {
   isRouteFile: boolean;
@@ -93,7 +93,7 @@ export async function scanTool(args: { file?: string }, cwd: string): Promise<Sc
 
   if (filePaths.length === 0) {
     const emptyAuth = buildMissingAuthResult([]);
-    const scoring = buildScoringResult({});
+    const scoring = buildScoringResultFromFindings([]);
     return {
       files: [],
       missingAuth: emptyAuth,
@@ -122,16 +122,33 @@ export async function scanTool(args: { file?: string }, cwd: string): Promise<Sc
   }
   const missingAuth = buildMissingAuthResult(authResults, allHandlers);
 
-  // Aggregate counts for scoring
-  const analyzerCounts: Record<string, number> = {
-    'sql-injection': files.reduce((sum, f) => sum + f.sqlInjection.count, 0),
-    'hardcoded-secrets': files.reduce((sum, f) => sum + f.hardcodedSecrets.count, 0),
-    'dangerous-functions': files.reduce((sum, f) => sum + f.dangerousFunctions.count, 0),
-    'cors-config': files.reduce((sum, f) => sum + f.corsConfig.count, 0),
-    'missing-auth': missingAuth.unprotected,
-  };
+  // Build per-finding severity data for accurate scoring
+  const perFindingSeverities: FindingSeverity[] = [];
 
-  const scoring = buildScoringResult(analyzerCounts);
+  // Dangerous functions have per-finding severity — aggregate by severity level
+  const dfBySeverity = new Map<Severity, number>();
+  for (const f of files) {
+    for (const loc of f.dangerousFunctions.locations) {
+      dfBySeverity.set(loc.severity, (dfBySeverity.get(loc.severity) ?? 0) + 1);
+    }
+  }
+  for (const [severity, count] of dfBySeverity) {
+    perFindingSeverities.push({ analyzer: 'dangerous-functions', severity, count });
+  }
+
+  // Other analyzers use flat classification
+  const sqlCount = files.reduce((sum, f) => sum + f.sqlInjection.count, 0);
+  if (sqlCount > 0) perFindingSeverities.push({ analyzer: 'sql-injection', severity: 'critical', count: sqlCount });
+
+  const secretsCount = files.reduce((sum, f) => sum + f.hardcodedSecrets.count, 0);
+  if (secretsCount > 0) perFindingSeverities.push({ analyzer: 'hardcoded-secrets', severity: 'critical', count: secretsCount });
+
+  const corsCount = files.reduce((sum, f) => sum + f.corsConfig.count, 0);
+  if (corsCount > 0) perFindingSeverities.push({ analyzer: 'cors-config', severity: 'medium', count: corsCount });
+
+  if (missingAuth.unprotected > 0) perFindingSeverities.push({ analyzer: 'missing-auth', severity: 'high', count: missingAuth.unprotected });
+
+  const scoring = buildScoringResultFromFindings(perFindingSeverities);
 
   // Count files with findings -- includes missing auth
   const filesWithFindings = files.filter(f =>

@@ -3,6 +3,8 @@
  * to error assertions in tests.
  */
 
+import { stripComments } from './strip-comments.js';
+
 export interface ErrorCoverageResult {
   throwable: number;
   tested: number;
@@ -34,19 +36,6 @@ const ERROR_TEST_PATTERNS = [
   /self\.assertRaises\(/,
   /assertRaises\(/,
 ];
-
-// Canonical version: mcp/shared/strip-comments.ts
-/** Strip single-line (//) and multi-line block comments from source text. */
-function stripComments(content: string): string {
-  // Remove block comments (non-greedy, handles multi-line)
-  let stripped = content.replace(/\/\*[\s\S]*?\*\//g, (match) => {
-    const newlines = match.split('\n').length - 1;
-    return '\n'.repeat(newlines);
-  });
-  // Remove single-line comments
-  stripped = stripped.replace(/\/\/.*$/gm, '');
-  return stripped;
-}
 
 export function analyzeErrorCoverage(
   sourceContent: string,
