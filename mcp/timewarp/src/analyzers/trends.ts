@@ -193,8 +193,8 @@ function detectGrowthPattern(
   const totalGrowth = latest - earliest;
   const totalGrowthPercent = earliest > 0 ? (totalGrowth / earliest) * 100 : 0;
 
-  // If both halves show less than 5% total growth, it's flat
-  if (Math.abs(totalGrowthPercent) < 5 * months) return 'flat';
+  // If total growth is less than 15%, classify as flat (constant threshold)
+  if (Math.abs(totalGrowthPercent) < 15) return 'flat';
 
   const midIndex = Math.floor(samples.length / 2);
   const midLines = samples[midIndex].lines;
@@ -356,3 +356,6 @@ export async function analyzeTrends(
 
   return results;
 }
+
+// Test-only exports
+export const detectGrowthPatternForTest = detectGrowthPattern;
