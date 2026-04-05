@@ -12,9 +12,13 @@ tools:
   - mcp__alignkit__alignkit_lint
   - mcp__alignkit__alignkit_check
   - mcp__alignkit__alignkit_status
+  - mcp__alignkit_local__alignkit_local_lint
+  - mcp__alignkit_local__alignkit_local_check
+  - mcp__alignkit_local__alignkit_local_status
   - Read
   - Glob
   - Grep
+  - Bash
 ---
 
 # Instruction Advisor
@@ -37,7 +41,26 @@ Note which files exist and their approximate size.
 
 ### Phase 2: Static Quality Analysis
 
-Call `alignkit_lint` to get structured diagnostic data for the primary instruction file.
+Call `alignkit_local_lint` first (bundled server, no external dependency). If unavailable,
+fall back to `alignkit_lint` (external server). If neither tool is available, perform manual
+lint analysis:
+
+1. Find instruction files using Glob: `CLAUDE.md`, `.claude/rules/**/*.md`, `.claude/agents/**/*.md`, `.claude/skills/**/SKILL.md`
+2. Read each file and parse rules (lines starting with `-`, `*`, or `N.` under headings). Strip YAML frontmatter first.
+3. Collect project context: read `package.json` for dependencies, `tsconfig.json` for config, list top-level directories.
+4. Run manual diagnostics on each rule:
+   - **VAGUE**: "try to", "when possible", "generally", "consider", "as needed"
+   - **CONFLICT**: "always X" paired with "never X" where X overlaps
+   - **REDUNDANT**: >70% word overlap between two rules
+   - **ORDERING**: tool constraints appearing after style rules
+   - **PLACEMENT**: file-pattern rules in CLAUDE.md (belong in .claude/rules/) or automation rules (belong as hooks)
+   - **WEAK_EMPHASIS**: tool constraints missing MUST/NEVER/ALWAYS markers
+   - **METADATA**: agent/skill files missing required frontmatter fields
+
+The primary instruction file is the project root `CLAUDE.md` (or the single instruction file
+if only one exists). When multiple files exist, analyze all of them but present `CLAUDE.md`
+as the primary with others as supplementary.
+
 Analyze the results:
 
 1. **Issue inventory**: Count and categorize all diagnostics (vague, conflict, redundant,
@@ -56,7 +79,8 @@ rate each rule's effectiveness:
 
 ### Phase 4: Adherence Analysis
 
-Call `alignkit_check` to get session history adherence data. Analyze:
+Call `alignkit_local_check` first for conformance data. Then call `alignkit_check` for
+session history adherence data (if available). Analyze:
 
 1. **Overall adherence**: What percentage of rules are being followed?
 2. **Problem rules**: Which rules have consistently low adherence?
@@ -67,7 +91,7 @@ If no session history exists, note this and skip to recommendations.
 
 ### Phase 5: Convention Discovery
 
-Go beyond coverage gaps — actively reverse-engineer conventions from the codebase. Sample
+Go beyond coverage gaps -- actively reverse-engineer conventions from the codebase. Sample
 8-12 source files across the project and identify consistent patterns: import styles, naming
 conventions, error handling, API shapes, data access patterns, architecture boundaries.
 
@@ -76,7 +100,28 @@ For each discovered convention that isn't already documented:
 2. Draft a paste-ready rule
 3. Note any exceptions
 
-This phase often produces the highest-value findings — conventions the developer follows
+**Value filtering -- apply before including any convention:**
+
+Before including a convention, ask: "If Claude violated this, would it cause a real problem?"
+
+- **High value**: Violations cause bugs, inconsistency, or architectural damage. Architecture
+  boundaries, security patterns, API contracts, import conventions affecting build/tooling.
+  Always include these.
+- **Medium value**: Violations cause inconsistency but not breakage. Naming conventions,
+  type organization, export style. Include but mark as medium.
+- **Low value -- OMIT**: Patterns Claude would follow anyway from reading existing code
+  (function vs arrow syntax, logging format). Also omit implementation details and patterns
+  that might be gaps rather than intentional choices.
+
+**Aim for 8-12 high/medium conventions, not 17+ with filler.** Fewer, stronger rules are
+more valuable than a comprehensive list that dilutes signal.
+
+**Evidence threshold** -- use a tiered approach:
+- 90%+ consistency: Strong convention, high-confidence rule
+- 70-89% consistency: Likely convention with exceptions -- note the exceptions
+- Below 70%: Not a convention, do not report
+
+This phase often produces the highest-value findings -- conventions the developer follows
 unconsciously but hasn't documented.
 
 ### Phase 6: Report

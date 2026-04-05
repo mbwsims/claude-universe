@@ -10,6 +10,8 @@ description: >-
 allowed-tools:
   - mcp__alignkit__alignkit_check
   - mcp__alignkit__alignkit_status
+  - mcp__alignkit_local__alignkit_local_check
+  - mcp__alignkit_local__alignkit_local_status
   - Read
   - Glob
   - Grep
@@ -32,12 +34,13 @@ Verify whether the project's instruction rules are actually being followed. Work
 
 ### 1. Gather Data
 
-Call the `alignkit_check` tool. Pass the `file` argument if the user specified one; otherwise
-omit it for auto-discovery. Optionally pass `since_days` to narrow the analysis window.
+Call `alignkit_local_check` first (bundled, conformance-only). For session-based adherence
+tracking, also call `alignkit_check` if available. Pass the `file` argument if the user
+specified one; otherwise omit it for auto-discovery. Optionally pass `since_days` to
+`alignkit_check` to narrow the analysis window.
 
-**If `alignkit_check` is unavailable** (MCP server not running or alignkit not installed),
-perform a **conformance check** instead — verify whether the codebase currently complies
-with each rule by reading the code directly.
+**If neither tool is available**, perform a **manual conformance check** -- verify whether
+the codebase currently complies with each rule by reading the code directly.
 
 **Conformance check procedure:**
 
@@ -155,8 +158,11 @@ Present evaluations in a clean table:
 | "Follow naming..." | Inconclusive | style rules not observable from actions |
 ```
 
-If more than 8 unresolved rules exist, note the remainder: "{N} additional unresolved rules —
-run `/check` again for next batch."
+If more than 8 unresolved rules exist, prioritize the 8 highest-impact unresolved rules
+(those with the most associated session action data). Note the remainder: "{N} additional
+unresolved rules not evaluated in this pass -- these had less session evidence available."
+Do not tell the user to run `/check` again for more. The 8 with the most evidence are the
+most meaningful to evaluate.
 
 Consult `references/evaluation-guide.md` for detailed evaluation patterns and common evidence
 indicators.
@@ -171,13 +177,19 @@ Consult `references/evaluation-guide.md` for recommendation patterns by rule out
 
 ### 5. Trend (When Available)
 
-If the data warrants it, call `alignkit_status` and include a trend line:
+Call `alignkit_status` (or `alignkit_local_status` if using the local server) to get summary
+data. Include a trend line when the data warrants it:
 
 ```
 **Trend:** {up|down|stable} over {sessionCount} sessions
 ```
 
-Only include when 5+ sessions exist and the trend is meaningful.
+Only include when 5+ sessions exist and the trend is **meaningful**: at least 10 percentage
+points change over 5+ sessions. A shift from 72% to 74% over 6 sessions is "stable", not
+"up". A shift from 65% to 78% over 5 sessions is genuinely "up".
+
+For conformance-only mode (no session history), call `alignkit_local_status` and report the
+current lint + conformance snapshot instead of a trend.
 
 ## Guidelines
 

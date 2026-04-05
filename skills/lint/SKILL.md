@@ -8,6 +8,7 @@ description: >-
   .claude/rules/, .claude/agents/, .claude/skills/).
 allowed-tools:
   - mcp__alignkit__alignkit_lint
+  - mcp__alignkit_local__alignkit_local_lint
   - Read
   - Glob
   - Grep
@@ -27,22 +28,56 @@ is enhanced with precise token counts and exhaustive deterministic static analyz
 
 ### 1. Run Static Analysis
 
-Call the `alignkit_lint` tool. Pass the `file` argument if the user specified one; otherwise
-omit it for auto-discovery of instruction files.
+Call the `alignkit_local_lint` tool first (bundled, no external dependency). If unavailable,
+fall back to `alignkit_lint` (external). Pass the `file` argument if the user specified one;
+otherwise omit it for auto-discovery of instruction files.
 
 If no instruction files are found, explain that the project has no CLAUDE.md or similar
-files and suggest creating one.
+files and suggest creating one. Offer to run `/discover` to find conventions.
 
-**If `alignkit_lint` is unavailable** (MCP server not running or alignkit not installed),
-perform manual analysis instead:
+**If `alignkit_lint` is unavailable** (MCP server not running or tool call fails),
+perform manual analysis instead. This fallback is fully self-contained:
 
-1. Find instruction files using Glob: `**/CLAUDE.md`, `.claude/rules/**/*.md`, etc.
-2. Read each file and parse rules (lines starting with `-` or numbered items under headings)
-3. Collect project context: read `package.json` for dependencies, `tsconfig.json` for config,
-   list top-level directories for structure
-4. Apply the analysis methodology from steps 2-5 below using this manually gathered data
-5. Note to the user: "Running without alignkit — token counts are estimated. Install
-   alignkit (`npm install -g alignkit`) for precise analysis and adherence tracking via `/check`."
+1. **Find instruction files** using Glob:
+   - `CLAUDE.md` (project root)
+   - `.claude/rules/**/*.md`
+   - `.claude/agents/**/*.md`
+   - `.claude/skills/**/SKILL.md`
+
+2. **Read each file and parse rules**: lines starting with `-`, `*`, or `N.` under headings.
+   Count total rules. Strip YAML frontmatter (between `---` markers) before parsing.
+
+3. **Collect project context**: read `package.json` (dependencies, scripts), `tsconfig.json`
+   (strict mode, path aliases), and list top-level directories using Glob.
+
+4. **Run manual diagnostics** on each rule:
+   - **VAGUE**: Flag rules containing "try to", "when possible", "generally", "consider",
+     "as needed", "should probably". Suggest concrete rewrites.
+   - **CONFLICT**: Scan for "always X" paired with "never X" where X overlaps. Note false
+     positives from different scopes.
+   - **REDUNDANT**: Flag pairs of rules with >70% word overlap. Suggest merges with token savings.
+   - **ORDERING**: Flag tool constraints (run X before Y) appearing after style rules. Suggest
+     moving them earlier.
+   - **PLACEMENT**: Flag rules in CLAUDE.md that mention specific file patterns (belong in
+     `.claude/rules/`) or describe automation (belong as hooks).
+   - **WEAK_EMPHASIS**: Flag tool constraints missing MUST/NEVER/ALWAYS markers.
+   - **METADATA**: Check agent files for required frontmatter (name, description, model) and
+     skill files for required frontmatter (name, description).
+
+5. **Estimate token count**: Roughly 1 token per 4 characters. Calculate total across all
+   instruction files. Context window percentage = tokens / 200000 * 100.
+
+6. Proceed to steps 2-5 below (Deep Effectiveness, Coverage Gaps, Consolidation) using the
+   manually gathered project context.
+
+7. Note to the user: "Running without alignkit MCP server -- token counts are estimated.
+   For precise token counting and session-based adherence tracking via `/check`, ensure the
+   alignkit MCP server is running."
+
+**If `alignkit_lint` returns an error or empty result**, check:
+- Whether any instruction files exist (suggest creating CLAUDE.md if none)
+- Whether the `file` argument path is correct
+- Fall back to manual analysis above if the tool is non-functional
 
 ### 2. Present the Issues Summary
 
@@ -71,6 +106,18 @@ Start with the quick wins (returned by the tool), then the full diagnostic break
 | Weak emphasis | {n} | warning |
 | Linter-job rules | {n} | warning |
 | Metadata issues | {n} | error |
+```
+
+**When multiple instruction files are found**, present a per-file summary first:
+
+```
+### Files Analyzed
+
+| File | Rules | Issues |
+|------|-------|--------|
+| CLAUDE.md | 12 | 3 |
+| .claude/rules/test-patterns.md | 4 | 1 |
+| .claude/agents/reviewer.md | 2 | 0 |
 ```
 
 Then list each diagnostic with the specific rule text and actionable guidance.
@@ -160,10 +207,16 @@ The merged text must preserve all original constraints.
 - Placement advice is actionable — don't just say "move this" without saying where
 - Coverage gaps must be evidence-based — only suggest rules for technologies actually present
 
+- Handle tool call edge cases:
+  - **Error response**: Report the error to the user and fall back to manual analysis
+  - **Empty result (zero files)**: The project has no instruction files -- suggest creating
+    a CLAUDE.md and offer to run `/discover` to find conventions to populate it
+  - **Tool not found**: The MCP server is not running -- fall back to manual analysis
+
 ## Related Skills
 
-- **`/discover`** — Use to find conventions in the codebase that should become rules
-- **`/check`** — Use to verify whether the rules are actually being followed
+- **`/discover`** -- Use to find conventions in the codebase that should become rules
+- **`/check`** -- Use to verify whether the rules are actually being followed
 
 ## Additional Resources
 
