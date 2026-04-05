@@ -39,6 +39,13 @@ Read the file now. Assess:
 - What's the most complex section? (deepest nesting, longest function, most branches)
 - What does this complexity serve? (business rules, error handling, compatibility, etc.)
 
+**Function-level tracking:** If a specific function was requested, isolate its evolution:
+1. Find the function in the current file (by name, signature, or line range)
+2. Use `git log -L :{function_name}:{file}` to get the function's commit history
+3. For each structural commit, extract only the function's code at that point
+4. Track the function's line count, parameter count, nesting depth, and branch count
+   independently from the rest of the file
+
 ### 3. Walk the History
 
 Find the structural commits — the ones that significantly changed the file's shape:
@@ -114,7 +121,11 @@ because it's doing things it wasn't designed for.
 2. ...
 ```
 
-**Save results** to `.timewarp/bisect-{file}-{date}.json`.
+**Save results** to `.timewarp/bisect-{sanitized-file}-{date}.json`.
+
+**Path sanitization for cache filenames:** Replace `/` with `--` and remove leading dots.
+Example: `src/services/auth-service.ts` becomes `src--services--auth-service.ts`.
+This prevents accidentally creating nested directories in the cache.
 
 ## Guidelines
 

@@ -21,7 +21,9 @@ A commit is structural if it:
 
 **Detection:** Look at `git log --stat` — structural commits tend to have a high ratio of
 additions to deletions (adding new code) or balanced adds/deletes (restructuring). Pure
-additions of 50+ lines are almost always structural.
+additions of 50+ lines are almost always structural. Use 50 lines as the threshold for
+identifying structural commits (consistent with bisect skill's filter of >20 lines for
+"significant" and 50+ lines for "almost always structural").
 
 ### Cosmetic (skip these)
 
@@ -34,6 +36,12 @@ A commit is cosmetic if it:
 
 **Detection:** Small diffs (< 10 lines changed) or diffs where every change is on the same
 type of line (all import lines, all comment lines).
+
+Additionally, always exclude these files from complexity analysis:
+- Binary files (images, compiled output, fonts)
+- Lock files (package-lock.json, yarn.lock, Cargo.lock, go.sum, poetry.lock)
+- Generated files (*.min.js, *.bundle.js, migrations with timestamps)
+- These files can have large diffs but carry no architectural signal
 
 ### Ambiguous
 
