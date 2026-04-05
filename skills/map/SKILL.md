@@ -12,6 +12,7 @@ allowed-tools:
   - Bash
   - mcp__lenskit__lenskit_graph
   - mcp__lenskit__lenskit_status
+  - mcp__lenskit__lenskit_analyze
 argument-hint: "[directory]"
 ---
 

@@ -11,6 +11,7 @@ allowed-tools:
   - Grep
   - Bash
   - mcp__lenskit__lenskit_graph
+  - mcp__lenskit__lenskit_analyze
 argument-hint: "[feature-or-endpoint]"
 ---
 
