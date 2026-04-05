@@ -47,10 +47,10 @@ const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { regex: /\.innerHTML\s*=/, name: 'innerHTML-assignment', severity: 'high' },
   { regex: /\bdocument\.write\s*\(/, name: 'document-write', severity: 'high' },
   {
-    regex: buildRegex('child_process', '\\.exec\\s*\\('),
+    regex: buildRegex('child_process', '.*\\.exec\\s*\\('),
     name: 'child-process-exec',
     severity: 'high',
-    excludeRegex: buildRegex('child_process', '\\.execFile'),
+    excludeRegex: buildRegex('child_process', '.*\\.execFile'),
   },
   { regex: /\bexecSync\s*\(/, name: 'execSync', severity: 'high' },
   { regex: /\bvm\.runInNewContext\s*\(/, name: 'vm-runInNewContext', severity: 'high' },
@@ -77,7 +77,7 @@ const DANGEROUS_PATTERNS: DangerousPattern[] = [
     name: 'python-subprocess-shell',
     severity: 'critical',
   },
-  { regex: /\bexec\s*\(/, name: 'python-exec', severity: 'critical' },
+  { regex: /(?<!\.)exec\s*\(/, name: 'python-exec', severity: 'critical' },
   { regex: /\bpickle\.loads\s*\(/, name: 'python-pickle-loads', severity: 'critical' },
 ];
 

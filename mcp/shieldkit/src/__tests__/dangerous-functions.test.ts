@@ -129,6 +129,30 @@ describe('dangerous-functions', () => {
     });
   });
 
+  describe('method-call exec false-positive prevention', () => {
+    it('should NOT flag regex.exec() as dangerous', () => {
+      const result = analyzeDangerousFunctions('const match = /pattern/.exec(input);');
+      expect(result.count).toBe(0);
+    });
+
+    it('should NOT flag obj.exec() method call as dangerous', () => {
+      const result = analyzeDangerousFunctions('const r = statement.exec();');
+      expect(result.count).toBe(0);
+    });
+
+    it('should still flag standalone exec() as dangerous', () => {
+      const result = analyzeDangerousFunctions('exec(userCode)');
+      expect(result.count).toBe(1);
+      expect(result.locations[0].pattern).toBe('python-exec');
+      expect(result.locations[0].severity).toBe('critical');
+    });
+
+    it('should still flag exec with leading whitespace', () => {
+      const result = analyzeDangerousFunctions('  exec(code)');
+      expect(result.count).toBe(1);
+    });
+  });
+
   describe('false-positive regression suite', () => {
     const knownSafePatterns = [
       // setTimeout/setInterval with function (not string)
