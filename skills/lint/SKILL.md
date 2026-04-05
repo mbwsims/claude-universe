@@ -82,18 +82,20 @@ perform manual analysis instead. This fallback is fully self-contained:
 
 ### 2. Present the Issues Summary
 
-Start with the quick wins (returned by the tool), then the full diagnostic breakdown.
+Present the diagnostic breakdown, starting with the highest-impact findings.
 
 **Report format:**
 
 ```
 ## Instruction Lint — {file}
 
-{ruleCount} rules · {tokenAnalysis.tokenCount} tokens ({tokenAnalysis.contextWindowPercent}% of context)
+{ruleCount} rules · ~{estimated tokens, ~1 token per 4 characters across all files} tokens ({estimated}% of context)
 
-### Quick Wins
+### Top Issues
 
-{List each quickWin item — these are pre-prioritized and actionable}
+{Prioritize from the diagnostics: list the 3-5 highest-impact findings. For each,
+state the issue and the concrete fix. Prioritize CONFLICT and METADATA errors first,
+then VAGUE and REDUNDANT warnings with the most token savings.}
 
 ### Issues by Type
 

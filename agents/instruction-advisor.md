@@ -52,9 +52,10 @@ lint analysis:
    - **VAGUE**: "try to", "when possible", "generally", "consider", "as needed"
    - **CONFLICT**: "always X" paired with "never X" where X overlaps
    - **REDUNDANT**: >70% word overlap between two rules
-   - **ORDERING**: tool constraints appearing after style rules
+   - **ORDERING**: tool constraints appearing after style rules (within same file)
    - **PLACEMENT**: file-pattern rules in CLAUDE.md (belong in .claude/rules/) or automation rules (belong as hooks)
    - **WEAK_EMPHASIS**: tool constraints missing MUST/NEVER/ALWAYS markers
+   - **LINTER_JOB**: formatting rules that should be enforced by a linter/formatter (indentation, semicolons, import sorting, trailing commas)
    - **METADATA**: agent/skill files missing required frontmatter fields
 
 The primary instruction file is the project root `CLAUDE.md` (or the single instruction file
