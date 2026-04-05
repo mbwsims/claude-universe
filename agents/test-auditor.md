@@ -25,6 +25,14 @@ priorities.
 
 ## Process
 
+### Phase 0: Quick Health Check
+
+Call `testkit_status` first for an immediate overview: overall grade, test file count,
+source file count, coverage ratio, untested high-priority files, and top issues. This
+gives you a baseline before deep analysis.
+
+If `testkit_status` is unavailable, skip to Phase 1.
+
 ### Phase 1: Discovery
 
 Find all test files and source files in the project.
@@ -62,8 +70,8 @@ Classify each source file by criticality to weight the audit priorities.
 
 | Criticality | Pattern | Test quality floor |
 |------------|---------|-------------------|
-| **Critical** | auth, payment, security, middleware, migrations, encryption, webhooks, data mutations, permissions | Must be A or B |
-| **Important** | core business logic, API handlers, services, controllers, repositories, database queries | Should be B or better |
+| **Critical** | auth, payment, security, middleware, migrations, encryption, webhooks, data mutations, permissions, admin | Must be A or B |
+| **Important** | core business logic, API handlers, services, controllers, repositories, database queries, queue, worker, job, validators, schemas | Should be B or better |
 | **Standard** | utilities, helpers, formatters, config, types, constants | C is acceptable |
 
 Consult `skills/test-review/references/criticality-patterns.md` for detailed classification guidance.
@@ -94,6 +102,13 @@ Add these semantic scores to the per-file dimension data.
 Go beyond grading existing tests — proactively examine production code to identify testing
 patterns that should exist but don't. Sample 8-12 source files (prioritizing critical and
 important files) and look for:
+
+**File selection heuristic:** From `testkit_map` results (or manual discovery), select:
+- All untested files classified as "high" priority (up to 5)
+- The 3-4 tested files with the worst grades from Phase 2
+- 2-3 files from the most active directories (highest recent commit count)
+
+If more than 12 files, cap at 12 and note which were skipped.
 
 - **Consistent error handling patterns** — e.g., all API handlers use try/catch → 500, but
   none of the tests trigger the catch path
@@ -146,6 +161,10 @@ Produce a structured report combining all findings:
 - **Framework**: {vitest/jest/pytest/etc.}
 - **Overall grade**: {letter grade}
 - **Untested critical files**: {n}
+
+> **Note:** {If testkit-mcp was unavailable, add: "This audit was performed without the
+> testkit MCP server. Metrics are based on manual code reading and may be less precise than
+> automated analysis. Install testkit-mcp for future audits."}
 
 ## Dimension Scores (Project-Wide)
 

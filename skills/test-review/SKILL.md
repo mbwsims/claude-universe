@@ -38,8 +38,10 @@ Install testkit-mcp (`npm install -g testkit-mcp`) for precise metrics."
 If a test file was specified, read it. Otherwise, discover test files using Glob:
 `**/*.test.*`, `**/*.spec.*`, `**/__tests__/**`.
 
-If multiple test files are found and none was specified, ask which to review — or review
-the most recently modified one.
+If multiple test files are found and none was specified, review the most recently modified
+test file. Use `ls -t` or equivalent to determine modification order. Do not ask the user
+to choose — pick the most recent one and note it: "Reviewing {filename} (most recently
+modified test file). Specify a file to review a different one."
 
 ### 2. Read the Test and Its Source
 
@@ -64,8 +66,9 @@ distinctions). Consult `references/smell-catalog.md` for detection patterns and
 **Dimension 2: Input Coverage**
 - Does the test suite cover more than the happy path?
 - Check: are there tests for empty input, null, boundary values, invalid input?
-- Compare the tested inputs against the input space from
-  `skills/test/references/input-space-analysis.md`
+- Compare against input space categories: canonical, empty, boundary, null, invalid,
+  adversarial. Each parameter should have test coverage for at least the "must" categories
+  (canonical + empty + boundary + one error case).
 
 **Dimension 3: Error Testing**
 - For each function in the source that can throw/reject, is there a corresponding error test?

@@ -34,6 +34,11 @@ Run all phases in sequence without stopping for user input.
 
 Do all of this automatically without asking the user:
 
+- **Call `testkit_map`**: If the testkit MCP server is available, call `testkit_map` first.
+  It returns the project's test framework, all test files mapped to source files, untested
+  source files ranked by criticality, and a coverage ratio. Use this data to skip manual
+  discovery and focus on what matters.
+  - If `testkit_map` is unavailable, perform manual discovery as described below.
 - **Find the target**: If a file was specified, use it. If not, infer from conversation
   context (last file discussed, last file edited). If truly ambiguous, ask — but this
   should be rare.
@@ -47,6 +52,16 @@ Do all of this automatically without asking the user:
 
 If no test framework exists at all, pick the standard one for the stack (vitest for
 TypeScript, pytest for Python, go test for Go) and set it up.
+
+> **Scope guard — framework setup:** If you need to set up a test framework from scratch,
+> do only the minimum: install the package, create a minimal config file, verify it runs.
+> Do NOT refactor the project's build system, add CI configuration, or configure coverage
+> tools. Those are separate concerns. Write the tests and move on.
+
+> **Fallback — no test runner available:** If the test runner cannot be executed (e.g.,
+> missing dependencies, Docker-only environment, or CI-only test setup), write the test
+> file anyway and note at the end: "Tests written but not verified — run `{command}` to
+> execute." Do not block on runner availability.
 
 ### 2. Analyze the Code (internally)
 
