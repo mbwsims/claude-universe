@@ -220,11 +220,14 @@ function detectChurnPattern(
   if (firstHalf === 0 && secondHalf === 0) return 'flat';
   if (firstHalf === 0) return 'accelerating';
 
+  // Low-count guard BEFORE ratio check — with fewer than 3 commits in each
+  // half, the ratio is meaningless noise.
+  if (firstHalf < 3 && secondHalf < 3) return 'flat';
+
   const ratio = secondHalf / firstHalf;
 
   if (ratio > 1.5) return 'accelerating';
   if (ratio < 0.7) return 'decelerating';
-  if (firstHalf < 3 && secondHalf < 3) return 'flat';
   return 'linear';
 }
 
@@ -359,3 +362,4 @@ export async function analyzeTrends(
 
 // Test-only exports
 export const detectGrowthPatternForTest = detectGrowthPattern;
+export const detectChurnPatternForTest = detectChurnPattern;

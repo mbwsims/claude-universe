@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 // We test detectGrowthPattern via a test-only export. See Step 3.
-import { detectGrowthPatternForTest } from '../analyzers/trends.js';
+import { detectGrowthPatternForTest, detectChurnPatternForTest } from '../analyzers/trends.js';
 
 describe('detectGrowthPattern — flat threshold', () => {
   it('classifies <15% total growth over 6 months as flat', () => {
@@ -85,5 +85,39 @@ describe('detectGrowthPattern — acceleration detection', () => {
       { date: '2025-07-01', lines: 185, functions: 11 },
     ];
     expect(detectGrowthPatternForTest(samples, 6)).toBe('linear');
+  });
+});
+
+describe('detectChurnPattern — low-count guard', () => {
+  it('returns flat when both halves have fewer than 3 commits (low-count)', () => {
+    // firstHalf=2, secondHalf=1. Ratio = 0.5 => old code says "decelerating".
+    // But with only 3 total commits, this is noise. Should be "flat".
+    expect(detectChurnPatternForTest(2, 1)).toBe('flat');
+  });
+
+  it('returns flat when both halves are 0', () => {
+    expect(detectChurnPatternForTest(0, 0)).toBe('flat');
+  });
+
+  it('returns accelerating when firstHalf is 0 and secondHalf is positive', () => {
+    expect(detectChurnPatternForTest(0, 5)).toBe('accelerating');
+  });
+
+  it('returns accelerating when ratio > 1.5 and counts are high enough', () => {
+    // firstHalf=4, secondHalf=8. Ratio = 2.0 => accelerating, counts are meaningful.
+    expect(detectChurnPatternForTest(4, 8)).toBe('accelerating');
+  });
+
+  it('returns decelerating when ratio < 0.7 and counts are high enough', () => {
+    // firstHalf=10, secondHalf=3. Ratio = 0.3 => decelerating, counts are meaningful.
+    expect(detectChurnPatternForTest(10, 3)).toBe('decelerating');
+  });
+
+  it('returns linear when ratio is between 0.7 and 1.5 and counts are high enough', () => {
+    expect(detectChurnPatternForTest(5, 6)).toBe('linear');
+  });
+
+  it('returns flat for 1 and 2 commits (both below threshold)', () => {
+    expect(detectChurnPatternForTest(1, 2)).toBe('flat');
   });
 });
