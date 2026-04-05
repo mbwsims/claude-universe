@@ -50,11 +50,22 @@ server.tool(
 
 server.tool(
   'shieldkit_surface',
-  'Attack surface mapping for the whole project. Discovers API endpoints, checks auth protection, finds .env files and gitignore coverage, and counts database access files.',
-  {},
-  async () => {
+  'Attack surface mapping for the whole project or a specific directory. Discovers API endpoints, checks auth protection, finds .env files and gitignore coverage, and counts database access files.',
+  {
+    directory: z.string().optional().describe(
+      'Directory to scope the surface analysis to. If omitted, analyzes the entire project.'
+    ),
+  },
+  async (args) => {
     try {
-      const result = await surfaceTool(cwd);
+      const directory = args.directory;
+      if (directory) {
+        const normalized = directory.replace(/\\/g, '/');
+        if (normalized.includes('..') || normalized.startsWith('/')) {
+          throw new Error(`Invalid directory: "${directory}". Must be relative.`);
+        }
+      }
+      const result = await surfaceTool(cwd, directory);
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
       };
