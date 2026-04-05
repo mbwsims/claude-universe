@@ -91,38 +91,14 @@ If no session history exists, note this and skip to recommendations.
 
 ### Phase 5: Convention Discovery
 
-Go beyond coverage gaps -- actively reverse-engineer conventions from the codebase. Sample
-8-12 source files across the project and identify consistent patterns: import styles, naming
-conventions, error handling, API shapes, data access patterns, architecture boundaries.
+Follow the methodology in the `/discover` skill (`skills/discover/SKILL.md`):
+- Sample 8-12 source files across the project's major directories
+- Identify consistent patterns (import styles, naming, error handling, architecture)
+- Apply value filtering: only include conventions where violation would cause real problems
+- Use 90%+ consistency as the threshold for strong conventions, 70-89% for likely conventions
+- Reference `skills/discover/references/convention-categories.md` for the full category list
 
-For each discovered convention that isn't already documented:
-1. Describe the pattern with evidence (file counts, specific paths)
-2. Draft a paste-ready rule
-3. Note any exceptions
-
-**Value filtering -- apply before including any convention:**
-
-Before including a convention, ask: "If Claude violated this, would it cause a real problem?"
-
-- **High value**: Violations cause bugs, inconsistency, or architectural damage. Architecture
-  boundaries, security patterns, API contracts, import conventions affecting build/tooling.
-  Always include these.
-- **Medium value**: Violations cause inconsistency but not breakage. Naming conventions,
-  type organization, export style. Include but mark as medium.
-- **Low value -- OMIT**: Patterns Claude would follow anyway from reading existing code
-  (function vs arrow syntax, logging format). Also omit implementation details and patterns
-  that might be gaps rather than intentional choices.
-
-**Aim for 8-12 high/medium conventions, not 17+ with filler.** Fewer, stronger rules are
-more valuable than a comprehensive list that dilutes signal.
-
-**Evidence threshold** -- use a tiered approach:
-- 90%+ consistency: Strong convention, high-confidence rule
-- 70-89% consistency: Likely convention with exceptions -- note the exceptions
-- Below 70%: Not a convention, do not report
-
-This phase often produces the highest-value findings -- conventions the developer follows
-unconsciously but hasn't documented.
+Aim for 8-12 high/medium-value conventions. Fewer, stronger rules beat comprehensive lists.
 
 ### Phase 6: Report
 
