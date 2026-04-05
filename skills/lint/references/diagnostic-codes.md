@@ -101,6 +101,67 @@ frontmatter. For instruction files: structural issues.
 **How to advise:** Show the specific metadata issue and what needs to be fixed.
 This is typically a formatting/structural fix, not a content issue.
 
+**Examples:**
+
+- Agent file missing frontmatter entirely:
+  ```
+  # My Agent     <-- missing ---/name/description/model/--- block
+  Do stuff
+  ```
+  Fix: Add frontmatter with required fields: `name`, `description`, `model`
+
+- Agent file missing `model` field:
+  ```
+  ---
+  name: reviewer
+  description: Reviews code
+  ---           <-- missing model field
+  ```
+  Fix: Add `model: sonnet` (or `opus`, `haiku`) to frontmatter
+
+- Skill file missing `description` field:
+  ```
+  ---
+  name: my-skill
+  ---           <-- missing description
+  ```
+  Fix: Add `description: >-` followed by a clear trigger description
+
+- Unclosed frontmatter (missing closing `---`):
+  ```
+  ---
+  name: broken
+  description: This never closes
+  # Rest of file  <-- parser treats everything as frontmatter
+  ```
+  Fix: Add closing `---` after the last frontmatter field
+
+---
+
+## Combined Diagnostics
+
+A single rule can trigger multiple diagnostics. Common combinations:
+
+- **VAGUE + WEAK_EMPHASIS**: A vague rule that's also a tool constraint. Fix the vagueness
+  first (make it concrete), then add emphasis. Example: "Try to run tests" -> "ALWAYS run
+  `vitest run` before committing."
+
+- **REDUNDANT + ORDERING**: Two similar rules where one is also misplaced. Merge the rules
+  first, then move the merged rule to the correct position.
+
+- **PLACEMENT + WEAK_EMPHASIS**: A rule that belongs in .claude/rules/ that also lacks
+  emphasis. If moving to .claude/rules/, the emphasis is less important (scoped rules auto-
+  apply). If keeping in CLAUDE.md, add emphasis.
+
+When a rule has multiple diagnostics, address them in this priority order:
+1. METADATA errors (structural issues block other fixes)
+2. CONFLICT (resolve contradictions before other changes)
+3. REDUNDANT (merge before rewriting)
+4. VAGUE (rewrite for clarity)
+5. PLACEMENT (move to correct location)
+6. ORDERING (reorder within file)
+7. WEAK_EMPHASIS (add emphasis markers)
+
 ---
 
 The following codes are NOT returned by `alignkit_lint`. They are produced by the CLI's

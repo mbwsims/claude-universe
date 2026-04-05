@@ -37,9 +37,18 @@ Rules about file organization, naming conventions, imports.
 - File extensions: .test.ts next to .ts, .spec.js next to .js
 
 **Verdict patterns:**
-- Followed: File paths consistently match the required pattern
-- Violated: Files created in wrong locations or with wrong naming
-- Inconclusive: Most code structure rules require reading file contents, not just paths
+- Followed: File paths consistently match the required pattern in 60%+ of relevant sessions.
+  Requires that the evidence clearly shows compliance, not just absence of counter-evidence.
+- Violated: Files created in wrong locations or with wrong naming in 2+ sessions, or a single
+  clear violation in a critical rule.
+- Inconclusive: Evidence is ambiguous -- file paths alone cannot determine compliance (e.g.,
+  "use absolute imports" requires reading file contents, not just seeing file paths). Also use
+  Inconclusive when fewer than 3 sessions contain relevant file operations.
+
+**Key distinction: Followed vs Inconclusive.** "Followed" requires positive evidence OF
+compliance. If sessions simply don't contain relevant actions, that is Inconclusive, not
+Followed. A session with no test file operations does not count as "following" a test
+co-location rule.
 
 ### Process Ordering Rules
 
@@ -95,9 +104,17 @@ Rules about communication, process, decision-making.
 
 ### Threshold for "Followed"
 
-A rule is Followed when evidence suggests compliance in the majority of relevant sessions.
+A rule is Followed when evidence suggests compliance in the **majority of relevant sessions,
+where majority means >60%**. Specifically:
+
+- Count only sessions where the rule was relevant (had actions that could trigger the rule).
+- Exclude sessions with no relevant actions (docs-only, config-only, etc.).
+- If 5 sessions touched test files and 4 followed the test co-location rule, that's 80% -> Followed.
+- If 5 sessions touched test files and 3 followed the rule, that's 60% -> borderline, lean Followed.
+- If 5 sessions touched test files and 2 followed the rule, that's 40% -> Violated.
+
 A single session where the rule wasn't relevant (e.g., no tests needed in a docs-only session)
-should not count as a violation.
+should not count toward either Followed or Violated.
 
 ### Threshold for "Violated"
 

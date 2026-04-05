@@ -44,7 +44,7 @@ The rule is reasonable but could be more specific or better targeted.
 The rule is vague, irrelevant, or states something Claude already knows.
 
 **Indicators:**
-- "Claude already knows this" — rules that restate common knowledge:
+- "Claude already knows this" -- rules that restate common knowledge:
   - "Write clean, readable code"
   - "Handle errors properly"
   - "Use meaningful variable names"
@@ -53,6 +53,17 @@ The rule is vague, irrelevant, or states something Claude already knows.
 - References tools or frameworks not in the project's dependencies
 - Too abstract to act on ("maintain good code quality")
 - Duplicates what a linter/formatter already enforces
+
+**Harder edge cases (common false-positive LOWs -- these are actually MEDIUM or HIGH):**
+- "Always check for null before accessing properties" -- sounds like Claude already knows
+  this, but in a codebase without strict null checks, this is genuinely useful. Check
+  tsconfig `strictNullChecks`. If disabled -> HIGH. If enabled -> LOW (TypeScript enforces it).
+- "Use async/await instead of .then()" -- sounds generic, but if the codebase has a mix
+  and the team wants consistency, this is MEDIUM. Check whether the codebase actually has both.
+- "Prefer composition over inheritance" -- sounds like textbook advice, but if the codebase
+  has deep inheritance chains causing issues, this is MEDIUM. Check for `extends` depth.
+- "Run database migrations before starting the server" -- sounds obvious, but many developers
+  forget this step. If the project has a migration tool (Prisma, Alembic, etc.), this is HIGH.
 
 **For "Claude already knows" rules:** Recommend REMOVE. These waste instruction budget
 without changing behavior. Claude reads code and infers conventions; it doesn't need
@@ -178,3 +189,21 @@ Merged:   (these are unrelated — do not merge)
 
 Estimate tokens saved as: (sum of original rule tokens) - (merged rule tokens).
 Rough estimate: 1 token per 4 characters.
+
+## Output Length Guidance
+
+For instruction files with many rules, scale the analysis depth:
+
+- **1-10 rules**: Full analysis of every rule. Show all MEDIUM and LOW ratings.
+- **11-25 rules**: Full analysis but group similar issues. Show individual ratings for LOW
+  rules only. Summarize MEDIUM rules as a group: "5 MEDIUM rules could benefit from
+  project-specific details (see table)."
+- **26-50 rules**: Focus on the worst offenders. Show the 5 lowest-rated rules individually.
+  Group remaining issues: "12 additional MEDIUM rules identified -- see consolidation
+  opportunities for the most impactful changes."
+- **50+ rules**: The instruction file is likely too large. Lead with token budget analysis
+  and consolidation. Show the 8 lowest-rated rules individually. Recommend aggressive
+  consolidation before detailed rule-by-rule analysis.
+
+The goal is a report the user will actually read. A 3-page analysis of 50 rules is less
+useful than a 1-page summary with the top 8 issues and a consolidation plan.
