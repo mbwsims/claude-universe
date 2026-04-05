@@ -14,7 +14,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "tsc && esbuild dist/timewarp/src/mcp/server.js --bundle --platform=node --format=esm --outfile=dist/server.bundle.mjs",
+    "build": "tsc && esbuild dist/timewarp/src/mcp/server.js --bundle --platform=node --format=esm --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\" --outfile=dist/server.bundle.mjs",
     "dev": "tsc --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
