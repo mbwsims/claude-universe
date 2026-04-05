@@ -1,0 +1,8 @@
+{
+  "name": "shared",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "globby": "^14.1.0"
+  }
+}

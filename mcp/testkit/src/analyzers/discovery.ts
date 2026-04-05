@@ -28,6 +28,7 @@ const TEST_PATTERNS = [
   '**/*_test.py',
 ];
 
+// Canonical version: mcp/shared/discovery.ts — keep in sync
 const IGNORE_PATTERNS = [
   '**/node_modules/**',
   '**/dist/**',

@@ -8,6 +8,7 @@ import { readFile } from 'node:fs/promises';
 import { join, extname, basename } from 'node:path';
 import { globby } from 'globby';
 
+// Canonical version: mcp/shared/discovery.ts — keep in sync
 const IGNORE_PATTERNS = [
   '**/node_modules/**',
   '**/dist/**',
