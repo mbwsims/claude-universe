@@ -14,6 +14,7 @@ export interface StatusResult {
   circularDepCount: number;
   hubCount: number;
   testCoverageRatio: number;
+  testCoverageDisclaimer: string;
   quickSummary: string;
 }
 
@@ -35,6 +36,10 @@ export async function statusTool(cwd: string): Promise<StatusResult> {
   const filesWithTests = analyzeResult.files.filter((f) => f.testCoverage.hasTests).length;
   const testCoverageRatio = fileCount > 0 ? filesWithTests / fileCount : 0;
 
+  const testCoverageDisclaimer =
+    'Test coverage is estimated by file naming conventions only (e.g., *.test.ts, test_*.py, *_test.go). ' +
+    'It does not verify that tests actually exercise the source file. Actual coverage may be lower.';
+
   // Build a human-readable summary
   const parts: string[] = [];
   parts.push(`${fileCount} source files analyzed`);
@@ -53,6 +58,7 @@ export async function statusTool(cwd: string): Promise<StatusResult> {
     circularDepCount,
     hubCount,
     testCoverageRatio: Math.round(testCoverageRatio * 100) / 100,
+    testCoverageDisclaimer,
     quickSummary: parts.join(' | '),
   };
 }
