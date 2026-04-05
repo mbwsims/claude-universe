@@ -240,11 +240,16 @@ export async function detectFramework(cwd: string): Promise<string | null> {
   return null;
 }
 
-export async function buildSourceMapping(cwd: string): Promise<SourceMapping> {
+export interface BuildSourceMappingCache {
+  testPaths?: string[];
+  framework?: string | null;
+}
+
+export async function buildSourceMapping(cwd: string, cache?: BuildSourceMappingCache): Promise<SourceMapping> {
   const [testFilePaths, sourceFilePaths, framework] = await Promise.all([
-    discoverTestFiles(cwd),
+    cache?.testPaths !== undefined ? Promise.resolve(cache.testPaths) : discoverTestFiles(cwd),
     discoverSourceFiles(cwd),
-    detectFramework(cwd),
+    cache?.framework !== undefined ? Promise.resolve(cache.framework) : detectFramework(cwd),
   ]);
 
   const testFiles: TestFile[] = testFilePaths.map(path => ({

@@ -17,8 +17,8 @@ export interface MapResult {
   untested: Array<{ path: string; priority: 'high' | 'medium' | 'low'; reason: string }>;
 }
 
-export async function mapTool(cwd: string, _discoveryCache?: DiscoveryCache): Promise<MapResult> {
-  const mapping = await buildSourceMapping(cwd);
+export async function mapTool(cwd: string, discoveryCache?: DiscoveryCache): Promise<MapResult> {
+  const mapping = await buildSourceMapping(cwd, discoveryCache);
 
   return {
     framework: mapping.framework,
