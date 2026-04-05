@@ -74,3 +74,28 @@ export function buildScoringResult(analyzerCounts: Record<string, number>): Scor
     summary: parts.join(' | '),
   };
 }
+
+/**
+ * Build scoring result from pre-classified per-finding severity data.
+ * Used when analyzers provide their own severity per finding
+ * (e.g., dangerous-functions with critical/high/medium per pattern).
+ */
+export function buildScoringResultFromFindings(findings: FindingSeverity[]): ScoringResult {
+  const riskLevel = computeRiskLevel(findings);
+
+  const totalFindings = findings.reduce((sum, f) => sum + f.count, 0);
+  const criticalCount = findings.filter(f => f.severity === 'critical').reduce((s, f) => s + f.count, 0);
+  const highCount = findings.filter(f => f.severity === 'high').reduce((s, f) => s + f.count, 0);
+
+  const parts: string[] = [];
+  parts.push(`Risk level: ${riskLevel}`);
+  parts.push(`${totalFindings} total finding(s)`);
+  if (criticalCount > 0) parts.push(`${criticalCount} critical`);
+  if (highCount > 0) parts.push(`${highCount} high`);
+
+  return {
+    findings,
+    riskLevel,
+    summary: parts.join(' | '),
+  };
+}
