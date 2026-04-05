@@ -270,7 +270,7 @@ async function analyzeFileTrend(
   const start = new Date(now);
   start.setMonth(start.getMonth() - months);
   const mid = new Date(now);
-  mid.setMonth(mid.getMonth() - Math.floor(months / 2));
+  mid.setMonth(mid.getMonth() - Math.round(months / 2));
 
   const startStr = start.toISOString().split('T')[0];
   const midStr = mid.toISOString().split('T')[0];
@@ -283,13 +283,23 @@ async function analyzeFileTrend(
 
   const churnPattern = detectChurnPattern(firstHalfCommits, secondHalfCommits);
 
-  // Projection
+  // Projection — use exponential model for accelerating files, linear otherwise
   const currentLines = latest.lines;
-  const linesIn3Months = Math.round(currentLines + linesPerMonth * 3);
-  const linesIn6Months = Math.round(currentLines + linesPerMonth * 6);
+  let linesIn3Months: number;
+  let linesIn6Months: number;
+
+  if (growthPattern === 'accelerating' && percentPerMonth > 0) {
+    // Exponential projection: current * (1 + rate)^months
+    const monthlyRate = percentPerMonth / 100;
+    linesIn3Months = Math.round(currentLines * Math.pow(1 + monthlyRate, 3));
+    linesIn6Months = Math.round(currentLines * Math.pow(1 + monthlyRate, 6));
+  } else {
+    linesIn3Months = Math.round(currentLines + linesPerMonth * 3);
+    linesIn6Months = Math.round(currentLines + linesPerMonth * 6);
+  }
 
   // Threshold crossing: common thresholds
-  const thresholds = [200, 300, 500, 750, 1000, 1500, 2000];
+  const thresholds = [300, 500, 750, 1000, 1500, 2000];
   let crossesThreshold: { threshold: number; inMonths: number } | null = null;
 
   if (linesPerMonth > 0) {
@@ -363,3 +373,4 @@ export async function analyzeTrends(
 // Test-only exports
 export const detectGrowthPatternForTest = detectGrowthPattern;
 export const detectChurnPatternForTest = detectChurnPattern;
+export const analyzeFileTrendForTest = analyzeFileTrend;

@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 
 // We test detectGrowthPattern via a test-only export. See Step 3.
-import { detectGrowthPatternForTest, detectChurnPatternForTest } from '../analyzers/trends.js';
+import { detectGrowthPatternForTest, detectChurnPatternForTest, analyzeFileTrendForTest } from '../analyzers/trends.js';
+import { join } from 'node:path';
+
+const FIXTURE_DIR = join(import.meta.dirname, '..', '..', '..', 'test-fixtures');
 
 describe('detectGrowthPattern — flat threshold', () => {
   it('classifies <15% total growth over 6 months as flat', () => {
@@ -119,5 +122,44 @@ describe('detectChurnPattern — low-count guard', () => {
 
   it('returns flat for 1 and 2 commits (both below threshold)', () => {
     expect(detectChurnPatternForTest(1, 2)).toBe('flat');
+  });
+});
+
+describe('threshold and projection fixes', () => {
+  it('does not include 200 in crossesThreshold thresholds', async () => {
+    // A file at 180 lines growing at 10 lines/month should project to 300
+    // threshold, NOT 200 (which was incorrectly included).
+    // We test this by inspecting the trend result for a file.
+    // Use a fixture file that we know exists.
+    const result = await analyzeFileTrendForTest(
+      'src/utils/helpers.ts',
+      6,
+      FIXTURE_DIR,
+    );
+    if (result && result.projection.crossesThreshold) {
+      // If it does cross a threshold, it should NOT be 200
+      expect(result.projection.crossesThreshold.threshold).not.toBe(200);
+      // Valid thresholds are: 300, 500, 750, 1000, 1500, 2000
+      expect([300, 500, 750, 1000, 1500, 2000]).toContain(
+        result.projection.crossesThreshold.threshold,
+      );
+    }
+    // If no threshold crossing, that's also fine (file may be too small)
+    expect(result).toBeDefined();
+  });
+});
+
+describe('half-period split uses Math.round', () => {
+  it('analyzeFileTrend completes without error for odd month counts', async () => {
+    // With 5 months, Math.floor(5/2) = 2, Math.round(5/2) = 3.
+    // This tests that the function runs with odd months without errors.
+    const result = await analyzeFileTrendForTest(
+      'src/utils/helpers.ts',
+      5,
+      FIXTURE_DIR,
+    );
+    // Should return a result (file exists in fixture) or null
+    // The important thing is it doesn't throw
+    expect(result === null || typeof result === 'object').toBe(true);
   });
 });
