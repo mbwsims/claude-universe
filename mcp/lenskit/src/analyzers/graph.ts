@@ -306,6 +306,20 @@ export function resolveImport(
     }
   }
 
+  // TypeScript convention: imports use .js extension but files are .ts
+  // Strip .js/.mjs/.cjs and try .ts/.tsx extensions
+  const jsExtMatch = importPath.match(/\.(js|mjs|cjs)$/);
+  if (jsExtMatch) {
+    const pathWithoutJsExt = importPath.replace(/\.(js|mjs|cjs)$/, '');
+    const resolvedNoJs = join(importerDir, pathWithoutJsExt);
+    for (const ext of extensions) {
+      const candidate = resolvedNoJs + ext;
+      if (fileSet.has(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
   // Try index files
   for (const ext of extensions) {
     const indexCandidate = join(resolved, 'index' + ext);

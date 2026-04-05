@@ -61,6 +61,11 @@ export function generateTestCandidates(filePath: string): string[] {
       const mirrorBase = mirrorDir === '.' ? testRoot : join(testRoot, mirrorDir);
       candidates.push(join(mirrorBase, `${base}.test${ext}`));
       candidates.push(join(mirrorBase, `${base}.spec${ext}`));
+      // Also check flat tests/ dir without mirroring (common pattern)
+      if (mirrorDir !== '.') {
+        candidates.push(join(testRoot, `${base}.test${ext}`));
+        candidates.push(join(testRoot, `${base}.spec${ext}`));
+      }
     }
   }
 
