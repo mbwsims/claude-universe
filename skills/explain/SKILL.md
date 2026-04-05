@@ -11,6 +11,7 @@ allowed-tools:
   - Grep
   - Bash
   - mcp__lenskit__lenskit_analyze
+  - mcp__lenskit__lenskit_graph
 argument-hint: "[file-or-module]"
 ---
 
@@ -32,6 +33,11 @@ If `lenskit_analyze` is available, call it on the target file to get quantitativ
 churn (how often it changes), author count (how many contributors), complexity metrics,
 and importer count. Use these to inform the explanation — a file with high churn and many
 authors has a different story than a stable single-author module.
+
+If `lenskit_graph` is also available, call it to understand the target file's position
+in the dependency graph: what imports it (dependents), what it imports (dependencies),
+whether it's involved in any circular dependencies, and its layer classification. This
+structural context enriches the "Architecture" section of the explanation.
 
 If unavailable, gather this context manually from git history in step 2.
 
@@ -64,6 +70,12 @@ Look for:
 - **Bug fixes**: What bugs were found? They reveal fragile areas
 - **Feature additions**: How the module grew over time
 - **Author patterns**: Who owns this code? Multiple authors = potential inconsistency
+
+**Files with no git history:** If `git log` returns nothing (file was just created, or
+the repo was initialized with a single commit containing all files), note this. For new
+files, focus entirely on code structure and design decisions visible in the code itself.
+For "big bang" initial commits, check if the commit message or PR description provides
+context about the migration or initial design.
 
 ### 3. Read the Context
 

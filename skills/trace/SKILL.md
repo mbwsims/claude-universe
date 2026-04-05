@@ -25,16 +25,36 @@ you don't understand.
 
 ## Workflow
 
+### 0. Build the Dependency Graph
+
+If `lenskit_graph` is available, call it FIRST to get the full project dependency graph.
+Use this data throughout the trace to:
+- Identify which files import from the current file (downstream impact)
+- Spot circular dependencies in the trace path
+- Verify layer classifications match your manual assessment
+- Find hub files that the trace passes through (high-impact nodes)
+
+This step takes seconds and saves minutes of manual grep work.
+
 ### 1. Identify the Entry Point
 
 Find where the feature begins:
 - **API endpoint**: The route handler (e.g., `POST /api/users`)
-- **UI action**: The component event handler (e.g., button click → fetch call)
+- **UI action**: The component event handler (e.g., button click -> fetch call)
 - **Background job**: The job/worker entry function
 - **CLI command**: The command handler
+- **Event handler**: The subscriber/listener function (for event-driven/pub-sub systems)
+- **Message consumer**: The queue consumer handler (for message-driven architectures)
 
 If the user specified a feature name (e.g., "checkout"), find the entry point by grepping
 for related routes, components, or handlers.
+
+**For event-driven / pub-sub systems:** The entry point may not be an HTTP route. Look for:
+- Event emitters: `emit('eventName', ...)`, `publish('topic', ...)`
+- Event subscribers: `on('eventName', ...)`, `subscribe('topic', ...)`
+- Message queue consumers: `consume('queue', handler)`, `@Listener('topic')`
+- Trace BOTH the publisher side (what triggers the event) and the subscriber side
+  (what reacts to it). Note the async boundary between them.
 
 ### 2. Trace Forward
 
@@ -92,6 +112,11 @@ Logic: {business logic}
 Storage: {database/API call}
   ↓ {result}
 Response: {what goes back to caller}
+
+### Branches (if applicable)
+- **Branch A: {condition}** -> {where it goes}
+- **Branch B: {condition}** -> {where it goes}
+- **Default path**: {which branch is the happy path}
 
 ### Detailed Steps
 

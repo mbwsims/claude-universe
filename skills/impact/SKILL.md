@@ -48,17 +48,36 @@ For each importer, note WHAT they import (which specific exports they use).
 
 ### 3. Find Transitive Dependents
 
-For each direct dependent, check if IT is imported by other files. Build a dependency
-chain up to 3 levels deep:
+**With lenskit_graph data (preferred):** Use the graph edges to traverse transitive
+dependents programmatically. Starting from the target file, follow all incoming edges
+(files that import it), then follow THEIR incoming edges, up to 3 levels deep.
 
 ```
 target.ts
-  ← service.ts (imports: functionA, TypeB)
-    ← handler.ts (imports: service)
-      ← route.ts (imports: handler)
+  <- service.ts (imports: functionA, TypeB)
+    <- handler.ts (imports: service)
+      <- route.ts (imports: handler)
 ```
 
 The deeper the chain, the wider the blast radius.
+
+**Type-only imports:** Distinguish between value imports and type-only imports:
+- `import type { Foo } from './target'` -- Type-only: changes to runtime behavior
+  won't break this importer. Only type signature changes matter.
+- `import { Foo } from './target'` -- Value import: any behavioral change may break
+  this importer.
+
+When reporting dependents, annotate which ones are type-only. These have lower
+risk and don't need runtime testing when only implementation changes.
+
+**Circular dependency handling:** If the graph data shows the target file is part of
+a circular dependency cycle, flag this prominently:
+- Identify all files in the cycle
+- Note that changes to ANY file in the cycle may affect ALL other files in the cycle
+- Recommend breaking the cycle before making changes (extract shared interface, use
+  dependency injection, or restructure to remove the circularity)
+- Circular dependencies make impact analysis unreliable because changes propagate
+  in both directions
 
 ### 4. Find Test Coverage
 
