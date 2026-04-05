@@ -12,6 +12,17 @@ const server = new McpServer({
 
 const cwd = process.cwd();
 
+function validateFilePath(file: string | undefined): string | undefined {
+  if (!file) return undefined;
+  const normalized = file.replace(/\\/g, '/');
+  if (normalized.includes('..') || normalized.startsWith('/')) {
+    throw new Error(
+      `Invalid file path: "${file}". Path must be relative and cannot contain ".." or start with "/".`,
+    );
+  }
+  return file;
+}
+
 server.tool(
   'lenskit_analyze',
   'Analyze source files for complexity metrics, coupling, churn, test coverage, and risk scores. Returns file-level metrics and risk classification (Critical/High/Medium/Low).',
@@ -22,7 +33,8 @@ server.tool(
   },
   async (args) => {
     try {
-      const result = await analyzeTool({ file: args.file }, cwd);
+      const file = validateFilePath(args.file);
+      const result = await analyzeTool({ file }, cwd);
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
       };

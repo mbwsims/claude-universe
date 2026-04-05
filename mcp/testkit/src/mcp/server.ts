@@ -12,6 +12,17 @@ const server = new McpServer({
 
 const cwd = process.cwd();
 
+function validateFilePath(file: string | undefined): string | undefined {
+  if (!file) return undefined;
+  const normalized = file.replace(/\\/g, '/');
+  if (normalized.includes('..') || normalized.startsWith('/')) {
+    throw new Error(
+      `Invalid file path: "${file}". Path must be relative and cannot contain ".." or start with "/".`,
+    );
+  }
+  return file;
+}
+
 server.tool(
   'testkit_analyze',
   'Analyze test files for quality issues: shallow assertions, error coverage gaps, mock health, and test name quality. Returns structured metrics and letter grades per dimension.',
@@ -22,7 +33,8 @@ server.tool(
   },
   async (args) => {
     try {
-      const result = await analyzeTool({ file: args.file }, cwd);
+      const file = validateFilePath(args.file);
+      const result = await analyzeTool({ file }, cwd);
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
       };
