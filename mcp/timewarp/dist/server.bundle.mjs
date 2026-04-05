@@ -27240,16 +27240,16 @@ async function gitRun(args, cwd2, maxBuffer = 10 * 1024 * 1024) {
 var execFile = promisify2(execFileCb2);
 function classifyMessage(message) {
   const lower = message.toLowerCase().trim();
-  if (lower.startsWith("feat"))
+  if (lower.startsWith("feat:") || lower.startsWith("feat("))
     return "feature";
-  if (lower.startsWith("fix"))
+  if (lower.startsWith("fix:") || lower.startsWith("fix("))
     return "fix";
-  if (lower.startsWith("refactor"))
+  if (lower.startsWith("refactor:") || lower.startsWith("refactor("))
     return "refactor";
-  if (lower.startsWith("chore") || lower.startsWith("build") || lower.startsWith("ci") || lower.startsWith("deps")) {
+  if (lower.startsWith("chore:") || lower.startsWith("chore(") || lower.startsWith("build:") || lower.startsWith("build(") || lower.startsWith("ci:") || lower.startsWith("ci(") || lower.startsWith("deps:") || lower.startsWith("deps(")) {
     return "chore";
   }
-  if (lower.startsWith("docs") || lower.startsWith("doc:"))
+  if (lower.startsWith("docs:") || lower.startsWith("docs(") || lower.startsWith("doc:"))
     return "docs";
   if (/\b(add|implement|introduce|create|new|support|enable|allow)\b/.test(lower)) {
     return "feature";

@@ -48,19 +48,19 @@ export interface HistoryResult {
 function classifyMessage(message: string): keyof CommitClassification {
   const lower = message.toLowerCase().trim();
 
-  // 1. Check conventional-commit prefixes first — these are unambiguous
-  if (lower.startsWith('feat')) return 'feature';
-  if (lower.startsWith('fix')) return 'fix';
-  if (lower.startsWith('refactor')) return 'refactor';
+  // 1. Check conventional-commit prefixes — require colon or paren delimiter
+  if (lower.startsWith('feat:') || lower.startsWith('feat(')) return 'feature';
+  if (lower.startsWith('fix:') || lower.startsWith('fix(')) return 'fix';
+  if (lower.startsWith('refactor:') || lower.startsWith('refactor(')) return 'refactor';
   if (
-    lower.startsWith('chore') ||
-    lower.startsWith('build') ||
-    lower.startsWith('ci') ||
-    lower.startsWith('deps')
+    lower.startsWith('chore:') || lower.startsWith('chore(') ||
+    lower.startsWith('build:') || lower.startsWith('build(') ||
+    lower.startsWith('ci:') || lower.startsWith('ci(') ||
+    lower.startsWith('deps:') || lower.startsWith('deps(')
   ) {
     return 'chore';
   }
-  if (lower.startsWith('docs') || lower.startsWith('doc:')) return 'docs';
+  if (lower.startsWith('docs:') || lower.startsWith('docs(') || lower.startsWith('doc:')) return 'docs';
 
   // 2. Keyword-based patterns — word-boundary guards prevent mid-word matches
   if (/\b(add|implement|introduce|create|new|support|enable|allow)\b/.test(lower)) {

@@ -48,6 +48,16 @@ describe('classifyMessage', () => {
     it('classifies "allow users to export data" as feature', () => {
       expect(classifyMessageForTest('allow users to export data')).toBe('feature');
     });
+
+    it('does NOT classify "fixture: add test data" as fix via loose prefix', () => {
+      // "fixture" starts with "fix" but is not the conventional-commit prefix "fix:"
+      // It should reach keyword matching where "add" classifies it as feature, not fix
+      expect(classifyMessageForTest('fixture: add test data')).not.toBe('fix');
+    });
+
+    it('does NOT classify "feast of code cleanup" as feature', () => {
+      expect(classifyMessageForTest('feast of code cleanup')).not.toBe('feature');
+    });
   });
 
   describe('fix classification', () => {
@@ -73,6 +83,10 @@ describe('classifyMessage', () => {
 
     it('classifies "fixes #99" as fix', () => {
       expect(classifyMessageForTest('fixes #99')).toBe('fix');
+    });
+
+    it('does NOT classify "fixture data setup" as fix via prefix', () => {
+      expect(classifyMessageForTest('fixture data setup')).not.toBe('fix');
     });
   });
 
