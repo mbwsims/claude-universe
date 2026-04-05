@@ -11,6 +11,7 @@ allowed-tools:
   - Grep
   - Bash
   - mcp__timewarp__timewarp_history
+  - mcp__timewarp__timewarp_trends
 argument-hint: "<file> [period]"
 ---
 
