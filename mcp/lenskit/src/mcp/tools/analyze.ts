@@ -8,7 +8,7 @@
 
 import { analyzeFileMetrics, type FileMetrics } from '../../analyzers/file-metrics.js';
 import { analyzeCoupling, buildImportIndex, lookupCoupling, type CouplingResult } from '../../analyzers/coupling.js';
-import { analyzeChurn, batchAnalyzeChurn, type ChurnResult } from '../../analyzers/churn.js';
+import { analyzeChurn, batchAnalyzeChurn, normalizePath, type ChurnResult } from '../../analyzers/churn.js';
 import { analyzeTestCoverage, type TestCoverageResult } from '../../analyzers/test-coverage.js';
 import { computeRiskScore, type ScoreResult } from '../../analyzers/scoring.js';
 import { discoverSourceFiles } from '../../analyzers/discovery.js';
@@ -62,7 +62,7 @@ async function analyzeBatch(filePaths: string[], cwd: string): Promise<FileAnaly
       ]);
 
       const coupling = lookupCoupling(filePath, importIndex);
-      const churn = churnIndex.get(filePath) ?? { changes: 0, authors: 0, period: '6 months' };
+      const churn = churnIndex.get(normalizePath(filePath)) ?? churnIndex.get(filePath) ?? { changes: 0, authors: 0, period: '6 months' };
       const riskScore = computeRiskScore(metrics, churn, coupling.importerCount);
 
       return { path: filePath, metrics, coupling, churn, testCoverage, riskScore };
