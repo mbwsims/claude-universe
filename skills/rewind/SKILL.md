@@ -36,6 +36,11 @@ structured commit data — this tells you total commits, classifications, and au
 file during the rewind period. Use this to understand the volume and nature of changes before
 diving into individual commits.
 
+**Rename detection:** Before looking up the historical version, check if the file was
+renamed: `git log --follow --diff-filter=R --format="%H %s" -- {file}`. If a rename
+is found, use the old path for historical lookups. Note the rename in the output:
+"This file was renamed from `{old-path}` to `{new-path}` on {date}."
+
 **Then find the specific historical commit:**
 ```bash
 # Find the commit closest to the requested time
