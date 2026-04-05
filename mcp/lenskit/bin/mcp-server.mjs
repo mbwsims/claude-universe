@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-import '../dist/mcp/server.js';
+import '../dist/lenskit/src/mcp/server.js';
