@@ -36,7 +36,10 @@ Read the target file. Understand what it exports:
 Extract direct and transitive dependents from the graph data. Also call `lenskit_analyze`
 on the target file for metrics (churn, complexity, coupling).
 
-**Without lenskit-mcp:** Grep manually:
+**If lenskit tools are unavailable:** Build the dependency data manually:
+- Use Grep with pattern `from.*{file}` across source files to find importers
+- Use Grep on the target file for `from` and `import` patterns to find dependencies
+- Count importers manually for the risk assessment
 
 Grep for files that import from the target:
 
