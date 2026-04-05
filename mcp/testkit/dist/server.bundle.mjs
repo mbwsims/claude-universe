@@ -27228,6 +27228,7 @@ function stripComments(content) {
     return "\n".repeat(newlines);
   });
   stripped = stripped.replace(/\/\/.*$/gm, "");
+  stripped = stripped.replace(/(?<=^|[^'"\\])#.*$/gm, "");
   return stripped;
 }
 
