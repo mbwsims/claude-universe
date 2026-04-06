@@ -128,6 +128,11 @@ because it's doing things it wasn't designed for.
 
 **Save results** to `.timewarp/bisect-{sanitized-file}-{date}.json`.
 
+> **`.timewarp/` directory:** Create the directory if it doesn't exist. Results older than
+> 30 days are stale — prefer re-running the analysis over consuming old data. Other
+> Timewarp skills may read these files to cross-reference findings (e.g., `/forecast`
+> checks for drift data on trending files).
+
 **Path sanitization for cache filenames:** Replace `/` with `--` and remove leading dots.
 Example: `src/services/auth-service.ts` becomes `src--services--auth-service.ts`.
 This prevents accidentally creating nested directories in the cache.

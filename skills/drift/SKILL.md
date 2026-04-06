@@ -133,6 +133,11 @@ strong signal that intervention is needed.
 
 **Save results** to `.timewarp/drift-{module}-{date}.json`.
 
+> **`.timewarp/` directory:** Create the directory if it doesn't exist. Results older than
+> 30 days are stale — prefer re-running the analysis over consuming old data. Other
+> Timewarp skills may read these files to cross-reference findings (e.g., `/forecast`
+> checks for drift data on trending files).
+
 ### Cross-Kit Degradation
 
 When `timewarp_history` is unavailable, degrade gracefully:

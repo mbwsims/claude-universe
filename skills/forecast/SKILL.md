@@ -113,6 +113,11 @@ These columns map directly to `timewarp_trends` output: `growth.pattern`, `growt
 **Save results** to `.timewarp/forecast-{date}.json` with structured trend data that
 other skills can consume.
 
+> **`.timewarp/` directory:** Create the directory if it doesn't exist. Results older than
+> 30 days are stale — prefer re-running the analysis over consuming old data. Other
+> Timewarp skills may read these files to cross-reference findings (e.g., `/forecast`
+> checks for drift data on trending files).
+
 ## Guidelines
 
 - Focus on ACCELERATION, not just size. A 500-line file that hasn't changed in a year is
