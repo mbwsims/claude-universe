@@ -29,6 +29,11 @@ export interface ChurnResult {
 /**
  * Single-file churn analysis. Spawns 2 git processes.
  * Use for single-file analysis only. For batch, use batchAnalyzeChurn.
+ *
+ * Uses a 6-month lookback window. This balances recency (recent changes matter
+ * most for risk assessment) against sample size (shorter windows produce noisy
+ * data for files that change in bursts). 6 months captures roughly 2 full sprint
+ * cycles in most teams.
  */
 export async function analyzeChurn(filePath: string, cwd: string): Promise<ChurnResult> {
   let changes = 0;

@@ -22,6 +22,15 @@ export interface ScoreResult {
 
 /**
  * Compute a complexity sub-score from file metrics (0-100).
+ *
+ * Threshold rationale:
+ * - 500 lines: files above this are consistently harder to reason about in one
+ *   session. The penalty ramps linearly from 0 at 0 lines to max at 500.
+ * - 20 functions: beyond this, a file likely has multiple responsibilities.
+ * - 6 nesting depth: deeper nesting correlates strongly with cyclomatic complexity.
+ *   Most well-structured functions stay under 4 levels.
+ * - 15 imports: high import count signals coupling surface — more things that can
+ *   change and break this file.
  */
 function computeComplexityScore(metrics: FileMetrics): number {
   // Line count contribution: files over 300 lines start scoring higher
