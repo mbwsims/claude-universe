@@ -203,9 +203,9 @@ When adding rules, place them in the most appropriate location:
 
 ## Related Skills
 
-- **`/lint`** — After adding discovered conventions to CLAUDE.md, use `/lint` to check
+- **`/lint-rules`** — After adding discovered conventions to CLAUDE.md, use `/lint-rules` to check
   the overall quality of the instruction file
-- **`/check`** — Use to verify whether discovered conventions are actually being followed
+- **`/check-rules`** — Use to verify whether discovered conventions are actually being followed
 
 ## Additional Resources
 

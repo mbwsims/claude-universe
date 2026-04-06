@@ -1,10 +1,11 @@
 ---
-name: check
+name: check-rules
 description: >-
   This skill should be used when the user asks to "check adherence", "check rule adherence",
   "are my rules being followed", "is Claude following my instructions", "how effective is my
   CLAUDE.md", "rule compliance", "instruction effectiveness", "how are my rules performing",
-  "which rules are being violated", "audit my rules", "check my CLAUDE.md", mentions "/check",
+  "which rules are being violated", "audit my rules", "check my CLAUDE.md",
+  mentions "/check-rules", mentions "/check",
   or wants to know whether their coding agent instruction rules are actually being followed
   across Claude Code sessions.
 allowed-tools:
@@ -91,7 +92,7 @@ make them verifiable, or note they require manual review.}
 
 6. Note to the user: "This is a point-in-time conformance check against the current
    codebase. For tracking adherence *across sessions over time*, install alignkit
-   (`npm install -g alignkit`) to unlock full `/check` capabilities."
+   (`npm install -g alignkit`) to unlock full `/check-rules` capabilities."
 
 Conformance checking answers "does the code match the rules right now?" — genuinely
 useful for catching drift. Session-based adherence tracking answers "is Claude following
@@ -161,7 +162,7 @@ Present evaluations in a clean table:
 If more than 8 unresolved rules exist, prioritize the 8 highest-impact unresolved rules
 (those with the most associated session action data). Note the remainder: "{N} additional
 unresolved rules not evaluated in this pass -- these had less session evidence available."
-Do not tell the user to run `/check` again for more. The 8 with the most evidence are the
+Do not tell the user to run `/check-rules` again for more. The 8 with the most evidence are the
 most meaningful to evaluate.
 
 Consult `references/evaluation-guide.md` for detailed evaluation patterns and common evidence
@@ -203,7 +204,7 @@ current lint + conformance snapshot instead of a trend.
 ## Related Skills
 
 - **`/discover`** — Use to find conventions that should become rules
-- **`/lint`** — Use to improve the quality of rules before checking adherence
+- **`/lint-rules`** — Use to improve the quality of rules before checking adherence
 
 ## Additional Resources
 

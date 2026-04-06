@@ -1,9 +1,10 @@
 ---
-name: lint
+name: lint-rules
 description: >-
   This skill should be used when the user asks to "lint instructions", "lint my CLAUDE.md",
   "check instruction quality", "review my rules", "analyze my CLAUDE.md", "find issues in my
-  instructions", "improve my rules", "instruction quality", mentions "/lint", or wants to
+  instructions", "improve my rules", "instruction quality", mentions "/lint-rules",
+  mentions "/lint", or wants to
   check the quality of their coding agent instruction files (CLAUDE.md, .cursorrules, AGENTS.md,
   .claude/rules/, .claude/agents/, .claude/skills/).
 allowed-tools:
@@ -72,7 +73,7 @@ perform manual analysis instead. This fallback is fully self-contained:
    manually gathered project context.
 
 7. Note to the user: "Running without alignkit MCP server -- token counts are estimated.
-   For precise token counting and session-based adherence tracking via `/check`, ensure the
+   For precise token counting and session-based adherence tracking via `/check-rules`, ensure the
    alignkit MCP server is running."
 
 **If `alignkit_lint` returns an error or empty result**, check:
@@ -219,7 +220,7 @@ The merged text must preserve all original constraints.
 ## Related Skills
 
 - **`/discover`** -- Use to find conventions in the codebase that should become rules
-- **`/check`** -- Use to verify whether the rules are actually being followed
+- **`/check-rules`** -- Use to verify whether the rules are actually being followed
 
 ## Additional Resources
 

@@ -17,8 +17,8 @@ allowed-tools: []
 | Command | What it does |
 |---------|-------------|
 | `/discover` | Find unwritten conventions in your code and suggest rules |
-| `/lint` | Check instruction file quality (CLAUDE.md, rules, skills) |
-| `/check` | Verify whether the codebase actually follows the rules |
+| `/lint-rules` | Check instruction file quality (CLAUDE.md, rules, skills) |
+| `/check-rules` | Verify whether the codebase actually follows the rules |
 
 Agent: **"review my CLAUDE.md"** runs all three as a comprehensive instruction audit.
 

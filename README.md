@@ -14,7 +14,7 @@ Run `/universe` to see all commands, or just describe what you need in plain Eng
 
 | System | Domain | Commands |
 |--------|--------|----------|
-| **Navigate** (alignkit) | Instruction intelligence | `/discover` `/lint` `/check` |
+| **Navigate** (alignkit) | Instruction intelligence | `/discover` `/lint-rules` `/check-rules` |
 | **Diagnose** (testkit) | Testing intelligence | `/test` `/test-review` `/test-plan` |
 | **Shield** (shieldkit) | Security intelligence | `/scan` `/threat-model` `/security-review` |
 | **Survey** (lenskit) | Codebase intelligence | `/trace` `/hotspots` `/impact` `/explain` `/map` |
