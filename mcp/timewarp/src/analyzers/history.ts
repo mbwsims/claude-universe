@@ -292,12 +292,16 @@ export async function analyzeHistory(
 ): Promise<HistoryResult> {
   const since = args.since ?? '6 months ago';
 
-  // Resolve the "since" date for the output period
+  // Resolve the "since" date for the output period.
+  // Use --reverse without -1: git applies -1 before --reverse, so --reverse -1
+  // returns the most recent commit, not the oldest. Instead, reverse and take
+  // the first line of output to get the earliest commit in the range.
   const sinceResult = await gitRun(
-    ['log', '--format=%aI', `--since=${since}`, '--reverse', '-1'],
+    ['log', '--format=%aI', `--since=${since}`, '--reverse'],
     cwd,
   );
-  const sinceDate = (sinceResult.ok ? sinceResult.stdout.trim().split('T')[0] : '') || new Date(
+  const firstLine = sinceResult.ok ? sinceResult.stdout.trim().split('\n')[0] : '';
+  const sinceDate = (firstLine ? firstLine.split('T')[0] : '') || new Date(
     Date.now() - 6 * 30 * 24 * 60 * 60 * 1000,
   ).toISOString().split('T')[0];
   const untilDate = new Date().toISOString().split('T')[0];
@@ -323,12 +327,29 @@ export async function analyzeHistory(
     classification[classifyWithFileFallback(commit.message, commit.files)]++;
   }
 
-  const months = computeMonthsDiff(sinceDate, untilDate);
-  const frequency = Math.round((total / months) * 10) / 10;
+  const daysDiff = Math.max(
+    Math.round((new Date(untilDate).getTime() - new Date(sinceDate).getTime()) / (1000 * 60 * 60 * 24)),
+    1,
+  );
+  // Use the most natural unit for the period length
+  let frequency: number;
+  let unit: string;
+  if (daysDiff < 14) {
+    frequency = Math.round((total / daysDiff) * 10) / 10;
+    unit = 'per day';
+  } else if (daysDiff < 60) {
+    const weeks = daysDiff / 7;
+    frequency = Math.round((total / weeks) * 10) / 10;
+    unit = 'per week';
+  } else {
+    const months = computeMonthsDiff(sinceDate, untilDate);
+    frequency = Math.round((total / months) * 10) / 10;
+    unit = 'per month';
+  }
 
   const result: HistoryResult = {
     period: { since: sinceDate, until: untilDate },
-    commits: { total, frequency, unit: 'per month' },
+    commits: { total, frequency, unit },
     authors,
     classification,
     mostChanged,

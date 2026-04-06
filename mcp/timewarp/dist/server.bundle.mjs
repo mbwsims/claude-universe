@@ -22942,8 +22942,9 @@ async function getCommitMessagesWithFiles(since, cwd2, file) {
 }
 async function analyzeHistory(args, cwd2) {
   const since = args.since ?? "6 months ago";
-  const sinceResult = await gitRun(["log", "--format=%aI", `--since=${since}`, "--reverse", "-1"], cwd2);
-  const sinceDate = (sinceResult.ok ? sinceResult.stdout.trim().split("T")[0] : "") || new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1e3).toISOString().split("T")[0];
+  const sinceResult = await gitRun(["log", "--format=%aI", `--since=${since}`, "--reverse"], cwd2);
+  const firstLine = sinceResult.ok ? sinceResult.stdout.trim().split("\n")[0] : "";
+  const sinceDate = (firstLine ? firstLine.split("T")[0] : "") || new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1e3).toISOString().split("T")[0];
   const untilDate = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const [total, authors, commitsWithFiles, mostChanged] = await Promise.all([
     getCommitCount(since, cwd2, args.file),
@@ -22962,11 +22963,24 @@ async function analyzeHistory(args, cwd2) {
   for (const commit of commitsWithFiles) {
     classification[classifyWithFileFallback(commit.message, commit.files)]++;
   }
-  const months = computeMonthsDiff(sinceDate, untilDate);
-  const frequency = Math.round(total / months * 10) / 10;
+  const daysDiff = Math.max(Math.round((new Date(untilDate).getTime() - new Date(sinceDate).getTime()) / (1e3 * 60 * 60 * 24)), 1);
+  let frequency;
+  let unit;
+  if (daysDiff < 14) {
+    frequency = Math.round(total / daysDiff * 10) / 10;
+    unit = "per day";
+  } else if (daysDiff < 60) {
+    const weeks = daysDiff / 7;
+    frequency = Math.round(total / weeks * 10) / 10;
+    unit = "per week";
+  } else {
+    const months = computeMonthsDiff(sinceDate, untilDate);
+    frequency = Math.round(total / months * 10) / 10;
+    unit = "per month";
+  }
   const result = {
     period: { since: sinceDate, until: untilDate },
-    commits: { total, frequency, unit: "per month" },
+    commits: { total, frequency, unit },
     authors,
     classification,
     mostChanged
