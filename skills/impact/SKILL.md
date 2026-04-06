@@ -64,6 +64,23 @@ target.ts
 
 The deeper the chain, the wider the blast radius.
 
+**Without lenskit_graph:** Build the transitive chain manually with iterative grep:
+
+```bash
+# Level 1: direct importers of the target
+grep -rl "from.*target-module" src/ --include="*.ts" --include="*.tsx"
+
+# Level 2: for each Level 1 result, find ITS importers
+grep -rl "from.*service" src/ --include="*.ts" --include="*.tsx"
+
+# Level 3: repeat for Level 2 results (stop here — deeper is diminishing returns)
+```
+
+Substitute the actual module names at each level. Stop at 3 levels — transitive
+impact beyond that is noise for most decisions. If you find more than 20 transitive
+dependents, note the count but focus the report on the direct dependents and the
+highest-risk transitive paths.
+
 **Type-only imports:** Distinguish between value imports and type-only imports:
 - `import type { Foo } from './target'` -- Type-only: changes to runtime behavior
   won't break this importer. Only type signature changes matter.
