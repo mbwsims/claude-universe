@@ -49,6 +49,13 @@ const AUTH_PATTERNS = [
   /@permission_required\b/,
   /@requires_auth\b/,
   /@jwt_required\b/,
+  // Middleware-level auth (app.use / router.use with auth)
+  /\b(?:app|router)\.use\s*\(\s*(?:auth|requireAuth|authenticate|withAuth|isAuthenticated|checkAuth|authMiddleware|verifyAuth|ensureAuth|authHandler)\b/,
+  /\b(?:app|router)\.use\s*\(\s*\w*[Aa]uth\w*\s*[\),]/,
+  /\bpassport\.initialize\b/,
+  // Django middleware auth
+  /AuthenticationMiddleware/,
+  /LoginRequiredMiddleware/,
 ];
 
 const ROUTE_FILE_PATTERNS = [

@@ -184,4 +184,47 @@ export async function GET(req) {
       expect(isRouteFile('src/middleware/logger.ts')).toBe(false);
     });
   });
+
+  describe('middleware auth detection', () => {
+    it('should detect Express app.use with auth middleware', () => {
+      const content = `
+app.use(authMiddleware);
+app.use(cors());
+
+app.get('/users', (req, res) => {
+  res.json([]);
+});
+`;
+      expect(analyzeAuth(content)).toBe(true);
+    });
+
+    it('should detect passport.initialize as middleware', () => {
+      const content = `
+app.use(passport.initialize());
+app.use(passport.session());
+`;
+      expect(analyzeAuth(content)).toBe(true);
+    });
+
+    it('should detect router.use with requireAuth', () => {
+      const content = `
+router.use(requireAuth);
+
+router.get('/profile', (req, res) => {
+  res.json(req.user);
+});
+`;
+      expect(analyzeAuth(content)).toBe(true);
+    });
+
+    it('should detect Django middleware in settings pattern', () => {
+      const content = `
+MIDDLEWARE = [
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'myapp.middleware.LoginRequiredMiddleware',
+]
+`;
+      expect(analyzeAuth(content)).toBe(true);
+    });
+  });
 });
