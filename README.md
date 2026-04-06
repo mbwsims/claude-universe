@@ -1,12 +1,14 @@
 # Claude Universe
 
-5 systems, 19 commands, 1 universe.
+5 systems, 20 commands, 1 universe.
 
 [claudeuniverse.com](https://claudeuniverse.com)
 
 ```bash
 claude plugin add mbwsims/claude-universe
 ```
+
+Run `/universe` to see all commands, or just describe what you need in plain English.
 
 ## The Systems
 
