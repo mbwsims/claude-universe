@@ -5,7 +5,7 @@
 import { readFile } from 'node:fs/promises';
 import { join, dirname, basename, extname } from 'node:path';
 import { existsSync } from 'node:fs';
-import { globby } from 'globby';
+import { glob } from 'tinyglobby';
 
 export interface TestFile {
   path: string;
@@ -150,7 +150,7 @@ export function inferSourcePath(testPath: string, cwd?: string): string | null {
 }
 
 export async function discoverTestFiles(cwd: string): Promise<string[]> {
-  return globby(TEST_PATTERNS, {
+  return glob(TEST_PATTERNS, {
     cwd,
     ignore: IGNORE_PATTERNS,
     absolute: false,
@@ -158,7 +158,7 @@ export async function discoverTestFiles(cwd: string): Promise<string[]> {
 }
 
 export async function discoverSourceFiles(cwd: string): Promise<string[]> {
-  const allFiles = await globby(['**/*'], {
+  const allFiles = await glob(['**/*'], {
     cwd,
     // Note: **/types/** removed -- type files may contain runtime code
     ignore: [...IGNORE_PATTERNS, ...TEST_PATTERNS, '**/*.d.ts'],
@@ -178,7 +178,7 @@ export async function detectFramework(cwd: string): Promise<string | null> {
   };
 
   for (const [pattern, framework] of Object.entries(configPatterns)) {
-    const matches = await globby(pattern, { cwd, ignore: IGNORE_PATTERNS });
+    const matches = await glob(pattern, { cwd, ignore: IGNORE_PATTERNS });
     if (matches.length > 0) return framework;
   }
 
@@ -218,7 +218,7 @@ export async function detectFramework(cwd: string): Promise<string | null> {
   }
 
   // Check for Python test files as a fallback for pytest detection
-  const pyTestFiles = await globby(['**/test_*.py', '**/*_test.py'], {
+  const pyTestFiles = await glob(['**/test_*.py', '**/*_test.py'], {
     cwd,
     ignore: IGNORE_PATTERNS,
   });

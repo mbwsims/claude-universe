@@ -6,7 +6,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { join, extname, basename } from 'node:path';
-import { globby } from 'globby';
+import { glob } from 'tinyglobby';
 
 // Canonical version: mcp/shared/discovery.ts — keep in sync
 const IGNORE_PATTERNS = [
@@ -33,7 +33,7 @@ const TEST_PATTERNS = [
 ];
 
 export async function discoverSourceFiles(cwd: string): Promise<string[]> {
-  const allFiles = await globby(['**/*'], {
+  const allFiles = await glob(['**/*'], {
     cwd,
     ignore: [...IGNORE_PATTERNS, ...TEST_PATTERNS, '**/*.d.ts'],
     absolute: false,
@@ -61,7 +61,7 @@ export async function discoverRouteFiles(cwd: string): Promise<string[]> {
     '**/views/**/*.py',
   ];
 
-  return globby(patterns, {
+  return glob(patterns, {
     cwd,
     ignore: IGNORE_PATTERNS,
     absolute: false,
@@ -69,7 +69,7 @@ export async function discoverRouteFiles(cwd: string): Promise<string[]> {
 }
 
 export async function discoverEnvFiles(cwd: string): Promise<string[]> {
-  return globby(['.env', '.env.*', '**/.env', '**/.env.*'], {
+  return glob(['.env', '.env.*', '**/.env', '**/.env.*'], {
     cwd,
     ignore: IGNORE_PATTERNS,
     absolute: false,
@@ -118,7 +118,7 @@ export async function detectFramework(cwd: string): Promise<string | null> {
 
   const results = await Promise.all(
     Object.entries(configPatterns).map(async ([pattern, framework]) => {
-      const matches = await globby(pattern, { cwd, ignore: IGNORE_PATTERNS });
+      const matches = await glob(pattern, { cwd, ignore: IGNORE_PATTERNS });
       return { framework, found: matches.length > 0 };
     })
   );

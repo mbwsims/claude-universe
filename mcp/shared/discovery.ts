@@ -3,7 +3,7 @@
  */
 
 import { extname } from 'node:path';
-import { globby } from 'globby';
+import { glob } from 'tinyglobby';
 
 export const IGNORE_PATTERNS = [
   '**/node_modules/**',
@@ -48,7 +48,7 @@ export function isDeclarationFile(filePath: string): boolean {
  * and common non-source directories.
  */
 export async function discoverSourceFiles(cwd: string): Promise<string[]> {
-  const allFiles = await globby(['**/*'], {
+  const allFiles = await glob(['**/*'], {
     cwd,
     ignore: IGNORE_PATTERNS,
     absolute: false,

@@ -10,7 +10,7 @@ import { gitRun } from '../../../shared/git-utils.js';
 
 /**
  * Normalize a file path by stripping leading ./ and converting backslashes.
- * Git and globby can return paths in different formats.
+ * Git and glob libraries can return paths in different formats.
  */
 export function normalizePath(p: string): string {
   let result = p.replace(/\\/g, '/');

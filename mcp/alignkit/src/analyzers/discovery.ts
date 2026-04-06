@@ -10,7 +10,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { globby } from 'globby';
+import { glob } from 'tinyglobby';
 
 export interface InstructionFile {
   relativePath: string;
@@ -48,7 +48,7 @@ function classifyFile(relativePath: string): InstructionFile['type'] {
 }
 
 export async function discoverInstructionFiles(cwd: string): Promise<InstructionFile[]> {
-  const paths = await globby(INSTRUCTION_PATTERNS, {
+  const paths = await glob(INSTRUCTION_PATTERNS, {
     cwd,
     ignore: IGNORE_PATTERNS,
     absolute: false,
