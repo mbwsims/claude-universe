@@ -1,63 +1,66 @@
 /**
  * lenskit_status -- Quick project health summary.
  *
- * Combines analyze + graph results into a scannable overview with
- * top hotspots, circular dependency count, hub count, and test coverage ratio.
+ * Lightweight probe using only file discovery (glob + filter).
+ * Does NOT run the full analysis or graph pipeline.
+ * For detailed metrics, use lenskit_analyze and lenskit_graph.
  */
 
-import { analyzeTool } from './analyze.js';
-import { graphTool } from './graph.js';
+import { discoverSourceFiles, isTestFile, IGNORE_PATTERNS, SOURCE_EXTENSIONS } from '../../analyzers/discovery.js';
+import { glob } from 'tinyglobby';
+import { extname } from 'node:path';
 
 export interface StatusResult {
   fileCount: number;
-  topHotspots: Array<{ path: string; score: number; risk: string }>;
-  circularDepCount: number;
-  hubCount: number;
+  testFileCount: number;
   testCoverageRatio: number;
   testCoverageDisclaimer: string;
   quickSummary: string;
 }
 
 export async function statusTool(cwd: string): Promise<StatusResult> {
-  const [analyzeResult, graphResult] = await Promise.all([
-    analyzeTool({}, cwd),
-    graphTool(cwd),
-  ]);
+  // Single glob pass — discover all files, then partition
+  const allFiles = await glob(['**/*'], {
+    cwd,
+    ignore: IGNORE_PATTERNS,
+    absolute: false,
+  });
 
-  const fileCount = analyzeResult.summary.totalFiles;
+  const sourceFiles: string[] = [];
+  const testFiles: string[] = [];
 
-  // Top 5 hotspots by risk score
-  const topHotspots = analyzeResult.summary.topRiskFiles.slice(0, 5);
+  for (const f of allFiles) {
+    const ext = extname(f);
+    if (!SOURCE_EXTENSIONS.has(ext)) continue;
+    if (f.endsWith('.d.ts')) continue;
 
-  const circularDepCount = graphResult.circularDeps.length;
-  const hubCount = graphResult.hubs.length;
+    if (isTestFile(f)) {
+      testFiles.push(f);
+    } else {
+      sourceFiles.push(f);
+    }
+  }
 
-  // Test coverage ratio: files with tests / total files
-  const filesWithTests = analyzeResult.files.filter((f) => f.testCoverage.hasTests).length;
-  const testCoverageRatio = fileCount > 0 ? filesWithTests / fileCount : 0;
+  const fileCount = sourceFiles.length;
+  const testFileCount = testFiles.length;
+  const testCoverageRatio = fileCount > 0
+    ? Math.round((testFileCount / fileCount) * 100) / 100
+    : 0;
 
   const testCoverageDisclaimer =
     'Test coverage is estimated by file naming conventions only (e.g., *.test.ts, test_*.py, *_test.go). ' +
     'It does not verify that tests actually exercise the source file. Actual coverage may be lower.';
 
-  // Build a human-readable summary
   const parts: string[] = [];
-  parts.push(`${fileCount} source files analyzed`);
-  parts.push(`Avg risk score: ${analyzeResult.summary.avgRiskScore}/100`);
-  parts.push(`Test coverage: ${Math.round(testCoverageRatio * 100)}%`);
-  parts.push(`${circularDepCount} circular dependency chain(s)`);
-  parts.push(`${hubCount} hub file(s)`);
-
-  if (topHotspots.length > 0) {
-    parts.push(`Top hotspot: ${topHotspots[0].path} (score: ${topHotspots[0].score}, ${topHotspots[0].risk})`);
-  }
+  parts.push(`${fileCount} source files`);
+  parts.push(`${testFileCount} test files`);
+  parts.push(`Test coverage: ~${Math.round(testCoverageRatio * 100)}%`);
+  parts.push('Use lenskit_analyze for risk scores and lenskit_graph for dependency analysis');
 
   return {
     fileCount,
-    topHotspots,
-    circularDepCount,
-    hubCount,
-    testCoverageRatio: Math.round(testCoverageRatio * 100) / 100,
+    testFileCount,
+    testCoverageRatio,
     testCoverageDisclaimer,
     quickSummary: parts.join(' | '),
   };

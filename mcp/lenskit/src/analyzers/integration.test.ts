@@ -87,14 +87,13 @@ describe('integration: fixture project analysis', () => {
     expect(result.summary.topRiskFiles.length).toBeGreaterThan(0);
   });
 
-  it('runs status tool and returns all fields', async () => {
+  it('runs status tool as a lightweight probe', async () => {
     const status = await statusTool(FIXTURE_DIR);
     expect(status.fileCount).toBeGreaterThan(0);
-    expect(status.topHotspots).toBeDefined();
-    expect(status.circularDepCount).toBeGreaterThanOrEqual(0);
-    expect(status.hubCount).toBeGreaterThanOrEqual(0);
+    expect(status.testFileCount).toBeGreaterThanOrEqual(0);
     expect(typeof status.testCoverageRatio).toBe('number');
     expect(status.testCoverageDisclaimer).toContain('naming conventions');
-    expect(status.quickSummary.length).toBeGreaterThan(0);
+    expect(status.quickSummary).toContain('source files');
+    expect(status.quickSummary).toContain('lenskit_analyze');
   });
 });

@@ -70,7 +70,7 @@ server.tool(
 
 server.tool(
   'lenskit_status',
-  'Quick project health summary: file count, top 5 hotspots by risk score, circular dependency count, hub count, and test coverage ratio.',
+  'Lightweight project health probe: file count, test file count, and estimated test coverage ratio. Fast (sub-second). Use lenskit_analyze for risk scores and lenskit_graph for dependency analysis.',
   {},
   async () => {
     try {
