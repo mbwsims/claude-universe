@@ -3,6 +3,8 @@
  * to error assertions in tests.
  */
 
+import { stripComments } from './strip-comments.js';
+
 export interface ErrorCoverageResult {
   throwable: number;
   tested: number;
@@ -16,7 +18,10 @@ const THROWABLE_PATTERNS = [
   /\bthrow\s+new\b/,
   /\bthrow\s+\w/,
   /Promise\.reject\(/,
-  /\.reject\(/,
+  /\.reject\(/,        // escaped dot -- only matches .reject(, not onReject(
+  // Python: raise SomeError(...) or bare raise (re-raise)
+  /\braise\s+\w/,
+  /\braise\s*$/,
 ];
 
 // Patterns that indicate an error is being tested
@@ -26,14 +31,18 @@ const ERROR_TEST_PATTERNS = [
   /\.rejects\./,
   /expect\.unreachable/,
   /\.toThrow\(\)/,
+  // Python: pytest.raises(ExceptionType) or self.assertRaises(ExceptionType)
+  /pytest\.raises\(/,
+  /self\.assertRaises\(/,
+  /assertRaises\(/,
 ];
 
 export function analyzeErrorCoverage(
   sourceContent: string,
   testContent: string
 ): ErrorCoverageResult {
-  const sourceLines = sourceContent.split('\n');
-  const testLines = testContent.split('\n');
+  const sourceLines = stripComments(sourceContent).split('\n');
+  const testLines = stripComments(testContent).split('\n');
 
   const throwableLocations: ErrorCoverageResult['throwableLocations'] = [];
   const errorTestLocations: ErrorCoverageResult['errorTestLocations'] = [];

@@ -27,16 +27,71 @@ Trace from the `page.tsx` through its data fetches to the database.
 | External | `clients/` or `integrations/` | HTTP calls, SDK usage |
 | Response | `res.json()` or `res.send()` | At end of handler chain |
 
-## Django / Flask / FastAPI
+## Java / Spring Boot
 
 | Layer | Location | Pattern |
 |-------|----------|---------|
-| Entry | `views.py` or `routes.py` | Decorated function/class |
-| Validation | `serializers.py` or Pydantic models | Input parsing and validation |
-| Business Logic | `services.py` or `utils.py` | Domain logic |
-| Data Access | `models.py` + ORM | `Model.objects.filter()` |
-| External | `clients/` or `tasks.py` | API calls, Celery tasks |
-| Response | Return from view | `JsonResponse`, `Response` |
+| Entry | `*Controller.java` | `@RestController`, `@RequestMapping`, `@GetMapping` |
+| Validation | DTOs + `@Valid` annotation | `@Valid @RequestBody CreateUserDto dto` |
+| Business Logic | `*Service.java` or `*ServiceImpl.java` | `@Service`, `@Transactional` |
+| Data Access | `*Repository.java` | `@Repository`, extends `JpaRepository<Entity, ID>` |
+| Models/Entities | `*Entity.java` or `model/*.java` | `@Entity`, `@Table`, `@Column` |
+| External | `*Client.java` or `*Adapter.java` | `@FeignClient`, `RestTemplate`, `WebClient` |
+| Configuration | `*Config.java` or `application.yml` | `@Configuration`, `@Bean`, `@Value` |
+
+**Spring Boot conventions:** Follow the `@Autowired` / constructor injection chain to trace
+dependencies. `@Service` classes contain business logic, `@Repository` classes wrap data
+access. The `@Transactional` annotation marks methods that need atomicity -- trace these
+carefully to understand rollback boundaries.
+
+**Spring Security:** Auth is typically configured in a `SecurityConfig` class with
+`SecurityFilterChain`. The `@PreAuthorize` and `@Secured` annotations on controller methods
+indicate per-endpoint auth rules.
+
+## Python / Django
+
+| Layer | Location | Pattern |
+|-------|----------|---------|
+| Entry | `views.py` or `viewsets.py` | `@api_view`, `class ModelViewSet`, function views |
+| URL Routing | `urls.py` | `path('api/users/', views.create_user)`, `router.register()` |
+| Validation | `serializers.py` | `class UserSerializer(serializers.ModelSerializer)` |
+| Business Logic | `services.py` or `selectors.py` | Pure functions, orchestration logic |
+| Data Access | `models.py` + ORM | `Model.objects.filter()`, `QuerySet` chains |
+| External | `tasks.py` or `clients/` | Celery tasks, API client classes |
+| Middleware | `middleware.py` | `class CustomMiddleware`, `process_request` / `process_response` |
+| Admin | `admin.py` | `@admin.register(Model)`, `class ModelAdmin` |
+
+**Django conventions:** `urls.py` maps URLs to views. `views.py` handles requests.
+`models.py` defines database schema AND business logic (Active Record pattern).
+`serializers.py` handles input validation AND output formatting. `admin.py` provides
+the admin interface.
+
+**Django REST Framework (DRF):** ViewSets combine CRUD operations into a single class.
+Serializers serve as both input validation and output formatting. `permissions.py`
+defines access control classes applied via `permission_classes`.
+
+**Trace tip:** Start from `urls.py` to find the view, then follow the view to its
+serializer (validation), model (data access), and any service functions (business logic).
+
+## Python / FastAPI
+
+| Layer | Location | Pattern |
+|-------|----------|---------|
+| Entry | `routers/*.py` or `main.py` | `@router.get('/users')`, `@app.post('/users')` |
+| Validation | Pydantic models | `class CreateUserRequest(BaseModel)`, type annotations |
+| Dependencies | `dependencies.py` or `deps.py` | `Depends(get_db)`, `Depends(get_current_user)` |
+| Business Logic | `services/*.py` or `crud/*.py` | Pure functions, service classes |
+| Data Access | `models/*.py` + SQLAlchemy | `session.query(User).filter(...)`, `AsyncSession` |
+| External | `clients/*.py` | `httpx.AsyncClient`, background tasks |
+| Middleware | `middleware.py` | `@app.middleware("http")`, Starlette middleware |
+
+**FastAPI conventions:** Uses Python type hints for automatic validation (via Pydantic).
+`Depends()` is the dependency injection system -- trace these to understand how database
+sessions, auth, and other dependencies are provided to route handlers.
+
+**Trace tip:** FastAPI routes declare their dependencies in the function signature.
+`async def create_user(db: Session = Depends(get_db), user: User = Depends(get_current_user))`
+tells you exactly what this endpoint needs. Follow each `Depends()` call to its provider.
 
 ## React / Vue / Svelte Components
 

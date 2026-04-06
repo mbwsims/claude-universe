@@ -9,6 +9,7 @@
 import { execFile as execFileCb } from 'node:child_process';
 import { promisify } from 'node:util';
 import { discoverSourceFiles } from './discovery.js';
+import { gitRun, type GitResult } from '../../../shared/git-utils.js';
 
 const execFile = promisify(execFileCb);
 
@@ -82,26 +83,15 @@ function countFunctions(content: string): number {
   return count;
 }
 
-async function gitRun(
-  args: string[],
-  cwd: string,
-): Promise<string> {
-  try {
-    const { stdout } = await execFile('git', args, { cwd, maxBuffer: 10 * 1024 * 1024 });
-    return stdout;
-  } catch {
-    return '';
-  }
-}
-
 async function getTopChangedFiles(
   months: number,
   cwd: string,
 ): Promise<string[]> {
   const since = `${months} months ago`;
   const args = ['log', '--format=format:', '--name-only', `--since=${since}`];
-  const stdout = await gitRun(args, cwd);
-  const files = stdout.trim().split('\n').filter(Boolean);
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return [];
+  const files = result.stdout.trim().split('\n').filter(Boolean);
 
   const counts = new Map<string, number>();
   for (const file of files) {
@@ -127,8 +117,9 @@ async function getCommitAtDate(
     '--',
     file,
   ];
-  const stdout = await gitRun(args, cwd);
-  const hash = stdout.trim();
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return null;
+  const hash = result.stdout.trim();
   return hash || null;
 }
 
@@ -163,8 +154,9 @@ async function getCommitCountInRange(
     '--',
     file,
   ];
-  const stdout = await gitRun(args, cwd);
-  return stdout.trim().split('\n').filter(Boolean).length;
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return 0;
+  return result.stdout.trim().split('\n').filter(Boolean).length;
 }
 
 function computeSampleDates(months: number): string[] {
@@ -193,8 +185,8 @@ function detectGrowthPattern(
   const totalGrowth = latest - earliest;
   const totalGrowthPercent = earliest > 0 ? (totalGrowth / earliest) * 100 : 0;
 
-  // If both halves show less than 5% total growth, it's flat
-  if (Math.abs(totalGrowthPercent) < 5 * months) return 'flat';
+  // If total growth is less than 15%, classify as flat (constant threshold)
+  if (Math.abs(totalGrowthPercent) < 15) return 'flat';
 
   const midIndex = Math.floor(samples.length / 2);
   const midLines = samples[midIndex].lines;
@@ -220,11 +212,14 @@ function detectChurnPattern(
   if (firstHalf === 0 && secondHalf === 0) return 'flat';
   if (firstHalf === 0) return 'accelerating';
 
+  // Low-count guard BEFORE ratio check — with fewer than 3 commits in each
+  // half, the ratio is meaningless noise.
+  if (firstHalf < 3 && secondHalf < 3) return 'flat';
+
   const ratio = secondHalf / firstHalf;
 
   if (ratio > 1.5) return 'accelerating';
   if (ratio < 0.7) return 'decelerating';
-  if (firstHalf < 3 && secondHalf < 3) return 'flat';
   return 'linear';
 }
 
@@ -267,7 +262,7 @@ async function analyzeFileTrend(
   const start = new Date(now);
   start.setMonth(start.getMonth() - months);
   const mid = new Date(now);
-  mid.setMonth(mid.getMonth() - Math.floor(months / 2));
+  mid.setMonth(mid.getMonth() - Math.round(months / 2));
 
   const startStr = start.toISOString().split('T')[0];
   const midStr = mid.toISOString().split('T')[0];
@@ -280,13 +275,23 @@ async function analyzeFileTrend(
 
   const churnPattern = detectChurnPattern(firstHalfCommits, secondHalfCommits);
 
-  // Projection
+  // Projection — use exponential model for accelerating files, linear otherwise
   const currentLines = latest.lines;
-  const linesIn3Months = Math.round(currentLines + linesPerMonth * 3);
-  const linesIn6Months = Math.round(currentLines + linesPerMonth * 6);
+  let linesIn3Months: number;
+  let linesIn6Months: number;
+
+  if (growthPattern === 'accelerating' && percentPerMonth > 0) {
+    // Exponential projection: current * (1 + rate)^months
+    const monthlyRate = percentPerMonth / 100;
+    linesIn3Months = Math.round(currentLines * Math.pow(1 + monthlyRate, 3));
+    linesIn6Months = Math.round(currentLines * Math.pow(1 + monthlyRate, 6));
+  } else {
+    linesIn3Months = Math.round(currentLines + linesPerMonth * 3);
+    linesIn6Months = Math.round(currentLines + linesPerMonth * 6);
+  }
 
   // Threshold crossing: common thresholds
-  const thresholds = [200, 300, 500, 750, 1000, 1500, 2000];
+  const thresholds = [300, 500, 750, 1000, 1500, 2000];
   let crossesThreshold: { threshold: number; inMonths: number } | null = null;
 
   if (linesPerMonth > 0) {
@@ -343,11 +348,19 @@ export async function analyzeTrends(
     }
   }
 
+  // Process files in parallel batches of 5
+  const BATCH_SIZE = 5;
   const results: FileTrend[] = [];
-  for (const file of filesToAnalyze) {
-    const trend = await analyzeFileTrend(file, months, cwd);
-    if (trend) {
-      results.push(trend);
+
+  for (let i = 0; i < filesToAnalyze.length; i += BATCH_SIZE) {
+    const batch = filesToAnalyze.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map((file) => analyzeFileTrend(file, months, cwd)),
+    );
+    for (const trend of batchResults) {
+      if (trend) {
+        results.push(trend);
+      }
     }
   }
 
@@ -356,3 +369,9 @@ export async function analyzeTrends(
 
   return results;
 }
+
+// Test-only exports
+export const detectGrowthPatternForTest = detectGrowthPattern;
+export const detectChurnPatternForTest = detectChurnPattern;
+export const analyzeFileTrendForTest = analyzeFileTrend;
+export const countFunctionsForTest = countFunctions;

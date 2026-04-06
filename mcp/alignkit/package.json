@@ -1,0 +1,44 @@
+{
+  "name": "alignkit-local-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for local instruction quality analysis and conformance checking",
+  "type": "module",
+  "bin": {
+    "alignkit-local-mcp": "./bin/mcp-server.mjs"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc && esbuild dist/mcp/server.js --bundle --platform=node --format=esm --banner:js=\"import{createRequire as __cjsReq}from'module';const require=__cjsReq(import.meta.url);\" --outfile=dist/server.bundle.mjs",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "author": {
+    "name": "Matt Sims",
+    "url": "https://github.com/mbwsims"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "instructions",
+    "lint",
+    "claude-code"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "tinyglobby": "^0.2.15",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^5.7.0",
+    "vitest": "~3.2.4"
+  }
+}

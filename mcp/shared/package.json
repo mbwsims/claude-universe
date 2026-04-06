@@ -1,0 +1,8 @@
+{
+  "name": "shared",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "tinyglobby": "^0.2.15"
+  }
+}

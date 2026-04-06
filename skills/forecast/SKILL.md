@@ -11,6 +11,7 @@ allowed-tools:
   - Grep
   - Bash
   - mcp__timewarp__timewarp_trends
+  - mcp__timewarp__timewarp_history
 argument-hint: "[directory]"
 ---
 
@@ -61,13 +62,13 @@ See `references/trend-analysis.md` for methodology.
 ### 4. Project Forward
 
 For files on concerning trajectories, project the trend forward:
-- When will it cross size thresholds? (300 lines = hard to reason about, 500 = refactor needed)
+- When will it cross size thresholds? (300-500 lines = large/hard to reason about, >500 lines = critical/should be split)
 - When will churn make it a hotspot? (if not already)
 - Is the growth accelerating (exponential) or linear?
 
 ### 5. Check for Cached Data
 
-Read `.timewarp/` for existing drift or bisect data on trending files. If a file is both
+Read `.timewarp/` for existing drift or dissect data on trending files. If a file is both
 drifting AND growing, that's a stronger signal — note the connection.
 
 ### 6. Present and Save
@@ -81,11 +82,13 @@ Analyzed {n} source files over {period}
 
 ### Files on Concerning Trajectories
 
-| Rank | File | Trend | Rate | Projection |
-|------|------|-------|------|------------|
-| 1 | src/lib/auth.ts | Complexity accelerating | +12%/month | ~500 lines in 6 weeks |
-| 2 | src/api/orders.ts | Churn accelerating | 2x more commits recently | Hotspot within 1 month |
-| 3 | src/lib/db.ts | Steady growth | +5%/month | ~400 lines in 3 months |
+| Rank | File | Growth Pattern | Lines/Month | %/Month | Churn Pattern | Projection (3mo) | Projection (6mo) | Threshold |
+|------|------|---------------|-------------|---------|--------------|------------------|------------------|-----------|
+| 1 | src/lib/auth.ts | accelerating | +26.7 | +14.8% | accelerating | ~425 lines | ~560 lines | 500 in ~5mo |
+| 2 | src/api/orders.ts | linear | +15.0 | +8.2% | accelerating | ~345 lines | ~390 lines | 500 in ~11mo |
+| 3 | src/lib/db.ts | linear | +8.3 | +5.0% | linear | ~225 lines | ~250 lines | 300 in ~9mo |
+
+These columns map directly to `timewarp_trends` output: `growth.pattern`, `growth.linesPerMonth`, `growth.percentPerMonth`, `churn.pattern`, `projection.linesIn3Months`, `projection.linesIn6Months`, `projection.crossesThreshold`.
 
 ### Detailed Analysis
 
@@ -109,6 +112,11 @@ Analyzed {n} source files over {period}
 
 **Save results** to `.timewarp/forecast-{date}.json` with structured trend data that
 other skills can consume.
+
+> **`.timewarp/` directory:** Create the directory if it doesn't exist. Results older than
+> 30 days are stale — prefer re-running the analysis over consuming old data. Other
+> Timewarp skills may read these files to cross-reference findings (e.g., `/forecast`
+> checks for drift data on trending files).
 
 ## Guidelines
 

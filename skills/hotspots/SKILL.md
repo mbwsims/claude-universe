@@ -12,6 +12,7 @@ allowed-tools:
   - Bash
   - mcp__lenskit__lenskit_analyze
   - mcp__lenskit__lenskit_status
+  - mcp__lenskit__lenskit_graph
 argument-hint: "[directory]"
 ---
 
@@ -34,6 +35,19 @@ as the foundation for hotspot ranking, supplementing with qualitative assessment
 
 If unavailable, perform full manual analysis as described below.
 
+### 0.5. Quick Health Probe
+
+If `lenskit_status` is available, call it with `detailed: true` FIRST before the detailed
+analysis. With `detailed: true` it returns:
+- Total file count and average risk score (calibration: is this a large/complex project?)
+- Top risk files with scores (you may already have your answer)
+- Circular dependency count (structural issue to note)
+- Hub count (coupling signal)
+- Test coverage ratio (context for risk assessment)
+
+If the status result already provides a clear answer (e.g., obvious top risk files with
+high scores), you may skip the manual git analysis and jump to presenting findings.
+
 ### 1. Measure Churn
 
 Use git history to find files that change most frequently:
@@ -43,6 +57,11 @@ git log --format=format: --name-only --since="6 months ago" | sort | uniq -c | s
 ```
 
 This gives the top 30 most-changed files in the last 6 months. High churn = high risk.
+
+**Filtering churn results:**
+- Exclude lock files and generated code: `grep -v -E '(package-lock|yarn.lock|pnpm-lock|\.generated\.|\.min\.)'`
+- Focus on source files only: `grep -E '\.(ts|tsx|js|jsx|py|go|rs|java)$'`
+- For monorepos, scope to a specific package: add `-- packages/my-package/` to the git log command
 
 Also check for files with many different authors (indicates shared/critical code):
 
@@ -83,6 +102,11 @@ Combine the signals into a risk score:
 
 Rank files by combined risk. The top 5-10 are the hotspots.
 
+**Amplify with graph data:** If `lenskit_graph` is available, check whether any hotspot
+is also a hub file (high importer count) or part of a circular dependency. Hub status
+amplifies risk — a complex, high-churn file that 15 other files depend on is a higher
+priority than one with zero importers.
+
 ### 5. Present Findings
 
 **Report format:**
@@ -115,6 +139,15 @@ Analyzed {n} files over {timeframe}
 ### Cool Spots (Low Risk, Stable)
 {Note 2-3 files that are stable, simple, and well-isolated — positive examples}
 ```
+
+## Monorepo Guidance
+
+For monorepos with multiple packages:
+- Run analysis scoped to each package separately: `lenskit_analyze` on each package root
+- Compare hotspot scores ACROSS packages to find the worst areas
+- Note cross-package dependencies (a hotspot in a shared package affects all consumers)
+- If a shared package has high churn, it's a higher-priority hotspot than a leaf package
+  with the same churn score
 
 ## Related Skills
 

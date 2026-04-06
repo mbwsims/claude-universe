@@ -36,7 +36,10 @@ Read the target file. Understand what it exports:
 Extract direct and transitive dependents from the graph data. Also call `lenskit_analyze`
 on the target file for metrics (churn, complexity, coupling).
 
-**Without lenskit-mcp:** Grep manually:
+**If lenskit tools are unavailable:** Build the dependency data manually:
+- Use Grep with pattern `from.*{file}` across source files to find importers
+- Use Grep on the target file for `from` and `import` patterns to find dependencies
+- Count importers manually for the risk assessment
 
 Grep for files that import from the target:
 
@@ -48,17 +51,53 @@ For each importer, note WHAT they import (which specific exports they use).
 
 ### 3. Find Transitive Dependents
 
-For each direct dependent, check if IT is imported by other files. Build a dependency
-chain up to 3 levels deep:
+**With lenskit_graph data (preferred):** Use the graph edges to traverse transitive
+dependents programmatically. Starting from the target file, follow all incoming edges
+(files that import it), then follow THEIR incoming edges, up to 3 levels deep.
 
 ```
 target.ts
-  ← service.ts (imports: functionA, TypeB)
-    ← handler.ts (imports: service)
-      ← route.ts (imports: handler)
+  <- service.ts (imports: functionA, TypeB)
+    <- handler.ts (imports: service)
+      <- route.ts (imports: handler)
 ```
 
 The deeper the chain, the wider the blast radius.
+
+**Without lenskit_graph:** Build the transitive chain manually with iterative grep:
+
+```bash
+# Level 1: direct importers of the target
+grep -rl "from.*target-module" src/ --include="*.ts" --include="*.tsx"
+
+# Level 2: for each Level 1 result, find ITS importers
+grep -rl "from.*service" src/ --include="*.ts" --include="*.tsx"
+
+# Level 3: repeat for Level 2 results (stop here — deeper is diminishing returns)
+```
+
+Substitute the actual module names at each level. Stop at 3 levels — transitive
+impact beyond that is noise for most decisions. If you find more than 20 transitive
+dependents, note the count but focus the report on the direct dependents and the
+highest-risk transitive paths.
+
+**Type-only imports:** Distinguish between value imports and type-only imports:
+- `import type { Foo } from './target'` -- Type-only: changes to runtime behavior
+  won't break this importer. Only type signature changes matter.
+- `import { Foo } from './target'` -- Value import: any behavioral change may break
+  this importer.
+
+When reporting dependents, annotate which ones are type-only. These have lower
+risk and don't need runtime testing when only implementation changes.
+
+**Circular dependency handling:** If the graph data shows the target file is part of
+a circular dependency cycle, flag this prominently:
+- Identify all files in the cycle
+- Note that changes to ANY file in the cycle may affect ALL other files in the cycle
+- Recommend breaking the cycle before making changes (extract shared interface, use
+  dependency injection, or restructure to remove the circularity)
+- Circular dependencies make impact analysis unreliable because changes propagate
+  in both directions
 
 ### 4. Find Test Coverage
 

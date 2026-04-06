@@ -114,3 +114,41 @@ For functions that transform input to output with no side effects.
 | Double transition | Same valid transition twice | second succeeds or idempotent | should |
 | Reset | Return to initial state from any state | clean initial state | should |
 | Concurrent transitions | Two transitions on same instance | serialized correctly | nice |
+
+## Template: Webhook Handler
+
+For endpoints that receive webhook events from external services (Stripe, GitHub, etc.).
+
+| Category | Input | Expected | Priority |
+|----------|-------|----------|----------|
+| Valid event + valid signature | Known event type, correct HMAC | processed, 200 response | must |
+| Invalid signature | Wrong HMAC / missing signature header | 401, event NOT processed | must |
+| Unknown event type | Valid signature, unrecognized event type | acknowledged (200), no processing | must |
+| Malformed payload | Valid signature, invalid JSON body | 400, event NOT processed | must |
+| Replay attack | Valid signature, timestamp too old | rejected (stale timestamp) | should |
+| Duplicate event | Same event ID delivered twice | processed once (idempotency) | should |
+| Missing required fields | Valid event type, payload missing expected fields | error logged, graceful handling | should |
+| Out-of-order events | Event B arrives before Event A | handled correctly or queued | should |
+| Payload too large | Event body exceeds size limit | 413, not processed | nice |
+| Concurrent identical events | Same event arrives simultaneously | only one processes | nice |
+
+## Template: Auth/Token Handler
+
+For functions that issue, verify, refresh, or revoke authentication tokens.
+
+| Category | Input | Expected | Priority |
+|----------|-------|----------|----------|
+| Valid credentials | Correct username + password | token issued with correct claims | must |
+| Invalid password | Correct username, wrong password | authentication error, no token | must |
+| Non-existent user | Username not in system | same error as invalid password (no enumeration) | must |
+| Token verification -- valid | Well-formed, unexpired token | decoded claims returned | must |
+| Token verification -- expired | Token past expiry time | expiration error | must |
+| Token verification -- malformed | Random string, truncated token | verification error | must |
+| Token verification -- wrong key | Valid structure, signed with wrong key | signature error | must |
+| Token refresh -- valid | Unexpired refresh token | new access token issued | should |
+| Token refresh -- expired | Refresh token past expiry | re-authentication required | should |
+| Token refresh -- revoked | Refresh token explicitly revoked | rejected, re-auth required | should |
+| Token revocation | Valid token revoked | subsequent verification fails | should |
+| Empty credentials | Empty string username or password | validation error | must |
+| SQL injection in username | `admin' OR 1=1 --` | rejected safely | should |
+| Concurrent token refresh | Two refresh requests with same token | one succeeds, one fails | nice |

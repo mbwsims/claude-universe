@@ -8,6 +8,7 @@
 
 import { execFile as execFileCb } from 'node:child_process';
 import { promisify } from 'node:util';
+import { gitRun, type GitResult } from '../../../shared/git-utils.js';
 
 const execFile = promisify(execFileCb);
 
@@ -47,27 +48,84 @@ export interface HistoryResult {
 function classifyMessage(message: string): keyof CommitClassification {
   const lower = message.toLowerCase().trim();
 
-  if (lower.startsWith('feat') || /\b(add|implement|introduce|create)\b/.test(lower)) {
-    return 'feature';
-  }
-  if (lower.startsWith('fix') || /\b(fix|bug|resolve|patch)\b/.test(lower)) {
-    return 'fix';
-  }
-  if (lower.startsWith('refactor') || /\b(refactor|restructure|simplify|extract)\b/.test(lower)) {
-    return 'refactor';
-  }
+  // 1. Check conventional-commit prefixes — require colon or paren delimiter
+  if (lower.startsWith('feat:') || lower.startsWith('feat(')) return 'feature';
+  if (lower.startsWith('fix:') || lower.startsWith('fix(')) return 'fix';
+  if (lower.startsWith('refactor:') || lower.startsWith('refactor(')) return 'refactor';
   if (
-    lower.startsWith('chore') ||
-    lower.startsWith('build') ||
-    lower.startsWith('ci') ||
-    lower.startsWith('deps') ||
-    /\b(update dep|upgrade|bump)\b/.test(lower)
+    lower.startsWith('chore:') || lower.startsWith('chore(') ||
+    lower.startsWith('build:') || lower.startsWith('build(') ||
+    lower.startsWith('ci:') || lower.startsWith('ci(') ||
+    lower.startsWith('deps:') || lower.startsWith('deps(')
   ) {
     return 'chore';
   }
-  if (lower.startsWith('docs') || /\b(readme|documentation|changelog)\b/.test(lower)) {
+  if (lower.startsWith('docs:') || lower.startsWith('docs(') || lower.startsWith('doc:')) return 'docs';
+
+  // 2. Keyword-based patterns — word-boundary guards prevent mid-word matches
+  if (/\b(add|implement|introduce|create|new|support|enable|allow)\b/.test(lower)) {
+    return 'feature';
+  }
+
+  if (
+    /\bfix(ed|es|ing)?\b(?!:|\()/.test(lower) ||
+    /\b(bug|resolve|patch|correct|repair)\b/.test(lower) ||
+    /\b(closes|fixes)\s+#\d+/.test(lower)
+  ) {
+    return 'fix';
+  }
+
+  if (
+    /\b(refactor|restructure|simplify|extract|reorganize|optimize)\b/.test(lower) ||
+    /\bclean\s*up\b/.test(lower)
+  ) {
+    return 'refactor';
+  }
+
+  if (/\b(update dep|upgrade|bump)\b/.test(lower)) {
+    return 'chore';
+  }
+
+  if (/\b(readme|documentation|changelog)\b/.test(lower)) {
     return 'docs';
   }
+
+  return 'other';
+}
+
+const CONFIG_FILE_PATTERNS = [
+  /^package\.json$/,
+  /^package-lock\.json$/,
+  /^yarn\.lock$/,
+  /^\.eslintrc/,
+  /^\.prettierrc/,
+  /^tsconfig.*\.json$/,
+  /^\.github\//,
+  /^Cargo\.lock$/,
+  /^go\.sum$/,
+];
+
+const DOC_FILE_PATTERNS = [
+  /\.md$/,
+  /^docs\//,
+  /^CHANGELOG/,
+];
+
+function classifyWithFileFallback(
+  message: string,
+  files: string[],
+): keyof CommitClassification {
+  const messageResult = classifyMessage(message);
+  if (messageResult !== 'other') return messageResult;
+
+  // File-based fallback when message is ambiguous
+  if (files.length === 0) return 'other';
+
+  const allConfig = files.every((f) => CONFIG_FILE_PATTERNS.some((p) => p.test(f)));
+  if (allConfig) return 'chore';
+
+  const allDocs = files.every((f) => DOC_FILE_PATTERNS.some((p) => p.test(f)));
+  if (allDocs) return 'docs';
 
   return 'other';
 }
@@ -75,35 +133,19 @@ function classifyMessage(message: string): keyof CommitClassification {
 function computeMonthsDiff(sinceDate: string, untilDate: string): number {
   const since = new Date(sinceDate);
   const until = new Date(untilDate);
-  const months =
+
+  // Whole calendar months between the two dates
+  let months =
     (until.getFullYear() - since.getFullYear()) * 12 +
     (until.getMonth() - since.getMonth());
+
+  // Subtract 1 if the day-of-month hasn't been reached yet in the final month.
+  // E.g. Jan 31 -> Feb 1: months=1 calendar, but day 1 < day 31, so subtract 1 => 0.
+  if (until.getDate() < since.getDate()) {
+    months -= 1;
+  }
+
   return Math.max(months, 1);
-}
-
-async function gitRun(
-  args: string[],
-  cwd: string,
-): Promise<string> {
-  try {
-    const { stdout } = await execFile('git', args, { cwd, maxBuffer: 10 * 1024 * 1024 });
-    return stdout;
-  } catch {
-    return '';
-  }
-}
-
-async function getCommitMessages(
-  since: string,
-  cwd: string,
-  file?: string,
-): Promise<string[]> {
-  const args = ['log', '--format=%s', `--since=${since}`];
-  if (file) {
-    args.push('--', file);
-  }
-  const stdout = await gitRun(args, cwd);
-  return stdout.trim().split('\n').filter(Boolean);
 }
 
 async function getCommitCount(
@@ -115,8 +157,9 @@ async function getCommitCount(
   if (file) {
     args.push('--', file);
   }
-  const stdout = await gitRun(args, cwd);
-  return stdout.trim().split('\n').filter(Boolean).length;
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return 0;
+  return result.stdout.trim().split('\n').filter(Boolean).length;
 }
 
 async function getAuthors(
@@ -128,8 +171,9 @@ async function getAuthors(
   if (file) {
     args.push('--', file);
   }
-  const stdout = await gitRun(args, cwd);
-  const names = stdout.trim().split('\n').filter(Boolean);
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return [];
+  const names = result.stdout.trim().split('\n').filter(Boolean);
 
   const counts = new Map<string, number>();
   for (const name of names) {
@@ -146,8 +190,9 @@ async function getMostChangedFiles(
   cwd: string,
 ): Promise<FileChangeInfo[]> {
   const args = ['log', '--format=format:', '--name-only', `--since=${since}`];
-  const stdout = await gitRun(args, cwd);
-  const files = stdout.trim().split('\n').filter(Boolean);
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return [];
+  const files = result.stdout.trim().split('\n').filter(Boolean);
 
   const counts = new Map<string, number>();
   for (const file of files) {
@@ -173,8 +218,9 @@ async function getSizeOverTime(
     '--',
     file,
   ];
-  const stdout = await gitRun(args, cwd);
-  const entries = stdout
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return [];
+  const entries = result.stdout
     .trim()
     .split('\n')
     .filter(Boolean)
@@ -215,30 +261,60 @@ async function getSizeOverTime(
   return snapshots.reverse();
 }
 
+async function getCommitMessagesWithFiles(
+  since: string,
+  cwd: string,
+  file?: string,
+): Promise<Array<{ message: string; files: string[] }>> {
+  const args = ['log', '--format=---COMMIT---%n%s', '--name-only', `--since=${since}`];
+  if (file) {
+    args.push('--', file);
+  }
+  const result = await gitRun(args, cwd);
+  if (!result.ok) return [];
+
+  const commits: Array<{ message: string; files: string[] }> = [];
+  const chunks = result.stdout.split('---COMMIT---').filter(Boolean);
+  for (const chunk of chunks) {
+    const lines = chunk.trim().split('\n').filter(Boolean);
+    if (lines.length === 0) continue;
+    commits.push({
+      message: lines[0],
+      files: lines.slice(1),
+    });
+  }
+  return commits;
+}
+
 export async function analyzeHistory(
   args: { file?: string; since?: string },
   cwd: string,
 ): Promise<HistoryResult> {
   const since = args.since ?? '6 months ago';
 
-  // Resolve the "since" date for the output period
-  const sinceOutput = await gitRun(
-    ['log', '--format=%aI', `--since=${since}`, '--reverse', '-1'],
+  // Resolve the "since" date for the output period.
+  // Use --reverse without -1: git applies -1 before --reverse, so --reverse -1
+  // returns the most recent commit, not the oldest. Instead, reverse and take
+  // the first line of output to get the earliest commit in the range.
+  const sinceResult = await gitRun(
+    ['log', '--format=%aI', `--since=${since}`, '--reverse'],
     cwd,
   );
-  const sinceDate = sinceOutput.trim().split('T')[0] || new Date(
+  const firstLine = sinceResult.ok ? sinceResult.stdout.trim().split('\n')[0] : '';
+  const sinceDate = (firstLine ? firstLine.split('T')[0] : '') || new Date(
     Date.now() - 6 * 30 * 24 * 60 * 60 * 1000,
   ).toISOString().split('T')[0];
   const untilDate = new Date().toISOString().split('T')[0];
 
-  const [total, authors, messages, mostChanged] = await Promise.all([
+  // Skip expensive whole-project getMostChangedFiles when analyzing a single file
+  const [total, authors, commitsWithFiles, mostChanged] = await Promise.all([
     getCommitCount(since, cwd, args.file),
     getAuthors(since, cwd, args.file),
-    getCommitMessages(since, cwd, args.file),
-    getMostChangedFiles(since, cwd),
+    getCommitMessagesWithFiles(since, cwd, args.file),
+    args.file ? Promise.resolve([] as FileChangeInfo[]) : getMostChangedFiles(since, cwd),
   ]);
 
-  // Classification
+  // Classification with file-based fallback for ambiguous messages
   const classification: CommitClassification = {
     feature: 0,
     fix: 0,
@@ -247,16 +323,33 @@ export async function analyzeHistory(
     docs: 0,
     other: 0,
   };
-  for (const msg of messages) {
-    classification[classifyMessage(msg)]++;
+  for (const commit of commitsWithFiles) {
+    classification[classifyWithFileFallback(commit.message, commit.files)]++;
   }
 
-  const months = computeMonthsDiff(sinceDate, untilDate);
-  const frequency = Math.round((total / months) * 10) / 10;
+  const daysDiff = Math.max(
+    Math.round((new Date(untilDate).getTime() - new Date(sinceDate).getTime()) / (1000 * 60 * 60 * 24)),
+    1,
+  );
+  // Use the most natural unit for the period length
+  let frequency: number;
+  let unit: string;
+  if (daysDiff < 14) {
+    frequency = Math.round((total / daysDiff) * 10) / 10;
+    unit = 'per day';
+  } else if (daysDiff < 60) {
+    const weeks = daysDiff / 7;
+    frequency = Math.round((total / weeks) * 10) / 10;
+    unit = 'per week';
+  } else {
+    const months = computeMonthsDiff(sinceDate, untilDate);
+    frequency = Math.round((total / months) * 10) / 10;
+    unit = 'per month';
+  }
 
   const result: HistoryResult = {
     period: { since: sinceDate, until: untilDate },
-    commits: { total, frequency, unit: 'per month' },
+    commits: { total, frequency, unit },
     authors,
     classification,
     mostChanged,
@@ -269,3 +362,9 @@ export async function analyzeHistory(
 
   return result;
 }
+
+// Test-only export — allows unit tests to exercise classifyMessage directly.
+// Not part of the public API.
+export const classifyMessageForTest = classifyMessage;
+export const computeMonthsDiffForTest = computeMonthsDiff;
+export const classifyWithFileFallbackForTest = classifyWithFileFallback;

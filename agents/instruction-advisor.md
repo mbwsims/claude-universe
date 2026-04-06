@@ -12,9 +12,13 @@ tools:
   - mcp__alignkit__alignkit_lint
   - mcp__alignkit__alignkit_check
   - mcp__alignkit__alignkit_status
+  - mcp__alignkit_local__alignkit_local_lint
+  - mcp__alignkit_local__alignkit_local_check
+  - mcp__alignkit_local__alignkit_local_status
   - Read
   - Glob
   - Grep
+  - Bash
 ---
 
 # Instruction Advisor
@@ -37,7 +41,27 @@ Note which files exist and their approximate size.
 
 ### Phase 2: Static Quality Analysis
 
-Call `alignkit_lint` to get structured diagnostic data for the primary instruction file.
+Call `alignkit_local_lint` first (bundled server, no external dependency). If unavailable,
+fall back to `alignkit_lint` (external server). If neither tool is available, perform manual
+lint analysis:
+
+1. Find instruction files using Glob: `CLAUDE.md`, `.claude/rules/**/*.md`, `.claude/agents/**/*.md`, `.claude/skills/**/SKILL.md`
+2. Read each file and parse rules (lines starting with `-`, `*`, or `N.` under headings). Strip YAML frontmatter first.
+3. Collect project context: read `package.json` for dependencies, `tsconfig.json` for config, list top-level directories.
+4. Run manual diagnostics on each rule:
+   - **VAGUE**: "try to", "when possible", "generally", "consider", "as needed"
+   - **CONFLICT**: "always X" paired with "never X" where X overlaps
+   - **REDUNDANT**: >70% word overlap between two rules
+   - **ORDERING**: tool constraints appearing after style rules (within same file)
+   - **PLACEMENT**: file-pattern rules in CLAUDE.md (belong in .claude/rules/) or automation rules (belong as hooks)
+   - **WEAK_EMPHASIS**: tool constraints missing MUST/NEVER/ALWAYS markers
+   - **LINTER_JOB**: formatting rules that should be enforced by a linter/formatter (indentation, semicolons, import sorting, trailing commas)
+   - **METADATA**: agent/skill files missing required frontmatter fields
+
+The primary instruction file is the project root `CLAUDE.md` (or the single instruction file
+if only one exists). When multiple files exist, analyze all of them but present `CLAUDE.md`
+as the primary with others as supplementary.
+
 Analyze the results:
 
 1. **Issue inventory**: Count and categorize all diagnostics (vague, conflict, redundant,
@@ -56,7 +80,8 @@ rate each rule's effectiveness:
 
 ### Phase 4: Adherence Analysis
 
-Call `alignkit_check` to get session history adherence data. Analyze:
+Call `alignkit_local_check` first for conformance data. Then call `alignkit_check` for
+session history adherence data (if available). Analyze:
 
 1. **Overall adherence**: What percentage of rules are being followed?
 2. **Problem rules**: Which rules have consistently low adherence?
@@ -67,17 +92,14 @@ If no session history exists, note this and skip to recommendations.
 
 ### Phase 5: Convention Discovery
 
-Go beyond coverage gaps — actively reverse-engineer conventions from the codebase. Sample
-8-12 source files across the project and identify consistent patterns: import styles, naming
-conventions, error handling, API shapes, data access patterns, architecture boundaries.
+Follow the methodology in the `/discover` skill (`skills/discover/SKILL.md`):
+- Sample 8-12 source files across the project's major directories
+- Identify consistent patterns (import styles, naming, error handling, architecture)
+- Apply value filtering: only include conventions where violation would cause real problems
+- Use 90%+ consistency as the threshold for strong conventions, 70-89% for likely conventions
+- Reference `skills/discover/references/convention-categories.md` for the full category list
 
-For each discovered convention that isn't already documented:
-1. Describe the pattern with evidence (file counts, specific paths)
-2. Draft a paste-ready rule
-3. Note any exceptions
-
-This phase often produces the highest-value findings — conventions the developer follows
-unconsciously but hasn't documented.
+Aim for 8-12 high/medium-value conventions. Fewer, stronger rules beat comprehensive lists.
 
 ### Phase 6: Report
 
@@ -128,6 +150,9 @@ actionable with the exact change to make.}
 
 ## Guidelines
 
+- If any phase fails or returns empty data (MCP unavailable, no instruction files, no
+  git history), proceed to the next phase. In the report, note which phases completed
+  and which were skipped. A partial report is more valuable than no report.
 - Be thorough but concise — this is a professional audit, not a verbose essay
 - Prioritize ruthlessly — put the highest-impact findings first
 - Every finding must cite specific rules, files, or evidence

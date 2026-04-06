@@ -12,6 +12,7 @@ allowed-tools:
   - Bash
   - mcp__lenskit__lenskit_graph
   - mcp__lenskit__lenskit_status
+  - mcp__lenskit__lenskit_analyze
 argument-hint: "[directory]"
 ---
 
@@ -31,29 +32,37 @@ Gather structural data:
   the stack?
 - **Framework config**: `next.config.js`, `vite.config.ts`, `tsconfig.json`, etc.
 - **Entry points**: Main files, route directories, handler directories
+- **lenskit_status**: If available, call `lenskit_status` with `detailed: true` first. It
+  provides file count, avg risk score, top risk files, circular dependency count, hub count,
+  and test coverage ratio. This gives you a quantitative foundation before reading any code.
 
 ### 2. Identify Layers
 
 Read representative files from each major directory to understand the layer:
 
-| Directory pattern | Likely layer |
-|-------------------|-------------|
-| `app/`, `pages/`, `routes/` | Entry / Routing |
-| `api/`, `handlers/`, `controllers/` | Request handling |
-| `services/`, `use-cases/`, `domain/` | Business logic |
-| `lib/`, `utils/`, `helpers/` | Shared utilities |
-| `db/`, `repositories/`, `models/` | Data access |
-| `components/`, `ui/`, `views/` | Presentation |
-| `types/`, `interfaces/`, `schemas/` | Type definitions |
-| `config/`, `env/` | Configuration |
-| `middleware/`, `plugins/` | Cross-cutting concerns |
-| `test/`, `__tests__/`, `spec/` | Tests |
+Use the layer classification from `skills/trace/references/layer-patterns.md` to identify
+which directory maps to which architectural layer. Common patterns:
+
+- **Entry/Routing:** `app/`, `pages/`, `routes/`, `api/`, `handlers/`, `controllers/`
+- **Business logic:** `services/`, `use-cases/`, `domain/`
+- **Data access:** `db/`, `repositories/`, `models/`
+- **Utilities:** `lib/`, `utils/`, `helpers/`
+- **Presentation:** `components/`, `ui/`, `views/`
+- **Cross-cutting:** `middleware/`, `plugins/`, `config/`
+
+For framework-specific patterns (Django, FastAPI, Spring Boot, etc.), see the reference file.
 
 ### 3. Map Dependencies
 
 **With lenskit-mcp (preferred):** Call `lenskit_graph` to get the full dependency graph
 with layer classifications, circular dependencies, hub files, and layer violations
 pre-computed. Use this data directly for the module map and observations sections.
+
+**Note on tsconfig path aliases:** If the project uses tsconfig path aliases (e.g.,
+`@/utils/helpers` mapping to `src/utils/helpers`), lenskit resolves these automatically.
+The graph data will show the true file-to-file dependencies even for aliased imports.
+If you see aliased imports in the code that don't appear in the graph, check whether
+the project's tsconfig.json has `paths` configured.
 
 **Without lenskit-mcp:** For each major module/directory, identify what it imports from
 and what imports it:
@@ -130,6 +139,17 @@ middleware chain, event-driven, etc.}
 - **`/hotspots`** — Find the riskiest areas in the architecture
 - **`/trace`** — Follow a specific feature flow through the layers
 - **`/explain`** — Deep-dive into any module you found in the map
+
+## Monorepo Guidance
+
+For monorepos (Turborepo, Nx, Lerna, pnpm workspaces):
+- Map each package separately first, then show inter-package dependencies
+- Identify the dependency graph between packages (which packages depend on which)
+- Highlight shared/core packages that all others depend on (these are the highest-impact
+  modules for architecture decisions)
+- Note package boundary violations: direct imports from one package's `src/` into another
+  (should use published package exports instead)
+- If lenskit_graph is available, run it at the monorepo root to get cross-package edges
 
 ## Guidelines
 

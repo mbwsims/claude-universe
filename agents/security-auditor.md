@@ -25,6 +25,16 @@ overall security posture, and produce a prioritized report with remediation plan
 
 ## Process
 
+### Phase 0: Quick Health Check
+
+**With shieldkit-mcp (preferred):** Call `shieldkit_status` first to get an immediate overview
+of the project's security posture -- risk level, finding counts, endpoint protection status.
+Use this to prioritize which areas need deeper investigation.
+
+If the project is clean (no findings, all endpoints protected), note this and proceed with
+a lighter-touch audit focusing on logic flaws and design issues that pattern matching cannot
+detect.
+
 ### Phase 1: Reconnaissance
 
 Map the project's security surface.
@@ -83,12 +93,40 @@ For the project's highest-risk features, apply STRIDE:
 - File upload/processing (if any)
 - External integrations
 
+**STRIDE Quick Reference:**
+
+| Threat | Question | What to look for |
+|--------|----------|-----------------|
+| **S**poofing | Can someone impersonate another user? | Weak tokens, missing signature verification, session fixation |
+| **T**ampering | Can someone modify data they shouldn't? | SQL injection, mass assignment, parameter manipulation |
+| **R**epudiation | Can someone deny their actions? | Missing audit logs, unsigned transactions |
+| **I**nfo Disclosure | Can someone see data they shouldn't? | IDOR, verbose errors, exposed debug endpoints |
+| **D**enial of Service | Can someone make this unavailable? | No rate limiting, unbounded queries, ReDoS |
+| **E**levation of Privilege | Can someone gain unauthorized access? | Missing role checks, mass assignment of role field |
+
+For each identified threat, classify priority using Likelihood x Impact:
+- **P0:** High likelihood + Critical/High impact -- fix before deploy
+- **P1:** Medium likelihood + High impact, or High + Medium -- fix this sprint
+- **P2:** Lower combinations -- schedule for next cycle
+- **P3:** Low likelihood + Low impact -- monitor
+
 ### Phase 5: Dependency Review
 
-Check project dependencies:
-- Look for known vulnerable packages
-- Flag severely outdated dependencies
-- Note packages with excessive permissions
+Check project dependencies using ecosystem-specific audit tools:
+
+- **Node.js:** Run `npm audit --json` (or `yarn audit --json`) and parse the output for
+  severity levels. Flag critical and high vulnerabilities.
+- **Python:** Run `pip audit` (requires `pip install pip-audit`) to check against PyPI
+  security advisories.
+- **Rust:** Run `cargo audit` to check against the RustSec advisory database.
+- **Go:** Run `govulncheck ./...` to check the Go vulnerability database.
+
+If the audit tool is not available, check the lock file manually:
+- Look for packages with known CVE patterns
+- Flag severely outdated packages (2+ major versions behind)
+- Note packages with excessive permissions (native code, filesystem, network)
+
+Include dependency findings in the report with specific CVE numbers when available.
 
 ### Phase 6: Security Posture Summary
 
@@ -102,6 +140,17 @@ Before writing the report, assess the project's overall security posture by doma
 | **Secrets Management** | Strong/Adequate/Weak/Missing | Env vars, .gitignore, no hardcoded keys |
 | **Error Handling** | Strong/Adequate/Weak/Missing | No stack traces leaked, consistent error shapes |
 | **Dependencies** | Strong/Adequate/Weak/Missing | Up-to-date, no known CVEs, minimal attack surface |
+
+**Rating Criteria:**
+
+- **Strong:** Industry best practices followed. No findings in this domain. Proactive
+  measures (e.g., CSP headers, rate limiting, audit logging) beyond the minimum.
+- **Adequate:** Basic security measures in place. Minor gaps exist but no exploitable
+  vulnerabilities. Follows common framework defaults.
+- **Weak:** Security measures exist but have significant gaps. At least one exploitable
+  vulnerability or systematic omission (e.g., auth on most routes but not all).
+- **Missing:** No security measures in this domain. Fundamental controls absent
+  (e.g., no authentication at all, plaintext passwords, no input validation).
 
 This table goes into the report and gives the executive summary real substance â€” not just
 "N vulnerabilities found" but "auth is strong, input validation is weak."
@@ -167,6 +216,15 @@ This table goes into the report and gives the executive summary real substance â
 - Estimated remediation effort: {brief assessment}
 ```
 
+## Progress Reporting
+
+Report progress between phases. After each phase, output a brief status line
+before proceeding:
+- "Phase 1 complete: found {n} endpoints, {n} route files, framework: {name}"
+- "Phase 2 complete: {n} findings ({n} critical, {n} high)"
+- "Phase 3 complete: traced {n} endpoints, {n} unvalidated data flows"
+This helps the user know work is progressing during long audits.
+
 ## Guidelines
 
 - Scan systematically â€” don't skip files because they "look safe"
@@ -174,3 +232,11 @@ This table goes into the report and gives the executive summary real substance â
 - Acknowledge secure patterns â€” builds trust and helps prioritize
 - The remediation plan should be actionable by a developer, not a security specialist
 - If the project is genuinely secure, say so. Don't manufacture findings.
+- **Scope large projects pragmatically.** For projects with 100+ source files, prioritize:
+  1. All API routes and handlers (externally reachable code)
+  2. Authentication and authorization code
+  3. Database access code
+  4. Configuration and secrets
+  5. Files flagged by `shieldkit_scan`
+  Do not attempt to manually review every utility function in a large codebase.
+  Use shieldkit for breadth, manual review for depth on high-risk code.

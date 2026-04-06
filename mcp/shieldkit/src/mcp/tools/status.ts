@@ -47,12 +47,21 @@ export async function statusTool(cwd: string): Promise<StatusResult> {
   const unprotectedEndpoints = surfaceResult.endpoints.filter(e => !e.hasAuth).length;
   const ungitignored = surfaceResult.envFiles.filter(e => !e.gitignored).length;
 
-  // Build top issues
+  // Build top issues, sorted by severity (critical first)
+  const severityOrder: Record<string, number> = {
+    critical: 0,
+    high: 1,
+    medium: 2,
+    low: 3,
+  };
+
+  const activeFindings = scanResult.scoring.findings
+    .filter(f => f.count > 0)
+    .sort((a, b) => (severityOrder[a.severity] ?? 4) - (severityOrder[b.severity] ?? 4));
+
   const topIssues: string[] = [];
-  for (const finding of scanResult.scoring.findings) {
-    if (finding.count > 0) {
-      topIssues.push(`${finding.analyzer}: ${finding.count} finding(s) [${finding.severity}]`);
-    }
+  for (const finding of activeFindings) {
+    topIssues.push(`${finding.analyzer}: ${finding.count} finding(s) [${finding.severity}]`);
   }
   if (unprotectedEndpoints > 0) {
     topIssues.push(`${unprotectedEndpoints} endpoint(s) without auth middleware`);

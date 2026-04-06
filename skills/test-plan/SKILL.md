@@ -10,6 +10,7 @@ allowed-tools:
   - Glob
   - Grep
   - mcp__testkit__testkit_map
+  - mcp__testkit__testkit_analyze
 argument-hint: "[file-or-function]"
 ---
 
@@ -32,6 +33,10 @@ Useful for:
 
 If `testkit_map` is available, call it to understand which functions already have tests
 and which need plans. This avoids planning for code that's already well-tested.
+
+If `testkit_map` is unavailable, note: "Running without testkit-mcp — discovering test
+coverage manually. Install the testkit MCP server for automated coverage mapping." Then
+manually Glob for existing test files and read them to understand current coverage.
 
 Read the code to be tested. If a specific function was named, focus on that. If a file or
 module was named, analyze each exported function/class.
@@ -58,11 +63,17 @@ for the full methodology) to produce a table for each function:
 | Canonical | {typical valid input} | {expected output} | must |
 | Empty | {empty/zero variant} | {error or default} | must |
 | Boundary | {at threshold} | {edge behavior} | must |
-| Null | {null/undefined} | {error} | must |
+| Null | {null/undefined/None} | {error} | must |
 | Invalid | {wrong type/value} | {error} | should |
 | Adversarial | {attack input} | {safe handling} | should |
 | Combinatorial | {conflicting options} | {defined behavior} | nice |
 ```
+
+Categories map to the reference type tables: Strings (empty, whitespace, unicode,
+special chars), Numbers (zero, negative, NaN, float precision), Arrays (empty, single,
+large, nulls), Objects (empty, missing keys, extra keys, wrong types), Dates (epoch,
+DST, leap year), Async (resolve, reject, timeout, cancel), Stateful (initial, mutated,
+concurrent).
 
 Mark each row:
 - **must** — Core behavior that absolutely needs a test
@@ -119,8 +130,10 @@ total tests planned.
   `/test`) and get a complete test suite written from it.
 - Prioritize ruthlessly. Every function does NOT need adversarial tests. Focus "must" on
   the inputs that are most likely to cause real bugs.
-- If the function is trivial (one-liner, no branching), say so. Not everything needs 12
-  test cases.
+- **Triviality check:** If the function is trivial (one-liner, no branching, pure getter,
+  simple delegation), say so explicitly: "This function is trivial — 1-2 tests are
+  sufficient (canonical + one edge case). Do not over-plan." Not everything needs 12
+  test cases. A simple `formatDate` function needs 3 tests, not 15.
 - For functions that are already well-tested, note what's covered and what's missing rather
   than producing a full plan from scratch.
 

@@ -50,11 +50,7 @@ that requires understanding business rules, race conditions).
 
 **Without shieldkit-mcp:** For each file in scope, manually check against the vulnerability
 categories in `references/vulnerability-catalog.md`. Note to the user: "Running without
-shieldkit-mcp — install it (`npm install -g shieldkit-mcp`) for precise pattern detection."
-
-For each file in scope, check against the vulnerability categories in
-`references/vulnerability-catalog.md`. The catalog is organized by OWASP Top 10 plus
-additional categories specific to modern web applications.
+shieldkit-mcp — analysis will use manual pattern matching."
 
 For each vulnerability found:
 1. Identify the specific code location (file + line)
@@ -72,10 +68,19 @@ Grep for patterns that indicate exposed secrets:
 
 ### 4. Check Dependencies
 
-If `package.json`, `requirements.txt`, `Cargo.toml`, or equivalent exists:
-- Look for known vulnerable packages (check versions against known CVEs if possible)
-- Flag packages that are severely outdated
-- Note packages with broad permissions (e.g., native code execution)
+Run the appropriate dependency audit command for the project's ecosystem:
+
+- **Node.js:** `npm audit --json` or `yarn audit --json` -- check for known CVEs
+- **Python:** `pip audit` (install via `pip install pip-audit`) -- checks PyPI advisories
+- **Rust:** `cargo audit` (install via `cargo install cargo-audit`) -- checks RustSec DB
+- **Go:** `govulncheck ./...` -- checks Go vulnerability database
+- **Ruby:** `bundle audit check` (install via `gem install bundler-audit`)
+
+If the audit tool is not installed, note the command for the user to run manually.
+
+Additionally:
+- Flag packages that are severely outdated (major version behind)
+- Note packages with broad permissions (e.g., native code execution, filesystem access)
 
 ### 5. Present Findings
 
@@ -108,7 +113,14 @@ If `package.json`, `requirements.txt`, `Cargo.toml`, or equivalent exists:
 {Any vulnerable or outdated dependencies}
 
 ### Not Vulnerable
-{Brief note on what was checked and found secure — builds confidence}
+{Explicitly list what was checked and found secure. Examples:}
+- SQL queries: All database access in `src/db/` uses parameterized queries via Prisma
+- Auth: All API routes in `src/routes/` have authentication middleware
+- CORS: Configuration restricts origins to `https://app.example.com`
+- Secrets: No hardcoded credentials found; all secrets loaded via env vars
+
+{This section builds confidence that the scan was thorough and helps developers
+understand what does NOT need attention.}
 ```
 
 Order findings by severity (Critical → High → Medium → Low). Within each severity,

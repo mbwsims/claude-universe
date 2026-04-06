@@ -11,6 +11,7 @@ allowed-tools:
   - Grep
   - Bash
   - mcp__timewarp__timewarp_history
+  - mcp__timewarp__timewarp_trends
 argument-hint: "<file> [period]"
 ---
 
@@ -30,6 +31,17 @@ decisions, and which were accumulated patches.
 
 ### 2. Find the Historical Version
 
+**With timewarp-mcp (preferred):** Call `timewarp_history` with the file and period to get
+structured commit data — this tells you total commits, classifications, and authors for the
+file during the rewind period. Use this to understand the volume and nature of changes before
+diving into individual commits.
+
+**Rename detection:** Before looking up the historical version, check if the file was
+renamed: `git log --follow --diff-filter=R --format="%H %s" -- {file}`. If a rename
+is found, use the old path for historical lookups. Note the rename in the output:
+"This file was renamed from `{old-path}` to `{new-path}` on {date}."
+
+**Then find the specific historical commit:**
 ```bash
 # Find the commit closest to the requested time
 git log --oneline --before="{date}" -1 -- {file}
@@ -53,8 +65,11 @@ Read the historical version and the current version. Note:
 
 ### 4. Annotate the Differences
 
-For each significant change between the two versions, find the commit(s) that introduced
-it and explain WHY:
+Annotate the **top 8-10 most significant changes** between the two versions. If there are
+more changes, note the remainder count: "...and N additional minor changes not annotated."
+This limit keeps the report focused on what matters.
+
+For each significant change, find the commit(s) that introduced it and explain WHY:
 
 ```bash
 # Find commits between the two points
@@ -100,6 +115,22 @@ This is useful for understanding what's stable vs volatile.}
 it's under-tested" or "the core algorithm hasn't changed, just the interfaces around it"}
 ```
 
+### 6. Cache Results
+
+**Save results** to `.timewarp/rewind-{sanitized-file}-{date}.json` with:
+- Historical version metadata (commit hash, date, line count, function count)
+- Current version metadata
+- List of annotated changes with classifications
+- "What Stayed the Same" summary
+
+**Path sanitization:** Replace `/` with `--` and remove leading dots in the filename.
+Example: `src/services/auth-service.ts` becomes `src--services--auth-service.ts`.
+
+**Read existing caches:** Before starting, check `.timewarp/` for:
+- `drift-*` files — if the same file has drift data, note whether changes align with drift
+- `forecast-*` files — if the file is on a concerning trajectory, mention it
+- `dissect-*` files — if complexity archaeology exists, reference the structural commits
+
 ## Guidelines
 
 - Annotate the IMPORTANT changes, not every single diff line. Group related changes
@@ -113,5 +144,10 @@ it's under-tested" or "the core algorithm hasn't changed, just the interfaces ar
 
 ## Related Skills
 
-- **`/bisect`** — For deeper analysis of HOW a specific complexity layer was added
+- **`/dissect`** — For deeper analysis of HOW a specific complexity layer was added
 - **lenskit `/explain`** — For understanding the current code in full context
+
+## Additional Resources
+
+- **`references/rewind-patterns.md`** — Change classification rubric, annotation methodology,
+  "What Stayed the Same" detection guidance

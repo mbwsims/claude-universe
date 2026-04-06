@@ -1,7 +1,9 @@
 # Security Review Checklist
 
-Quick-reference checklist organized by code area. For each area, check every item.
-Mark as PASS, FAIL, or N/A.
+Quick-reference checklist organized by code area. For each item, mark as:
+- **[PASS]** -- Verified secure
+- **[FAIL]** -- Vulnerability found (document details)
+- **[N/A]** -- Not applicable to this codebase (briefly note why)
 
 ## Authentication
 
@@ -13,6 +15,7 @@ Mark as PASS, FAIL, or N/A.
 - [ ] Password reset tokens are single-use and expire
 - [ ] Failed login attempts are rate-limited
 - [ ] Auth errors don't differentiate "user not found" vs "wrong password"
+- [ ] CSRF protection on state-changing endpoints (forms, POST/PUT/DELETE)
 
 ## Authorization
 
@@ -27,6 +30,7 @@ Mark as PASS, FAIL, or N/A.
 
 - [ ] All user input is validated before use
 - [ ] Validation is server-side (not just client-side)
+- [ ] Validation uses a schema library (zod, joi, yup, ajv, Pydantic, marshmallow, etc.) rather than ad-hoc checks
 - [ ] Request body fields are explicitly destructured (no mass assignment)
 - [ ] File uploads validate: type, size, filename
 - [ ] URL parameters are validated and typed
@@ -61,8 +65,14 @@ Mark as PASS, FAIL, or N/A.
 
 - [ ] Cookies use `httpOnly`, `secure`, `sameSite` flags
 - [ ] Session tokens have reasonable expiry
-- [ ] CSRF protection on state-changing endpoints
 - [ ] Session data stored server-side (not in cookies)
+
+## Dependencies
+
+- [ ] No known vulnerable packages (run `npm audit` / `pip audit` / `cargo audit`)
+- [ ] No severely outdated dependencies (2+ major versions behind)
+- [ ] Lock file (`package-lock.json`, `yarn.lock`, `poetry.lock`) is committed and reviewed
+- [ ] Dependencies use integrity hashes where supported
 
 ## External Services
 

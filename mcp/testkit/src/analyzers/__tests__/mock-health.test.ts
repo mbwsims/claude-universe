@@ -93,3 +93,60 @@ line 4`;
     expect(result.mocks[0].line).toBe(3);
   });
 });
+
+describe('Python mock detection', () => {
+  it('detects mock.patch as boundary mock', () => {
+    const content = `
+from unittest.mock import patch
+
+@patch('os.path.exists')
+def test_file_check(mock_exists):
+    mock_exists.return_value = True
+    assert check_file('/tmp/test')
+`;
+    const result = analyzeMockHealth(content);
+    expect(result.total).toBe(1);
+    expect(result.boundary).toBe(1);
+    expect(result.mocks[0].path).toBe('os.path.exists');
+  });
+
+  it('detects MagicMock usage as a mock setup line', () => {
+    const content = `
+from unittest.mock import MagicMock
+
+def test_service():
+    db = MagicMock()
+    service = UserService(db)
+`;
+    const result = analyzeMockHealth(content);
+    // MagicMock() matches MOCK_SETUP_PATTERNS but has no quoted path,
+    // so it is counted as a setup line but not added to the mocks array
+    expect(result.setupPercent).toBeGreaterThan(0);
+  });
+
+  it('classifies local module patches as internal', () => {
+    const content = `
+from unittest.mock import patch
+
+@patch('myapp.services.email.send_email')
+def test_signup(mock_send):
+    mock_send.return_value = True
+`;
+    const result = analyzeMockHealth(content);
+    expect(result.total).toBe(1);
+    expect(result.internal).toBe(1);
+  });
+
+  it('classifies stdlib patches as boundary', () => {
+    const content = `
+from unittest.mock import patch
+
+@patch('http.client.HTTPConnection')
+def test_connection(mock_conn):
+    pass
+`;
+    const result = analyzeMockHealth(content);
+    expect(result.total).toBe(1);
+    expect(result.boundary).toBe(1);
+  });
+});

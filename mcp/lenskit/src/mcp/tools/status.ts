@@ -1,58 +1,99 @@
 /**
  * lenskit_status -- Quick project health summary.
  *
- * Combines analyze + graph results into a scannable overview with
- * top hotspots, circular dependency count, hub count, and test coverage ratio.
+ * Lightweight probe using only file discovery (glob + filter).
+ * With detailed=true, also runs analyze + graph for rich metrics.
  */
 
+import { isTestFile, IGNORE_PATTERNS, SOURCE_EXTENSIONS } from '../../analyzers/discovery.js';
+import { glob } from 'tinyglobby';
+import { extname } from 'node:path';
 import { analyzeTool } from './analyze.js';
 import { graphTool } from './graph.js';
 
 export interface StatusResult {
   fileCount: number;
-  topHotspots: Array<{ path: string; score: number; risk: string }>;
-  circularDepCount: number;
-  hubCount: number;
+  testFileCount: number;
   testCoverageRatio: number;
+  testCoverageDisclaimer: string;
   quickSummary: string;
 }
 
-export async function statusTool(cwd: string): Promise<StatusResult> {
+export interface DetailedStatusResult extends StatusResult {
+  avgRiskScore: number;
+  topRiskFiles: Array<{ path: string; score: number; risk: string }>;
+  circularDepCount: number;
+  hubCount: number;
+}
+
+export async function statusTool(cwd: string, detailed?: boolean): Promise<StatusResult | DetailedStatusResult> {
+  // Single glob pass — discover all files, then partition
+  const allFiles = await glob(['**/*'], {
+    cwd,
+    ignore: IGNORE_PATTERNS,
+    absolute: false,
+  });
+
+  const sourceFiles: string[] = [];
+  const testFiles: string[] = [];
+
+  for (const f of allFiles) {
+    const ext = extname(f);
+    if (!SOURCE_EXTENSIONS.has(ext)) continue;
+    if (f.endsWith('.d.ts')) continue;
+
+    if (isTestFile(f)) {
+      testFiles.push(f);
+    } else {
+      sourceFiles.push(f);
+    }
+  }
+
+  const fileCount = sourceFiles.length;
+  const testFileCount = testFiles.length;
+  const testCoverageRatio = fileCount > 0
+    ? Math.round((testFileCount / fileCount) * 100) / 100
+    : 0;
+
+  const testCoverageDisclaimer =
+    'Test coverage is estimated by file naming conventions only (e.g., *.test.ts, test_*.py, *_test.go). ' +
+    'It does not verify that tests actually exercise the source file. Use testkit_map for verified source mapping.';
+
+  const summaryParts: string[] = [];
+  summaryParts.push(`${fileCount} source files`);
+  summaryParts.push(`${testFileCount} test files`);
+  summaryParts.push(`Test coverage: ~${Math.round(testCoverageRatio * 100)}%`);
+
+  const baseResult: StatusResult = {
+    fileCount,
+    testFileCount,
+    testCoverageRatio,
+    testCoverageDisclaimer,
+    quickSummary: '',
+  };
+
+  if (!detailed) {
+    summaryParts.push('Use lenskit_status with detailed=true, or lenskit_analyze/lenskit_graph for full metrics');
+    baseResult.quickSummary = summaryParts.join(' | ');
+    return baseResult;
+  }
+
+  // Detailed mode: run analyze + graph in parallel
   const [analyzeResult, graphResult] = await Promise.all([
     analyzeTool({}, cwd),
     graphTool(cwd),
   ]);
 
-  const fileCount = analyzeResult.summary.totalFiles;
-
-  // Top 5 hotspots by risk score
-  const topHotspots = analyzeResult.summary.topRiskFiles.slice(0, 5);
-
-  const circularDepCount = graphResult.circularDeps.length;
-  const hubCount = graphResult.hubs.length;
-
-  // Test coverage ratio: files with tests / total files
-  const filesWithTests = analyzeResult.files.filter((f) => f.testCoverage.hasTests).length;
-  const testCoverageRatio = fileCount > 0 ? filesWithTests / fileCount : 0;
-
-  // Build a human-readable summary
-  const parts: string[] = [];
-  parts.push(`${fileCount} source files analyzed`);
-  parts.push(`Avg risk score: ${analyzeResult.summary.avgRiskScore}/100`);
-  parts.push(`Test coverage: ${Math.round(testCoverageRatio * 100)}%`);
-  parts.push(`${circularDepCount} circular dependency chain(s)`);
-  parts.push(`${hubCount} hub file(s)`);
-
-  if (topHotspots.length > 0) {
-    parts.push(`Top hotspot: ${topHotspots[0].path} (score: ${topHotspots[0].score}, ${topHotspots[0].risk})`);
-  }
+  summaryParts.push(`Avg risk: ${analyzeResult.summary.avgRiskScore}`);
+  summaryParts.push(`${graphResult.circularDeps.length} circular deps`);
+  summaryParts.push(`${graphResult.hubs.length} hubs`);
+  baseResult.quickSummary = summaryParts.join(' | ');
 
   return {
-    fileCount,
-    topHotspots,
-    circularDepCount,
-    hubCount,
-    testCoverageRatio: Math.round(testCoverageRatio * 100) / 100,
-    quickSummary: parts.join(' | '),
+    ...baseResult,
+    avgRiskScore: analyzeResult.summary.avgRiskScore,
+    topRiskFiles: analyzeResult.summary.topRiskFiles,
+    circularDepCount: graphResult.circularDeps.length,
+    hubCount: graphResult.hubs.length,
   };
 }

@@ -75,6 +75,25 @@ email notification inline.
 **Recommendation:** Extract business logic into a service. Handler should only: parse
 request, call service, format response.
 
+### Layer Violation
+
+**What happened:** A module crossed architectural boundaries — a utility became a service,
+a data access layer started making HTTP calls, a frontend component began querying the
+database directly.
+
+**Detection signals:**
+- Original version: imports only from its own architectural layer
+- Current version: imports from a different layer (e.g., utility importing from services)
+- Functions that belong in a different layer based on their behavior
+- The module's name/path suggests one layer but its behavior is in another
+
+**Example:** `src/utils/notifications.ts` started as `formatNotification(data)` and
+`groupNotifications(list)` → now includes `sendPushNotification()`, `checkUserPreferences()`,
+and `logNotificationEvent()` with database and HTTP client imports.
+
+**Recommendation:** Move cross-layer functionality to the appropriate layer. The utility
+should remain a utility; create a `NotificationService` for side-effect operations.
+
 ### Feature Flag Accumulation
 
 **What happened:** Feature flags were added for gradual rollout but never cleaned up.
@@ -125,3 +144,14 @@ Drift is problematic when:
 - It's impossible to understand the module's purpose from reading it
 - Changes to one concern in the module risk breaking unrelated concerns
 - The module can't be tested without mocking half the application
+
+## Renamed File Guidance
+
+When tracing drift, files may have been renamed during their history. Handle this:
+
+1. Use `git log --follow -- {file}` to trace across renames
+2. Use `git log --diff-filter=R --find-renames -- {file}` to find the rename commit
+3. When comparing "original vs current," use the file at its earliest path, not its
+   current path at that old commit (which won't exist)
+4. Note the rename in the drift report — a rename often signals a purpose shift
+5. If the file was renamed multiple times, each rename may represent a drift event

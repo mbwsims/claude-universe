@@ -102,6 +102,21 @@ export function valueToGrade(value: number): Grade {
   return 'F';
 }
 
+/**
+ * Compute the overall grade from dimension scores using a weighted average.
+ *
+ * Null dimensions are excluded from the calculation entirely -- they do not
+ * count as zero. This means a project with only one measurable dimension will
+ * be graded on that dimension alone, not penalized for unmeasurable ones.
+ *
+ * The `inputCoverage` and `independence` dimensions are always null because
+ * they require semantic analysis that the deterministic analyzer cannot perform.
+ *
+ * Grade caps (hard limits that override the weighted average):
+ * - errorTesting === 'F' (zero error tests) -> capped at C
+ * - assertionDepth <= C (>40% shallow) -> capped at C+
+ * - mockHealth <= D (>50% mock setup lines) -> capped at C
+ */
 export function computeOverallGrade(dimensions: DimensionScores): Grade {
   // Weighted scoring: error testing highest, then assertion depth
   const weights: Array<{ key: keyof DimensionScores; weight: number }> = [
@@ -127,8 +142,10 @@ export function computeOverallGrade(dimensions: DimensionScores): Grade {
   let overall = valueToGrade(totalValue / totalWeight);
 
   // Grade caps from the scoring rubric
-  if (dimensions.errorTesting === 'F' || dimensions.errorTesting === 'D') {
-    const cap = 'C';
+  // Only F (no error tests at all) triggers the C cap.
+  // D means SOME error tests exist -- it drags down the average but doesn't hard-cap.
+  if (dimensions.errorTesting === 'F') {
+    const cap: Grade = 'C';
     if (GRADE_VALUES[overall] > GRADE_VALUES[cap]) overall = cap;
   }
 

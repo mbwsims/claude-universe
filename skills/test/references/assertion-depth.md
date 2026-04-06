@@ -176,6 +176,49 @@ expect(isValid).toBe(true)
 expect(isExpired).toBe(false)
 ```
 
+## Python Assertion Patterns
+
+**Shallow:**
+```python
+assert result
+assert user is not None
+assert len(items)
+```
+
+**Why it's shallow:** `assert result` passes for ANY truthy value. If the function returns
+an error string instead of a user object, the test still passes. `assert user is not None`
+is the Python equivalent of `toBeDefined()` -- it only proves existence, not correctness.
+
+**Deep:**
+```python
+assert result == {"id": "123", "name": "Alice", "role": "member"}
+assert user.email == "alice@example.com"
+assert len(items) == 3
+assert items[0]["name"] == "Alice"
+```
+
+**For errors (pytest):**
+```python
+# Shallow:
+with pytest.raises(Exception):
+    validate("")
+
+# Deep:
+with pytest.raises(ValueError, match="Email is required"):
+    validate("")
+```
+
+**For errors (unittest):**
+```python
+# Shallow:
+self.assertRaises(Exception, validate, "")
+
+# Deep:
+with self.assertRaises(ValueError) as ctx:
+    validate("")
+self.assertEqual(str(ctx.exception), "Email is required")
+```
+
 ## HTTP Response Assertions
 
 **Shallow:**
@@ -202,6 +245,34 @@ expect(await response.json()).toEqual({
   error: "Email is required",
 })
 ```
+
+## Snapshot Assertions
+
+**Shallow usage:**
+```
+expect(result).toMatchSnapshot()
+```
+
+**Why it can be shallow:** Snapshot tests verify that output hasn't CHANGED, not that it's
+CORRECT. If the initial snapshot captured wrong output, the test locks in the bug. Snapshot
+updates (`--update-snapshot`) can silently accept regressions.
+
+**When snapshots ARE appropriate:**
+- Large output where manual assertion is impractical (rendered HTML, serialized configs)
+- Output stability matters more than output correctness (API response shape)
+- Combined with at least ONE explicit assertion on the critical field
+
+**Deep snapshot usage:**
+```
+// Explicit assertion on the critical value
+expect(result.status).toBe("success")
+expect(result.user.email).toBe("alice@example.com")
+// Snapshot for the full shape (catches unexpected changes)
+expect(result).toMatchSnapshot()
+```
+
+**Rule of thumb:** Never use a snapshot as the ONLY assertion. Always pair it with at least
+one explicit value assertion on the most important field.
 
 ## The Assertion Depth Checklist
 

@@ -11,7 +11,7 @@ allowed-tools:
   - Grep
   - Bash
   - mcp__shieldkit__shieldkit_scan
-argument-hint: "[file]"
+argument-hint: "[file-or-directory]"
 ---
 
 # Security Review
@@ -64,6 +64,22 @@ For every operation that modifies data or accesses resources:
 - Can the auth check be bypassed (parameter tampering, direct object reference)?
 - Are there admin-only operations without admin checks?
 
+**Ownership verification methodology:**
+1. Find every resource-loading operation (e.g., `findById(req.params.id)`)
+2. Check if the query filters by the authenticated user's ID
+3. If not, check if there is a separate ownership check before the response
+4. Flag as IDOR if a user can access another user's resource by changing the ID
+
+Example of MISSING ownership:
+```
+const order = await Order.findById(req.params.orderId); // Anyone can access any order
+```
+
+Example of CORRECT ownership:
+```
+const order = await Order.findOne({ _id: req.params.orderId, userId: req.user.id });
+```
+
 ### 4. Check Error Handling
 
 Errors are a common source of information disclosure:
@@ -71,6 +87,11 @@ Errors are a common source of information disclosure:
 - Do different error types reveal information (different messages for "user not found" vs
   "wrong password" enables user enumeration)?
 - Are errors handled consistently (no swallowed errors that skip security checks)?
+- Do responses take different amounts of time for different outcomes? (e.g., login takes
+  longer for valid usernames because it checks the password hash, but returns immediately
+  for invalid usernames -- this enables username enumeration via timing side-channel)
+- **Mitigation:** Use constant-time comparison for secrets (`crypto.timingSafeEqual()`),
+  and ensure login flows take the same time regardless of whether the user exists
 
 ### 5. Present Findings
 

@@ -23,6 +23,30 @@ valid and invalid tokens is where security bugs live.
 **Mock boundary:** Mock the token verification library's key/secret, but test the actual
 verification flow. Don't mock `verifyToken()` itself — that defeats the purpose.
 
+## OAuth / Third-Party Auth Flows
+
+**Beyond redirect -- test the exchange and token lifecycle:**
+
+| Scenario | What to test |
+|----------|-------------|
+| Valid auth code exchange | Code exchanged for tokens -> access token + refresh token returned |
+| Expired auth code | Code used after expiry window -> error, not tokens |
+| Reused auth code | Same code submitted twice -> second attempt rejected |
+| Invalid redirect URI | Redirect URI doesn't match registered URI -> error |
+| Token refresh | Valid refresh token -> new access token issued |
+| Expired refresh token | Refresh token past expiry -> force re-authentication |
+| Revoked token | Token explicitly revoked -> subsequent API calls fail with 401 |
+| Scope mismatch | Token has `read` scope, request needs `write` -> 403 |
+| State parameter | Missing or mismatched state parameter -> reject (CSRF protection) |
+| Provider down | OAuth provider unreachable -> graceful error, not crash |
+
+**Common mistake:** Only testing the happy path (code exchange works, token refresh works).
+OAuth has many failure modes that attackers specifically target -- expired codes, reused
+codes, scope escalation, missing state parameters.
+
+**Mock boundary:** Mock the HTTP calls to the OAuth provider. Test your own code's handling
+of every response type the provider can return (success, error, timeout, malformed).
+
 ## Pagination
 
 **Beyond first page — test the boundaries:**
@@ -133,3 +157,28 @@ invalidation, expiry, or behavior during source failures.
 
 **Common mistake:** Only testing that the transaction "completes." Not testing rollback
 behavior when something in the middle fails.
+
+## Background Jobs / Queue Workers
+
+**Beyond enqueue -- test the full job lifecycle:**
+
+| Scenario | What to test |
+|----------|-------------|
+| Successful processing | Job enqueued -> worker processes -> job marked complete |
+| Job failure | Processing throws -> job marked failed with error details |
+| Retry on failure | Failed job retried up to max retries -> succeeds on retry N |
+| Max retries exhausted | Job fails max times -> moved to dead letter queue, not retried |
+| Duplicate job | Same job enqueued twice -> processed once (idempotency) |
+| Job timeout | Processing exceeds time limit -> job killed, marked as timed out |
+| Concurrent workers | Two workers pick up same job -> only one processes it |
+| Priority ordering | High-priority job enqueued after low-priority -> processed first |
+| Graceful shutdown | Worker receives shutdown signal mid-job -> completes current job, stops accepting new |
+| Poison message | Malformed job payload -> rejected without crashing worker |
+| Dependent jobs | Job B depends on Job A completing -> B waits, processes after A |
+
+**Common mistake:** Only testing that jobs are enqueued and processed in the happy path.
+Queue systems have complex failure, retry, and concurrency semantics that are invisible
+until production load hits.
+
+**Mock boundary:** Mock the queue transport (Redis, SQS, RabbitMQ) but test the actual
+job handler logic with real data. For retry tests, mock the transport to simulate failures.

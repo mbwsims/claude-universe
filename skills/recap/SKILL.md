@@ -11,6 +11,7 @@ allowed-tools:
   - Grep
   - Bash
   - mcp__timewarp__timewarp_history
+  - mcp__timewarp__timewarp_trends
 argument-hint: "[period]"
 ---
 
@@ -28,6 +29,14 @@ neglected. A developer returning from vacation runs this and is caught up in 2 m
 - **With argument:** Parse the period — "last sprint", "this month", "since Monday",
   "march", "last 30 days"
 
+**Period parsing guidance:**
+- "last sprint" / "last 2 weeks" → `--since="14 days ago"`
+- "this month" → `--since="{YYYY-MM}-01"`
+- "since Monday" → calculate the most recent Monday date
+- Month names ("march", "february") → `--since="{YYYY}-{MM}-01" --until="{YYYY}-{MM+1}-01"`
+- "last N days" → `--since="{N} days ago"`
+- ISO dates ("2025-01-01") → pass through directly to `--since`
+
 ### 2. Gather History
 
 **With timewarp-mcp (preferred):** Call `timewarp_history` with the period to get structured
@@ -44,6 +53,7 @@ git log --since="{date}" --format=format: --name-only | sort | uniq -c | sort -r
 Group commits by theme using commit message analysis (see `references/recap-patterns.md`):
 - **Features** — new functionality added
 - **Fixes** — bugs resolved
+- **Tests** — test additions or modifications without corresponding feature/fix
 - **Refactors** — structural improvements without behavior change
 - **Chores** — dependency updates, config changes, CI tweaks
 - **Docs** — documentation changes
@@ -93,8 +103,23 @@ reports (did recent changes worsen any drift?).
 {Who worked on what — brief, not a full attribution}
 ```
 
-**Save results** to `.timewarp/recap-{date}.json` with structured data (commit counts,
-classifications, focus areas) for other skills and future runs.
+**Save results** to `.timewarp/recap-{date}.json` with structured data for other skills
+and future runs. Use this JSON schema:
+
+```json
+{
+  "period": { "since": "YYYY-MM-DD", "until": "YYYY-MM-DD" },
+  "commits": { "total": 0, "byClassification": { "feature": 0, "fix": 0, "test": 0, "refactor": 0, "chore": 0, "docs": 0, "other": 0 } },
+  "focusAreas": [{ "directory": "src/auth/", "commits": 12, "summary": "..." }],
+  "neglectedAreas": [{ "directory": "src/legacy/", "lastCommit": "YYYY-MM-DD" }],
+  "contributors": [{ "name": "...", "commits": 0, "areas": ["src/auth/"] }]
+}
+```
+
+> **`.timewarp/` directory:** Create the directory if it doesn't exist. Results older than
+> 30 days are stale — prefer re-running the analysis over consuming old data. Other
+> Timewarp skills may read these files to cross-reference findings (e.g., `/forecast`
+> checks for drift data on trending files).
 
 ## Guidelines
 

@@ -131,6 +131,43 @@ Before including a convention, ask: "If Claude violated this, would it cause a r
 **Aim for 8-12 high/medium conventions, not 17+ with filler.** Fewer, stronger rules are
 more valuable than a comprehensive list that dilutes signal.
 
+### Handling Special Cases
+
+**Projects with no existing CLAUDE.md:**
+When no instruction files exist, this is a greenfield opportunity. Focus on the highest-value
+conventions first:
+1. Architecture boundaries (import restrictions, layer separation)
+2. Error handling patterns (consistent shapes, validation approaches)
+3. Testing conventions (framework, file location, assertion style)
+
+After presenting discoveries, offer to create a new CLAUDE.md with the selected rules
+organized by category. Use this structure:
+```
+# Project Instructions
+
+## Architecture
+{architecture boundary rules}
+
+## Code Style
+{naming, import, export rules}
+
+## Testing
+{test framework, file location, assertion rules}
+
+## Workflow
+{tool constraints, process rules}
+```
+
+**Small projects (fewer than 8 source files):**
+Reduce sampling -- read all source files instead of a sample. Adjust evidence thresholds
+downward since the sample IS the population:
+- 100% consistency: Strong convention (all files follow it)
+- 75%+ consistency: Likely convention (most files follow it)
+- Below 75%: Not enough evidence with such a small sample
+
+Note to the user: "This is a small project -- conventions may solidify as it grows.
+These rules reflect what exists now."
+
 ### 6. Offer to Apply
 
 After presenting discoveries, offer to add selected rules to CLAUDE.md:
@@ -149,8 +186,11 @@ When adding rules, place them in the most appropriate location:
 
 ## Guidelines
 
-- **Evidence threshold**: Only report conventions with strong evidence (pattern appears in
-  80%+ of relevant files). Weak patterns are noise, not conventions.
+- **Evidence threshold** -- use a tiered approach:
+  - **90%+ consistency**: Strong convention, high-confidence rule. Include with full confidence.
+  - **70-89% consistency**: Likely convention with exceptions. Include but explicitly note the
+    exceptions found and whether they appear intentional.
+  - **Below 70%**: Not a convention -- do not report it. This is noise, not signal.
 - **Not already documented**: Skip conventions that are already in CLAUDE.md or .claude/rules/.
   The value is finding what's MISSING.
 - **Actionable rules only**: Every suggested rule must be something Claude can act on.
@@ -163,9 +203,9 @@ When adding rules, place them in the most appropriate location:
 
 ## Related Skills
 
-- **`/lint`** — After adding discovered conventions to CLAUDE.md, use `/lint` to check
+- **`/lint-rules`** — After adding discovered conventions to CLAUDE.md, use `/lint-rules` to check
   the overall quality of the instruction file
-- **`/check`** — Use to verify whether discovered conventions are actually being followed
+- **`/check-rules`** — Use to verify whether discovered conventions are actually being followed
 
 ## Additional Resources
 

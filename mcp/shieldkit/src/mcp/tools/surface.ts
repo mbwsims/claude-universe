@@ -5,8 +5,10 @@
  * Checks auth protection and gitignore coverage.
  */
 
+import { join } from 'node:path';
 import { analyzeSurface, type SurfaceResult } from '../../analyzers/surface.js';
 
-export async function surfaceTool(cwd: string): Promise<SurfaceResult> {
-  return analyzeSurface(cwd);
+export async function surfaceTool(cwd: string, directory?: string): Promise<SurfaceResult> {
+  const targetCwd = directory ? join(cwd, directory) : cwd;
+  return analyzeSurface(targetCwd);
 }

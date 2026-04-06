@@ -381,13 +381,30 @@ the project.
 - Include both recent and older files (check git dates)
 - Prioritize files with the most imports (likely central/important)
 
-**Threshold for reporting:**
-- 90%+ consistency → Strong convention, high-confidence rule
-- 70-89% consistency → Likely convention with exceptions, note the exceptions
-- Below 70% → Not a convention, don't report it
+**Threshold for reporting (tiered approach):**
+- **90%+ consistency**: Strong convention, high-confidence rule. Include with full confidence
+  and note the exact percentage (e.g., "12/12 files" or "34/36 files").
+- **70-89% consistency**: Likely convention with exceptions. Include but explicitly list the
+  exceptions found. Assess whether exceptions are intentional (e.g., framework-required
+  deviations) or accidental (e.g., older code predating the convention).
+- **Below 70%**: Not a convention -- do not report it. If the pattern seems important but
+  falls below 70%, note it as an observation without a suggested rule.
 
 **What NOT to report:**
-- Framework-imposed patterns (Next.js routing structure is not a "convention")
+- Framework-imposed patterns (Next.js routing structure, Rails directory layout)
 - Obvious language features (using TypeScript interfaces in a TypeScript project)
-- Single-instance patterns (one file does something unique — not a convention)
+- Single-instance patterns (one file does something unique -- not a convention)
 - Patterns already documented in CLAUDE.md or .claude/rules/
+- Implementation details masquerading as conventions (e.g., "SSE uses TextEncoder" describes
+  how something was built, not a rule to follow)
+- Absence-as-convention (e.g., "no Zod for API inputs" might be a gap, not a convention)
+
+**Monorepo / multi-language projects:**
+- Analyze each package or language separately -- a convention in `packages/api/` may not
+  apply to `packages/web/`.
+- When a convention exists across multiple packages, note it as a project-wide convention
+  with the packages it spans.
+- For multi-language projects, categorize conventions by language. A Python naming convention
+  does not apply to TypeScript files and vice versa.
+- Check for cross-package conventions: shared config files, workspace-level scripts, or
+  import boundaries between packages.

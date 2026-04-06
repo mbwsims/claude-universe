@@ -26,6 +26,8 @@ Detailed methodology for each STRIDE category with common patterns by applicatio
 - Are sessions bound to the client (IP, user agent)?
 - Can external callbacks be spoofed?
 
+**See also:** `references/vulnerability-catalog.md` > A07: Identification and Authentication Failures
+
 ## Tampering
 
 **Core question:** Can an attacker modify data they shouldn't?
@@ -49,6 +51,8 @@ Detailed methodology for each STRIDE category with common patterns by applicatio
 - Are request parameters validated and sanitized?
 - Can users modify fields they shouldn't (role, price, permissions)?
 - Is data integrity verified (checksums, signatures)?
+
+**See also:** `references/vulnerability-catalog.md` > A03: Injection, A08: Software and Data Integrity Failures
 
 ## Repudiation
 
@@ -93,18 +97,25 @@ Detailed methodology for each STRIDE category with common patterns by applicatio
 - Are responses consistent regardless of data existence?
 - Is sensitive data exposed in logs, URLs, or client code?
 
+**See also:** `references/vulnerability-catalog.md` > A01: Broken Access Control (IDOR)
+
 ## Denial of Service
 
 **Core question:** Can someone make this unavailable?
 
 ### Common Patterns
 
-**Application-level:**
+**Application-level (resource exhaustion):**
 - No rate limiting on any endpoint
 - Expensive operations triggered by cheap requests (search with complex regex)
 - Unbounded queries (SELECT * without LIMIT)
 - Resource exhaustion (unlimited file uploads, unbounded pagination)
-- Regular expression denial of service (ReDoS)
+- Regular expression denial of service (ReDoS) -- see `references/vulnerability-catalog.md` > ReDoS
+
+**Application-level (logic abuse):**
+- Account lockout abuse (locking out legitimate users by triggering failed login attempts)
+- Cart/reservation holding (reserving all inventory without purchasing)
+- Email/SMS flooding via notification triggers
 
 **Infrastructure-level:**
 - Single points of failure
@@ -112,11 +123,19 @@ Detailed methodology for each STRIDE category with common patterns by applicatio
 - Synchronous operations blocking event loop
 - Memory leaks from accumulating state
 
+**Python/Django specific:**
+- Missing `DATA_UPLOAD_MAX_MEMORY_SIZE` (default allows large POST bodies)
+- Unbounded `QuerySet` evaluation (`.all()` without pagination)
+- Synchronous views performing blocking I/O (blocks entire Django worker)
+- Missing `CONN_MAX_AGE` causing connection churn
+
 **What to check:**
 - Are endpoints rate-limited?
 - Can a single request consume disproportionate resources?
 - Are queries bounded (LIMIT, pagination limits)?
 - Can uploads/inputs exhaust storage or memory?
+
+**See also:** `references/vulnerability-catalog.md` > A06: Vulnerable and Outdated Components (ReDoS)
 
 ## Elevation of Privilege
 
@@ -138,6 +157,8 @@ Detailed methodology for each STRIDE category with common patterns by applicatio
 - Are there default credentials anywhere?
 - Can a low-privilege action lead to high-privilege access?
 
+**See also:** `references/vulnerability-catalog.md` > A01: Broken Access Control (Privilege Escalation, Mass Assignment)
+
 ## Application Type Quick Reference
 
 ### REST APIs
@@ -157,3 +178,12 @@ Focus on: Price tampering (T), Race conditions (T), Audit logging (R), Idempoten
 
 ### Multi-tenant Applications
 Focus on: Tenant isolation (I/E), Cross-tenant access (I), Shared resource exhaustion (D)
+
+### Django Applications
+Focus on: CSRF (T), IDOR (I), Missing `@login_required` (S), DEBUG=True (I), Mass assignment via ModelForm (E), Unbounded QuerySets (D)
+
+### Flask Applications
+Focus on: Missing auth decorators (S), SQL injection via raw queries (T), Debug mode (I), CORS misconfiguration (I), Rate limiting (D)
+
+### FastAPI Applications
+Focus on: Missing `Depends()` auth (S), Pydantic bypass (T), CORS middleware config (I), Rate limiting (D)

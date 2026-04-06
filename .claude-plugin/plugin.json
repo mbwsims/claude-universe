@@ -1,7 +1,7 @@
 {
   "name": "claude-universe",
-  "version": "0.3.0",
-  "description": "Five intelligence plugins in one install. Align instructions, test behavior, shield against attacks, understand your codebase, and analyze its evolution. 19 commands, 5 agents, one install.",
+  "version": "0.4.0",
+  "description": "Five intelligence systems in one install. Align instructions, test behavior, shield against attacks, understand your codebase, and analyze its evolution. 19 commands, 5 agents, 6 MCP servers. JavaScript/TypeScript and Python analysis.",
   "author": {
     "name": "Matt Sims",
     "url": "https://github.com/mbwsims"
@@ -22,6 +22,8 @@
     "temporal",
     "evolution",
     "forecast",
+    "python",
+    "typescript",
     "claude-code"
   ]
 }

@@ -14,7 +14,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && esbuild dist/lenskit/src/mcp/server.js --bundle --platform=node --format=esm --banner:js=\"import{createRequire as __cjsReq}from'module';const require=__cjsReq(import.meta.url);\" --outfile=dist/server.bundle.mjs",
     "dev": "tsc --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
@@ -33,12 +33,13 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",
-    "globby": "^14.1.0",
+    "tinyglobby": "^0.2.15",
     "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "esbuild": "^0.28.0",
     "typescript": "^5.7.0",
-    "vitest": "^4.1.2"
+    "vitest": "~3.2.4"
   }
 }
