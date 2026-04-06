@@ -9,6 +9,7 @@
 import { readFile } from 'node:fs/promises';
 import { join, relative, dirname, basename, extname } from 'node:path';
 import { discoverSourceFiles } from './discovery.js';
+import { extractImports } from './graph.js';
 import { resolveAliasedImport, type TsconfigPaths } from '../../../shared/tsconfig-resolver.js';
 
 export interface CouplingResult {
@@ -25,20 +26,9 @@ function getModuleName(filePath: string): string {
   return filePath.replace(ext, '');
 }
 
-/** Extract all import paths from a file's content. */
+/** Extract all import paths from a file's content using the shared graph parser. */
 function extractImportPaths(content: string): string[] {
-  const paths: string[] = [];
-  for (const line of content.split('\n')) {
-    const trimmed = line.trimStart();
-    if (!(trimmed.startsWith('import ') || trimmed.includes('require(') || trimmed.startsWith('from '))) {
-      continue;
-    }
-    const pathMatch = trimmed.match(/['"`]([^'"`]+)['"`]/);
-    if (pathMatch) {
-      paths.push(pathMatch[1]);
-    }
-  }
-  return paths;
+  return extractImports(content).map(i => i.path);
 }
 
 /**

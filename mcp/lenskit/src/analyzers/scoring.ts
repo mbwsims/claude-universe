@@ -53,7 +53,7 @@ function computeComplexityScore(metrics: FileMetrics): number {
  * High churn = frequently changing = higher risk.
  */
 function computeChurnScore(churn: ChurnResult): number {
-  // Change frequency: files changing more than 20 times in 6 months are hot
+  // Change frequency: files changing 30+ times in 6 months saturate the churn score
   const changePenalty = Math.min(churn.changes / 30, 1) * 60;
 
   // Multiple authors: more authors = coordination risk

@@ -84,6 +84,38 @@ export function analyzeCorsConfig(content: string): CorsConfigResult {
       continue;
     }
 
+    // Detect Django CORS_ALLOW_ALL_ORIGINS = True or CORS_ORIGIN_ALLOW_ALL = True
+    if (/CORS_(ALLOW_ALL_ORIGINS|ORIGIN_ALLOW_ALL)\s*=\s*True\b/.test(line)) {
+      reportedLines.add(lineNum);
+      locations.push({
+        line: lineNum,
+        text: line.trim(),
+        credentialsWithWildcard: false,
+      });
+      continue;
+    }
+
+    // Detect Flask-CORS wildcard: CORS(... origins="*" ...) or {"origins": "*"}
+    if (/CORS\s*\(/.test(line) && /origins\s*=\s*["']\*["']/.test(line)) {
+      reportedLines.add(lineNum);
+      locations.push({
+        line: lineNum,
+        text: line.trim(),
+        credentialsWithWildcard: false,
+      });
+      continue;
+    }
+
+    if (/CORS\s*\(/.test(line) && /\{\s*["']origins["']\s*:\s*["']\*["']\s*\}/.test(line)) {
+      reportedLines.add(lineNum);
+      locations.push({
+        line: lineNum,
+        text: line.trim(),
+        credentialsWithWildcard: false,
+      });
+      continue;
+    }
+
     // Detect standalone origin: '*' or origin: true in config-like contexts
     if (/origin\s*:\s*['"`]\*['"`]/.test(line) || /origin\s*:\s*true\b/.test(line)) {
       // Check if this is in a CORS context by looking at expanded surrounding lines (10-line window)

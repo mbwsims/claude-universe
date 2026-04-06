@@ -12,7 +12,7 @@ import { scanTool } from '../mcp/tools/scan.js';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const FIXTURES_DIR = resolve(import.meta.dirname, '../../../../test-fixtures');
+const FIXTURES_DIR = resolve(import.meta.dirname, '../../../test-fixtures');
 const hasFixtures = existsSync(FIXTURES_DIR);
 
 describe('tools/scan', () => {

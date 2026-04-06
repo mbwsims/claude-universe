@@ -22864,7 +22864,7 @@ function analyzeShallowAssertions(content) {
       }
     }
     BARE_CALLED_REGEX.lastIndex = 0;
-    if (BARE_CALLED_REGEX.test(line)) {
+    if (BARE_CALLED_REGEX.test(line) && !line.includes(".not.toHaveBeenCalled")) {
       locations.push({ line: i + 1, text: line.trim(), kind: "bareToHaveBeenCalled" });
     }
     for (const { regex, kind } of PYTHON_SHALLOW_PATTERNS) {
@@ -23308,7 +23308,7 @@ function computeOverallGrade(dimensions) {
 // dist/analyzers/discovery.js
 import { readFile } from "node:fs/promises";
 import { join, dirname as dirname2, basename as basename2, extname } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 
 // node_modules/tinyglobby/dist/index.mjs
 import nativeFs2 from "fs";
@@ -24210,6 +24210,19 @@ function inferSourcePath(testPath, cwd2) {
     const parentDir = dir.replace(/__tests__\/?/, "");
     candidates.push(join(parentDir, sourceName));
   }
+  if (dir.includes("__tests__") && cwd2) {
+    const parentDir = dir.replace(/__tests__\/?/, "");
+    const parentFullPath = join(cwd2, parentDir);
+    try {
+      const entries = readdirSync(parentFullPath, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory() && entry.name !== "__tests__" && entry.name !== "node_modules") {
+          candidates.push(join(parentDir, entry.name, sourceName));
+        }
+      }
+    } catch {
+    }
+  }
   candidates.push(join(dir, sourceName));
   if (dir.startsWith("test") || dir.startsWith("tests")) {
     const srcDir = dir.replace(/^tests?/, "src");
@@ -24423,6 +24436,7 @@ async function mapTool(cwd2, discoveryCache) {
     testFiles: mapping.testFiles.length,
     sourceFiles: mapping.sourceFiles.length,
     coverageRatio: mapping.coverageRatio,
+    coverageDisclaimer: "Coverage is measured by verified source mapping: each test file is mapped to a specific source file by path resolution. Only successfully mapped pairs count. This may undercount if test naming conventions differ from source paths. lenskit_status uses file-name convention matching which typically reports a higher ratio.",
     mapped: mapping.testFiles.map((t) => ({
       test: t.path,
       source: t.sourcePath

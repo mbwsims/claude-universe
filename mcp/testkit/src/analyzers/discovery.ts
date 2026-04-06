@@ -4,7 +4,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { join, dirname, basename, extname } from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { glob } from 'tinyglobby';
 
 export interface TestFile {
@@ -124,6 +124,22 @@ export function inferSourcePath(testPath: string, cwd?: string): string | null {
   if (dir.includes('__tests__')) {
     const parentDir = dir.replace(/__tests__\/?/, '');
     candidates.push(join(parentDir, sourceName));
+  }
+
+  // If in __tests__ and cwd is provided, scan sibling directories of parent
+  if (dir.includes('__tests__') && cwd) {
+    const parentDir = dir.replace(/__tests__\/?/, '');
+    const parentFullPath = join(cwd, parentDir);
+    try {
+      const entries = readdirSync(parentFullPath, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory() && entry.name !== '__tests__' && entry.name !== 'node_modules') {
+          candidates.push(join(parentDir, entry.name, sourceName));
+        }
+      }
+    } catch {
+      // Parent dir doesn't exist or is unreadable — skip
+    }
   }
 
   // Same directory

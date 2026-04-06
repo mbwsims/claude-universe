@@ -27,7 +27,7 @@ export class UserRepository {
   async update(id: string, data: Partial<User>): Promise<User> {
     const conn = getConnection();
     // Deliberately using string interpolation for SQL injection test target
-    await conn.query(`UPDATE users SET role = '${data.role}' WHERE id = $1`, [id]);
+    await conn.query(`UPDATE users SET role = '${data.role}' WHERE id = '${id}'`);
     const user = await this.findById(id);
     return user!;
   }

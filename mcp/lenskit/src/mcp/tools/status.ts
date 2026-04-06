@@ -2,13 +2,14 @@
  * lenskit_status -- Quick project health summary.
  *
  * Lightweight probe using only file discovery (glob + filter).
- * Does NOT run the full analysis or graph pipeline.
- * For detailed metrics, use lenskit_analyze and lenskit_graph.
+ * With detailed=true, also runs analyze + graph for rich metrics.
  */
 
-import { discoverSourceFiles, isTestFile, IGNORE_PATTERNS, SOURCE_EXTENSIONS } from '../../analyzers/discovery.js';
+import { isTestFile, IGNORE_PATTERNS, SOURCE_EXTENSIONS } from '../../analyzers/discovery.js';
 import { glob } from 'tinyglobby';
 import { extname } from 'node:path';
+import { analyzeTool } from './analyze.js';
+import { graphTool } from './graph.js';
 
 export interface StatusResult {
   fileCount: number;
@@ -18,7 +19,14 @@ export interface StatusResult {
   quickSummary: string;
 }
 
-export async function statusTool(cwd: string): Promise<StatusResult> {
+export interface DetailedStatusResult extends StatusResult {
+  avgRiskScore: number;
+  topRiskFiles: Array<{ path: string; score: number; risk: string }>;
+  circularDepCount: number;
+  hubCount: number;
+}
+
+export async function statusTool(cwd: string, detailed?: boolean): Promise<StatusResult | DetailedStatusResult> {
   // Single glob pass — discover all files, then partition
   const allFiles = await glob(['**/*'], {
     cwd,
@@ -49,19 +57,43 @@ export async function statusTool(cwd: string): Promise<StatusResult> {
 
   const testCoverageDisclaimer =
     'Test coverage is estimated by file naming conventions only (e.g., *.test.ts, test_*.py, *_test.go). ' +
-    'It does not verify that tests actually exercise the source file. Actual coverage may be lower.';
+    'It does not verify that tests actually exercise the source file. Use testkit_map for verified source mapping.';
 
-  const parts: string[] = [];
-  parts.push(`${fileCount} source files`);
-  parts.push(`${testFileCount} test files`);
-  parts.push(`Test coverage: ~${Math.round(testCoverageRatio * 100)}%`);
-  parts.push('Use lenskit_analyze for risk scores and lenskit_graph for dependency analysis');
+  const summaryParts: string[] = [];
+  summaryParts.push(`${fileCount} source files`);
+  summaryParts.push(`${testFileCount} test files`);
+  summaryParts.push(`Test coverage: ~${Math.round(testCoverageRatio * 100)}%`);
 
-  return {
+  const baseResult: StatusResult = {
     fileCount,
     testFileCount,
     testCoverageRatio,
     testCoverageDisclaimer,
-    quickSummary: parts.join(' | '),
+    quickSummary: '',
+  };
+
+  if (!detailed) {
+    summaryParts.push('Use lenskit_status with detailed=true, or lenskit_analyze/lenskit_graph for full metrics');
+    baseResult.quickSummary = summaryParts.join(' | ');
+    return baseResult;
+  }
+
+  // Detailed mode: run analyze + graph in parallel
+  const [analyzeResult, graphResult] = await Promise.all([
+    analyzeTool({}, cwd),
+    graphTool(cwd),
+  ]);
+
+  summaryParts.push(`Avg risk: ${analyzeResult.summary.avgRiskScore}`);
+  summaryParts.push(`${graphResult.circularDeps.length} circular deps`);
+  summaryParts.push(`${graphResult.hubs.length} hubs`);
+  baseResult.quickSummary = summaryParts.join(' | ');
+
+  return {
+    ...baseResult,
+    avgRiskScore: analyzeResult.summary.avgRiskScore,
+    topRiskFiles: analyzeResult.summary.topRiskFiles,
+    circularDepCount: graphResult.circularDeps.length,
+    hubCount: graphResult.hubs.length,
   };
 }

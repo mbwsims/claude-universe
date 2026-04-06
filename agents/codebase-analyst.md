@@ -26,9 +26,10 @@ detection, and key module explanations into a single onboarding-quality report.
 
 ### Phase 0: Fast Probe
 
-Call `lenskit_status` first. This returns in seconds and provides:
+Call `lenskit_status` with `detailed: true` first. This provides:
 - File count (project scale)
-- Top 5 hotspots with risk scores (immediate high-value findings)
+- Top risk files with scores (immediate high-value findings)
+- Average risk score (overall health)
 - Circular dependency count (structural health signal)
 - Hub count (coupling signal)
 - Test coverage ratio (quality signal)
@@ -109,7 +110,7 @@ For the top 3-5 most important modules, explain each one:
 
 ## At a Glance
 {Stack, size, structure in 3-4 lines}
-{lenskit_status summary if available: avg risk, test coverage, circular deps}
+{lenskit_status detailed summary if available: avg risk, top risk files, test coverage, circular deps, hub count}
 
 ## Architecture
 {Layer diagram + module map}

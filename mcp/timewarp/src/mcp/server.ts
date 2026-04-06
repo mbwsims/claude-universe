@@ -66,8 +66,11 @@ server.tool(
     try {
       const file = validateFilePath(args.file);
       const result = await analyzeTrends({ file, months: args.months }, cwd);
+      const output = Array.isArray(result) && result.length === 0
+        ? { trends: [], message: 'Insufficient git history to compute trends. Need at least 2 data points per file within the analysis period.' }
+        : result;
       return {
-        content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+        content: [{ type: 'text' as const, text: JSON.stringify(output, null, 2) }],
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

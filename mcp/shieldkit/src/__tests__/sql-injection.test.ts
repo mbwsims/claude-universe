@@ -160,4 +160,43 @@ describe('sql-injection', () => {
       expect(result.count).toBe(0);
     });
   });
+
+  describe('JS safe-context false-positive regression', () => {
+    it('should NOT flag ES module import with from keyword', () => {
+      const content = `import { UserService } from './services/user-service';`;
+      const result = analyzeSqlInjection(content);
+      expect(result.count).toBe(0);
+    });
+
+    it('should NOT flag Array.from()', () => {
+      const content = `const items = Array.from(new Set(values));`;
+      const result = analyzeSqlInjection(content);
+      expect(result.count).toBe(0);
+    });
+
+    it('should NOT flag .join() calls', () => {
+      const content = `const result = parts.join(', ');`;
+      const result = analyzeSqlInjection(content);
+      expect(result.count).toBe(0);
+    });
+
+    it('should NOT flag destructuring with from variable name', () => {
+      const content = `const { from, to } = dateRange;`;
+      const result = analyzeSqlInjection(content);
+      expect(result.count).toBe(0);
+    });
+
+    it('should NOT flag ES re-export with from keyword', () => {
+      const content = `export { handler } from './handler';`;
+      const result = analyzeSqlInjection(content);
+      expect(result.count).toBe(0);
+    });
+
+    it('should still flag real SQL injection in template literals', () => {
+      const content = 'const q = `SELECT * FROM users WHERE id = ${userId}`;';
+      const result = analyzeSqlInjection(content);
+      expect(result.count).toBe(1);
+      expect(result.locations[0].pattern).toBe('template-literal-interpolation');
+    });
+  });
 });

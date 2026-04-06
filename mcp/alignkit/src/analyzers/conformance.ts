@@ -329,13 +329,17 @@ async function checkFileStructureRule(rule: ParsedRule, cwd: string): Promise<Ru
 
     const misplaced: string[] = [];
     for (const testFile of testFiles) {
-      const dir = testFile.replace(/[^/]+$/, '');
-      // A test is "co-located" if there's a source file in the same directory
+      let dir = testFile.replace(/[^/]+$/, '');
+      // For __tests__/ subdirectories, check the parent directory for adjacent source
+      if (dir.endsWith('__tests__/')) {
+        dir = dir.replace(/__tests__\/$/, '');
+      }
+      // A test is "co-located" if there's a source file in the same (or parent) directory
       const hasAdjacentSource = sourceFiles.some(sf => {
         const sfDir = sf.replace(/[^/]+$/, '');
         return sfDir === dir;
       });
-      if (!hasAdjacentSource && !testFile.startsWith('src/')) {
+      if (!hasAdjacentSource) {
         misplaced.push(testFile);
       }
     }

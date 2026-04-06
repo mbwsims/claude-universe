@@ -70,11 +70,15 @@ server.tool(
 
 server.tool(
   'lenskit_status',
-  'Lightweight project health probe: file count, test file count, and estimated test coverage ratio. Fast (sub-second). Use lenskit_analyze for risk scores and lenskit_graph for dependency analysis.',
-  {},
-  async () => {
+  'Project health probe. Default: file count, test file count, estimated test coverage (fast, sub-second). With detailed=true: also returns avgRiskScore, topRiskFiles, circularDepCount, hubCount (slower — runs full analysis + graph).',
+  {
+    detailed: z.boolean().optional().describe(
+      'When true, enriches the response with risk scores, top risk files, circular dependency count, and hub count. Slower than the default lightweight probe.'
+    ),
+  },
+  async (args) => {
     try {
-      const result = await statusTool(cwd);
+      const result = await statusTool(cwd, args.detailed);
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
       };

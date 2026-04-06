@@ -61,7 +61,7 @@ export function analyzeShallowAssertions(content: string): ShallowAssertionResul
     }
 
     BARE_CALLED_REGEX.lastIndex = 0;
-    if (BARE_CALLED_REGEX.test(line)) {
+    if (BARE_CALLED_REGEX.test(line) && !line.includes('.not.toHaveBeenCalled')) {
       locations.push({ line: i + 1, text: line.trim(), kind: 'bareToHaveBeenCalled' });
     }
 

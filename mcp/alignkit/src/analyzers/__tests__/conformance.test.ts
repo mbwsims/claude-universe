@@ -71,6 +71,18 @@ function setupFixture() {
     '});',
   ].join('\n'));
 
+  // Orphaned test in src/__tests__/ with no adjacent source file
+  mkdirSync(join(TMP_DIR, 'src', 'routes', '__tests__'), { recursive: true });
+  writeFileSync(join(TMP_DIR, 'src', 'routes', '__tests__', 'auth.test.ts'), [
+    'import { describe, it, expect } from "vitest";',
+    '',
+    'describe("auth", () => {',
+    '  it("placeholder", () => {',
+    '    expect(true).toBe(true);',
+    '  });',
+    '});',
+  ].join('\n'));
+
   // tsconfig with strict mode
   writeFileSync(join(TMP_DIR, 'tsconfig.json'), JSON.stringify({
     compilerOptions: {
@@ -154,6 +166,14 @@ describe('checkConformance', () => {
     expect(results[0]).toHaveProperty('text');
     expect(results[0]).toHaveProperty('verdict');
     expect(results[0]).toHaveProperty('evidence');
+  });
+
+  it('flags orphaned test in src/__tests__/ with no adjacent source', async () => {
+    const rules = [makeRule('Co-locate test files next to source files')];
+    const results = await checkConformance(rules, TMP_DIR);
+    expect(results).toHaveLength(1);
+    expect(results[0].verdict).toBe('violates');
+    expect(results[0].evidence).toContain('auth.test.ts');
   });
 });
 

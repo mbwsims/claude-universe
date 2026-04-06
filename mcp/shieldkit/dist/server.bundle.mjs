@@ -23776,12 +23776,85 @@ function isTestFile(filePath) {
   return TEST_FILE_PATTERNS.some((p) => p.test(filePath));
 }
 function stripComments(content) {
-  let result = content.replace(/\/\*[\s\S]*?\*\//g, (match) => {
-    return match.replace(/[^\n]/g, " ");
-  });
-  result = result.replace(/\/\/.*$/gm, (match) => " ".repeat(match.length));
-  result = result.replace(/(?<=^|\s)#.*$/gm, (match) => " ".repeat(match.length));
-  return result;
+  const len = content.length;
+  const result = [];
+  let i = 0;
+  while (i < len) {
+    const ch = content[i];
+    if (ch === "'" || ch === '"' || ch === "`") {
+      const quote = ch;
+      result.push(ch);
+      i++;
+      while (i < len && content[i] !== quote) {
+        if (content[i] === "\\") {
+          result.push(content[i]);
+          i++;
+          if (i < len) {
+            result.push(content[i]);
+            i++;
+          }
+        } else if (content[i] === "\n" && quote !== "`") {
+          break;
+        } else {
+          result.push(content[i]);
+          i++;
+        }
+      }
+      if (i < len && content[i] === quote) {
+        result.push(content[i]);
+        i++;
+      }
+      continue;
+    }
+    if (ch === "/" && i + 1 < len && content[i + 1] === "*") {
+      i += 2;
+      let newlineCount = 0;
+      while (i < len && !(content[i] === "*" && i + 1 < len && content[i + 1] === "/")) {
+        if (content[i] === "\n")
+          newlineCount++;
+        i++;
+      }
+      if (i < len)
+        i += 2;
+      for (let n = 0; n < newlineCount; n++)
+        result.push("\n");
+      continue;
+    }
+    if (ch === "/" && i + 1 < len && content[i + 1] === "/") {
+      i += 2;
+      while (i < len && content[i] !== "\n")
+        i++;
+      continue;
+    }
+    if (ch === "#") {
+      i++;
+      while (i < len && content[i] !== "\n")
+        i++;
+      continue;
+    }
+    result.push(ch);
+    i++;
+  }
+  return result.join("");
+}
+var JS_SAFE_PATTERNS = [
+  /\bimport\b.*\bfrom\b/,
+  // ES module imports
+  /\bexport\b.*\bfrom\b/,
+  // ES re-exports
+  /\bArray\.from\b/,
+  // Array.from()
+  /\.join\s*\(/,
+  // Array.join()
+  /\brequire\s*\(/
+  // CommonJS require()
+];
+function isJsSafeContext(line) {
+  return JS_SAFE_PATTERNS.some((p) => p.test(line));
+}
+function sqlKeywordCount(line) {
+  const matches = line.match(/\b(SELECT|INSERT|UPDATE|DELETE|WHERE|FROM|JOIN)\b/gi);
+  return matches ? matches.length : 0;
 }
 function isParameterizedQuery(line) {
   if (/\.\s*(query|execute)\s*\([^)]*,\s*\[/.test(line))
@@ -23832,22 +23905,28 @@ function analyzeSqlInjection(content, filePath) {
     if (isParameterizedQuery(originalLine))
       continue;
     if (SQL_KEYWORDS.test(line) && /\$\{/.test(line) && /`/.test(line)) {
-      reportedLines.add(lineNum);
-      locations.push({
-        line: lineNum,
-        text: originalLine.trim(),
-        pattern: "template-literal-interpolation"
-      });
-      continue;
+      if (isJsSafeContext(line) || sqlKeywordCount(line) < 2) {
+      } else {
+        reportedLines.add(lineNum);
+        locations.push({
+          line: lineNum,
+          text: originalLine.trim(),
+          pattern: "template-literal-interpolation"
+        });
+        continue;
+      }
     }
     if (SQL_KEYWORDS.test(line) && /["']\s*\+\s*\w+/.test(line)) {
-      reportedLines.add(lineNum);
-      locations.push({
-        line: lineNum,
-        text: originalLine.trim(),
-        pattern: "string-concatenation"
-      });
-      continue;
+      if (isJsSafeContext(line) || sqlKeywordCount(line) < 2) {
+      } else {
+        reportedLines.add(lineNum);
+        locations.push({
+          line: lineNum,
+          text: originalLine.trim(),
+          pattern: "string-concatenation"
+        });
+        continue;
+      }
     }
     if (SQL_KEYWORDS.test(line) && /\w+\s*\+\s*["']/.test(line)) {
       if (/\w+\s*\+\s*["'][^"']*\b(SELECT|INSERT|UPDATE|DELETE|WHERE|FROM|JOIN)\b/i.test(line) || /\b(SELECT|INSERT|UPDATE|DELETE|WHERE|FROM|JOIN)\b[^"']*["']\s*\+\s*\w+/i.test(line)) {
@@ -24275,7 +24354,7 @@ var DANGEROUS_PATTERNS = [
     name: "python-subprocess-shell",
     severity: "critical"
   },
-  { regex: /(?<!\.)exec\s*\(/, name: "python-exec", severity: "critical" },
+  { regex: /(?<!\.)exec\s*\(/, name: "python-exec", severity: "critical", fileExtensions: [".py"] },
   { regex: /\bpickle\.loads\s*\(/, name: "python-pickle-loads", severity: "critical" }
 ];
 function analyzeDangerousFunctions(content, filePath) {
@@ -24290,7 +24369,10 @@ function analyzeDangerousFunctions(content, filePath) {
     if (/^\s*\/\//.test(line) || /^\s*\/?\*/.test(line) || /^\s*#/.test(line)) {
       continue;
     }
-    for (const { regex, name, severity, excludeRegex } of DANGEROUS_PATTERNS) {
+    for (const { regex, name, severity, excludeRegex, fileExtensions } of DANGEROUS_PATTERNS) {
+      if (fileExtensions && filePath && !fileExtensions.some((ext) => filePath.endsWith(ext))) {
+        continue;
+      }
       if (regex.test(line)) {
         if (excludeRegex && excludeRegex.test(line)) {
           continue;
@@ -24362,6 +24444,33 @@ function analyzeCorsConfig(content) {
         line: lineNum,
         text: line.trim(),
         credentialsWithWildcard: hasNearbyCredentials(i)
+      });
+      continue;
+    }
+    if (/CORS_(ALLOW_ALL_ORIGINS|ORIGIN_ALLOW_ALL)\s*=\s*True\b/.test(line)) {
+      reportedLines.add(lineNum);
+      locations.push({
+        line: lineNum,
+        text: line.trim(),
+        credentialsWithWildcard: false
+      });
+      continue;
+    }
+    if (/CORS\s*\(/.test(line) && /origins\s*=\s*["']\*["']/.test(line)) {
+      reportedLines.add(lineNum);
+      locations.push({
+        line: lineNum,
+        text: line.trim(),
+        credentialsWithWildcard: false
+      });
+      continue;
+    }
+    if (/CORS\s*\(/.test(line) && /\{\s*["']origins["']\s*:\s*["']\*["']\s*\}/.test(line)) {
+      reportedLines.add(lineNum);
+      locations.push({
+        line: lineNum,
+        text: line.trim(),
+        credentialsWithWildcard: false
       });
       continue;
     }

@@ -24342,12 +24342,15 @@ async function checkFileStructureRule(rule, cwd2) {
     });
     const misplaced = [];
     for (const testFile of testFiles) {
-      const dir = testFile.replace(/[^/]+$/, "");
+      let dir = testFile.replace(/[^/]+$/, "");
+      if (dir.endsWith("__tests__/")) {
+        dir = dir.replace(/__tests__\/$/, "");
+      }
       const hasAdjacentSource = sourceFiles.some((sf) => {
         const sfDir = sf.replace(/[^/]+$/, "");
         return sfDir === dir;
       });
-      if (!hasAdjacentSource && !testFile.startsWith("src/")) {
+      if (!hasAdjacentSource) {
         misplaced.push(testFile);
       }
     }

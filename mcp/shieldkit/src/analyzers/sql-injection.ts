@@ -37,22 +37,106 @@ function isTestFile(filePath: string): boolean {
 }
 
 /**
- * Strip comments from source content.
- * Handles: // single-line, multi-line comment blocks, # Python single-line
+ * Strip comments from source code using a string-aware state machine.
+ * Handles JS/TS (//, /* ... *​/), and Python (#) comment styles.
+ * Preserves line count by emitting newlines for block comment content.
+ * Correctly skips comment-like tokens inside string literals.
+ *
+ * Canonical version: mcp/shared/strip-comments.ts — keep in sync.
  */
-// Canonical version: mcp/shared/strip-comments.ts
 function stripComments(content: string): string {
-  // Remove multi-line comments
-  let result = content.replace(/\/\*[\s\S]*?\*\//g, (match) => {
-    // Preserve line count by replacing with same number of newlines
-    return match.replace(/[^\n]/g, ' ');
-  });
+  const len = content.length;
+  const result: string[] = [];
+  let i = 0;
 
-  // Remove single-line comments (// ...) and Python comments (# ...)
-  result = result.replace(/\/\/.*$/gm, (match) => ' '.repeat(match.length));
-  result = result.replace(/(?<=^|\s)#.*$/gm, (match) => ' '.repeat(match.length));
+  while (i < len) {
+    const ch = content[i];
 
-  return result;
+    // String literals — skip through, preserving content
+    if (ch === "'" || ch === '"' || ch === '`') {
+      const quote = ch;
+      result.push(ch);
+      i++;
+      while (i < len && content[i] !== quote) {
+        if (content[i] === '\\') {
+          result.push(content[i]);
+          i++;
+          if (i < len) {
+            result.push(content[i]);
+            i++;
+          }
+        } else if (content[i] === '\n' && quote !== '`') {
+          // Unterminated string on this line — break to avoid runaway
+          break;
+        } else {
+          result.push(content[i]);
+          i++;
+        }
+      }
+      if (i < len && content[i] === quote) {
+        result.push(content[i]); // closing quote
+        i++;
+      }
+      continue;
+    }
+
+    // Block comments /* ... */
+    if (ch === '/' && i + 1 < len && content[i + 1] === '*') {
+      i += 2;
+      let newlineCount = 0;
+      while (i < len && !(content[i] === '*' && i + 1 < len && content[i + 1] === '/')) {
+        if (content[i] === '\n') newlineCount++;
+        i++;
+      }
+      if (i < len) i += 2; // skip */
+      for (let n = 0; n < newlineCount; n++) result.push('\n');
+      continue;
+    }
+
+    // Single-line comments //
+    if (ch === '/' && i + 1 < len && content[i + 1] === '/') {
+      i += 2;
+      while (i < len && content[i] !== '\n') i++;
+      continue;
+    }
+
+    // Python/shell comments #
+    if (ch === '#') {
+      i++;
+      while (i < len && content[i] !== '\n') i++;
+      continue;
+    }
+
+    result.push(ch);
+    i++;
+  }
+
+  return result.join('');
+}
+
+/**
+ * Patterns that indicate a line is ordinary JS/TS code rather than SQL.
+ * When a line matches one of these, a single SQL keyword hit (e.g. "from"
+ * inside an import statement) should not be treated as SQL context.
+ */
+const JS_SAFE_PATTERNS = [
+  /\bimport\b.*\bfrom\b/,   // ES module imports
+  /\bexport\b.*\bfrom\b/,   // ES re-exports
+  /\bArray\.from\b/,         // Array.from()
+  /\.join\s*\(/,             // Array.join()
+  /\brequire\s*\(/,          // CommonJS require()
+];
+
+function isJsSafeContext(line: string): boolean {
+  return JS_SAFE_PATTERNS.some(p => p.test(line));
+}
+
+/**
+ * Count distinct SQL keywords on a single line.
+ */
+function sqlKeywordCount(line: string): number {
+  const matches = line.match(/\b(SELECT|INSERT|UPDATE|DELETE|WHERE|FROM|JOIN)\b/gi);
+  return matches ? matches.length : 0;
 }
 
 /**
@@ -120,24 +204,34 @@ export function analyzeSqlInjection(content: string, filePath?: string): SqlInje
 
     // Single-line template literal with SQL + interpolation
     if (SQL_KEYWORDS.test(line) && /\$\{/.test(line) && /`/.test(line)) {
-      reportedLines.add(lineNum);
-      locations.push({
-        line: lineNum,
-        text: originalLine.trim(),
-        pattern: 'template-literal-interpolation',
-      });
-      continue;
+      // Skip JS-idiomatic lines that happen to contain one SQL keyword
+      if (isJsSafeContext(line) || sqlKeywordCount(line) < 2) {
+        // Not enough SQL signal — skip
+      } else {
+        reportedLines.add(lineNum);
+        locations.push({
+          line: lineNum,
+          text: originalLine.trim(),
+          pattern: 'template-literal-interpolation',
+        });
+        continue;
+      }
     }
 
     // String concatenation with SQL keywords
     if (SQL_KEYWORDS.test(line) && /["']\s*\+\s*\w+/.test(line)) {
-      reportedLines.add(lineNum);
-      locations.push({
-        line: lineNum,
-        text: originalLine.trim(),
-        pattern: 'string-concatenation',
-      });
-      continue;
+      // Skip JS-idiomatic lines that happen to contain one SQL keyword
+      if (isJsSafeContext(line) || sqlKeywordCount(line) < 2) {
+        // Not enough SQL signal — skip
+      } else {
+        reportedLines.add(lineNum);
+        locations.push({
+          line: lineNum,
+          text: originalLine.trim(),
+          pattern: 'string-concatenation',
+        });
+        continue;
+      }
     }
 
     // Concatenation on the variable side

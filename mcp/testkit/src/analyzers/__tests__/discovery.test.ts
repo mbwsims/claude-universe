@@ -37,6 +37,13 @@ describe('inferSourcePath', () => {
     expect(result).toBe('tests/utils/helper.ts');
   });
 
+  it('resolves __tests__/ test to sibling directory when cwd provided', () => {
+    // The plugin itself has this structure:
+    // src/__tests__/discovery.test.ts → should resolve to src/analyzers/discovery.ts
+    const result = inferSourcePath('src/__tests__/discovery.test.ts', process.cwd());
+    expect(result).toBe('src/analyzers/discovery.ts');
+  });
+
   it('handles Python test files with test_ prefix', () => {
     const result = inferSourcePath('tests/test_utils.py');
     expect(result).toBe('tests/utils.py');

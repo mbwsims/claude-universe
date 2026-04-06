@@ -33,19 +33,12 @@ describe('batchAnalyzeChurn', () => {
     expect(results).toBeInstanceOf(Map);
   });
 
-  it('warns when >80% files show zero churn', async () => {
-    // In a freshly initialized repo, most files will show zero churn
-    // unless setup-git-history.sh was run.
-    // This test verifies the warning mechanism exists.
+  it('returns ChurnResult values with expected shape', async () => {
     const results = await batchAnalyzeChurn(FIXTURE_DIR);
-    // The function should return results with a warning property
-    // when too many files have zero churn
-    const zeroChurnCount = Array.from(results.values()).filter(r => r.changes === 0).length;
-    const totalCount = results.size;
-    if (totalCount > 0 && zeroChurnCount / totalCount > 0.8) {
-      // Expected: the warning should be attached or logged
-      // We'll check the return type for the warning flag
-      expect((results as any).__zeroChurnWarning).toBeDefined();
+    for (const [, result] of results) {
+      expect(result).toHaveProperty('changes');
+      expect(result).toHaveProperty('authors');
+      expect(result).toHaveProperty('period', '6 months');
     }
   });
 });

@@ -22797,7 +22797,7 @@ function classifyMessage(message) {
   if (/\b(add|implement|introduce|create|new|support|enable|allow)\b/.test(lower)) {
     return "feature";
   }
-  if (/\b(bug|resolve|patch|correct|repair)\b/.test(lower) || /\b(closes|fixes)\s+#\d+/.test(lower)) {
+  if (/\bfix(ed|es|ing)?\b(?!:|\()/.test(lower) || /\b(bug|resolve|patch|correct|repair)\b/.test(lower) || /\b(closes|fixes)\s+#\d+/.test(lower)) {
     return "fix";
   }
   if (/\b(refactor|restructure|simplify|extract|reorganize|optimize)\b/.test(lower) || /\bclean\s*up\b/.test(lower)) {
@@ -24100,8 +24100,9 @@ server.tool("timewarp_trends", "Trend computation for growth rates and accelerat
   try {
     const file = validateFilePath(args.file);
     const result = await analyzeTrends({ file, months: args.months }, cwd);
+    const output = Array.isArray(result) && result.length === 0 ? { trends: [], message: "Insufficient git history to compute trends. Need at least 2 data points per file within the analysis period." } : result;
     return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+      content: [{ type: "text", text: JSON.stringify(output, null, 2) }]
     };
   } catch (error2) {
     const message = error2 instanceof Error ? error2.message : String(error2);

@@ -5,7 +5,7 @@ import { scanTool } from '../mcp/tools/scan.js';
 import { surfaceTool } from '../mcp/tools/surface.js';
 import { statusTool } from '../mcp/tools/status.js';
 
-const FIXTURES_DIR = resolve(import.meta.dirname, '../../../../test-fixtures');
+const FIXTURES_DIR = resolve(import.meta.dirname, '../../../test-fixtures');
 const hasFixtures = existsSync(FIXTURES_DIR);
 
 describe.skipIf(!hasFixtures)('integration: scan against test-fixtures', () => {

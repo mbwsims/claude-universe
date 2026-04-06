@@ -30,6 +30,8 @@ interface DangerousPattern {
   name: string;
   severity: Severity;
   excludeRegex?: RegExp;
+  /** When set, pattern only applies to files with these extensions. */
+  fileExtensions?: string[];
 }
 
 /** Build a regex from parts to avoid static analysis false positives. */
@@ -77,7 +79,7 @@ const DANGEROUS_PATTERNS: DangerousPattern[] = [
     name: 'python-subprocess-shell',
     severity: 'critical',
   },
-  { regex: /(?<!\.)exec\s*\(/, name: 'python-exec', severity: 'critical' },
+  { regex: /(?<!\.)exec\s*\(/, name: 'python-exec', severity: 'critical', fileExtensions: ['.py'] },
   { regex: /\bpickle\.loads\s*\(/, name: 'python-pickle-loads', severity: 'critical' },
 ];
 
@@ -98,7 +100,11 @@ export function analyzeDangerousFunctions(content: string, filePath?: string): D
       continue;
     }
 
-    for (const { regex, name, severity, excludeRegex } of DANGEROUS_PATTERNS) {
+    for (const { regex, name, severity, excludeRegex, fileExtensions } of DANGEROUS_PATTERNS) {
+      // Skip patterns restricted to specific file types
+      if (fileExtensions && filePath && !fileExtensions.some(ext => filePath.endsWith(ext))) {
+        continue;
+      }
       if (regex.test(line)) {
         // Skip if the exclude pattern matches (e.g., execFile is safe)
         if (excludeRegex && excludeRegex.test(line)) {

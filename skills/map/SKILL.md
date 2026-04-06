@@ -32,9 +32,9 @@ Gather structural data:
   the stack?
 - **Framework config**: `next.config.js`, `vite.config.ts`, `tsconfig.json`, etc.
 - **Entry points**: Main files, route directories, handler directories
-- **lenskit_status**: If available, call `lenskit_status` first. It provides file count,
-  top hotspots, circular dependency count, hub count, and test coverage ratio in seconds.
-  This gives you a quantitative foundation before reading any code.
+- **lenskit_status**: If available, call `lenskit_status` with `detailed: true` first. It
+  provides file count, avg risk score, top risk files, circular dependency count, hub count,
+  and test coverage ratio. This gives you a quantitative foundation before reading any code.
 
 ### 2. Identify Layers
 

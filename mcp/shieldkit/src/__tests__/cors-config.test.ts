@@ -110,6 +110,38 @@ app.use(cors(corsOptions));`;
     });
   });
 
+  describe('Python CORS detection', () => {
+    it('should detect Django CORS_ALLOW_ALL_ORIGINS = True', () => {
+      const content = `CORS_ALLOW_ALL_ORIGINS = True`;
+      const result = analyzeCorsConfig(content);
+      expect(result.count).toBe(1);
+    });
+
+    it('should detect Django CORS_ORIGIN_ALLOW_ALL = True', () => {
+      const content = `CORS_ORIGIN_ALLOW_ALL = True`;
+      const result = analyzeCorsConfig(content);
+      expect(result.count).toBe(1);
+    });
+
+    it('should detect Flask-CORS wildcard origin', () => {
+      const content = `CORS(app, origins="*")`;
+      const result = analyzeCorsConfig(content);
+      expect(result.count).toBe(1);
+    });
+
+    it('should detect Flask-CORS dict form wildcard', () => {
+      const content = `CORS(app, resources={r"/*": {"origins": "*"}})`;
+      const result = analyzeCorsConfig(content);
+      expect(result.count).toBe(1);
+    });
+
+    it('should NOT detect Django CORS_ALLOW_ALL_ORIGINS = False', () => {
+      const content = `CORS_ALLOW_ALL_ORIGINS = False`;
+      const result = analyzeCorsConfig(content);
+      expect(result.count).toBe(0);
+    });
+  });
+
   describe('false-positive regression suite', () => {
     const knownSafePatterns = [
       // Specific origins

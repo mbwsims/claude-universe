@@ -131,6 +131,30 @@ expect(y).toBeTruthy();`;
   });
 });
 
+describe('.not.toHaveBeenCalled() exclusion', () => {
+  it('does NOT flag .not.toHaveBeenCalled() as shallow', () => {
+    const content = 'expect(mockFn).not.toHaveBeenCalled();';
+    const result = analyzeShallowAssertions(content);
+    // .not.toHaveBeenCalled() should not count as shallow
+    const bareCalled = result.locations.filter(l => l.kind === 'bareToHaveBeenCalled');
+    expect(bareCalled.length).toBe(0);
+  });
+
+  it('does NOT flag .not.toHaveBeenCalledWith() as shallow', () => {
+    const content = "expect(mockFn).not.toHaveBeenCalledWith('arg');";
+    const result = analyzeShallowAssertions(content);
+    const bareCalled = result.locations.filter(l => l.kind === 'bareToHaveBeenCalled');
+    expect(bareCalled.length).toBe(0);
+  });
+
+  it('still flags bare .toHaveBeenCalled() as shallow', () => {
+    const content = 'expect(mockFn).toHaveBeenCalled();';
+    const result = analyzeShallowAssertions(content);
+    const bareCalled = result.locations.filter(l => l.kind === 'bareToHaveBeenCalled');
+    expect(bareCalled.length).toBe(1);
+  });
+});
+
 describe('analyzeShallowAssertions — Python patterns', () => {
   it('detects bare assert as shallow', () => {
     const content = `

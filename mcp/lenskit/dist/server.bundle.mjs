@@ -22964,8 +22964,8 @@ async function analyzeFileMetrics(filePath, cwd2) {
 }
 
 // dist/lenskit/src/analyzers/coupling.js
-import { readFile as readFile3 } from "node:fs/promises";
-import { join as join3, dirname as dirname3, basename as basename2, extname as extname3 } from "node:path";
+import { readFile as readFile4 } from "node:fs/promises";
+import { join as join4, dirname as dirname4, basename as basename2, extname as extname3 } from "node:path";
 
 // dist/shared/discovery.js
 import { extname as extname2 } from "node:path";
@@ -23804,6 +23804,10 @@ async function discoverSourceFiles(cwd2) {
   return allFiles.filter((f) => SOURCE_EXTENSIONS.has(extname2(f)) && !isTestFile(f) && !isDeclarationFile(f));
 }
 
+// dist/lenskit/src/analyzers/graph.js
+import { readFile as readFile3 } from "node:fs/promises";
+import { join as join3, dirname as dirname3 } from "node:path";
+
 // dist/shared/tsconfig-resolver.js
 import { readFile as readFile2 } from "node:fs/promises";
 import { join as join2, dirname as dirname2 } from "node:path";
@@ -23867,357 +23871,7 @@ function resolveAliasedImport(importPath, paths, baseUrl) {
   return null;
 }
 
-// dist/lenskit/src/analyzers/coupling.js
-function getModuleName(filePath) {
-  const ext = extname3(filePath);
-  const base = basename2(filePath, ext);
-  if (base === "index") {
-    return dirname3(filePath);
-  }
-  return filePath.replace(ext, "");
-}
-function extractImportPaths(content) {
-  const paths = [];
-  for (const line of content.split("\n")) {
-    const trimmed = line.trimStart();
-    if (!(trimmed.startsWith("import ") || trimmed.includes("require(") || trimmed.startsWith("from "))) {
-      continue;
-    }
-    const pathMatch = trimmed.match(/['"`]([^'"`]+)['"`]/);
-    if (pathMatch) {
-      paths.push(pathMatch[1]);
-    }
-  }
-  return paths;
-}
-async function buildImportIndex(cwd2, files) {
-  const allFiles = files ?? await discoverSourceFiles(cwd2);
-  const index = /* @__PURE__ */ new Map();
-  await Promise.all(allFiles.map(async (filePath) => {
-    try {
-      const content = await readFile3(join3(cwd2, filePath), "utf-8");
-      index.set(filePath, extractImportPaths(content));
-    } catch {
-      index.set(filePath, []);
-    }
-  }));
-  return index;
-}
-function lookupCoupling(filePath, importIndex, tsconfigPaths) {
-  const targetModuleName = getModuleName(filePath);
-  const targetModuleNoExt = targetModuleName.replace(/\.[^.]+$/, "");
-  const importers = [];
-  for (const [otherFile, importPaths] of importIndex) {
-    if (otherFile === filePath)
-      continue;
-    const importerDir = dirname3(otherFile);
-    for (const importPath of importPaths) {
-      let resolved = false;
-      if (tsconfigPaths && tsconfigPaths.paths) {
-        const aliasResolved = resolveAliasedImport(importPath, tsconfigPaths.paths, tsconfigPaths.baseUrl);
-        if (aliasResolved) {
-          const aliasNoExt = aliasResolved.replace(/\.[^.]+$/, "");
-          if (aliasNoExt === targetModuleNoExt) {
-            resolved = true;
-          }
-        }
-      }
-      if (!resolved) {
-        const importPathNoExt = importPath.replace(/\.(ts|tsx|js|jsx|py|go|rs|rb|java|mjs|cjs)$/, "");
-        if (importPath.startsWith(".") || importPath.startsWith("/")) {
-          const resolvedPath = join3(importerDir, importPathNoExt);
-          const normalizedResolved = resolvedPath.replace(/\\/g, "/");
-          if (normalizedResolved === targetModuleNoExt) {
-            resolved = true;
-          }
-        }
-        if (!resolved && importPath.startsWith(".") && !importPath.startsWith("./") && !importPath.startsWith("../")) {
-          const dots = importPath.match(/^(\.+)/);
-          if (dots) {
-            const dotCount = dots[1].length;
-            const modulePart = importPath.slice(dotCount);
-            let pythonDir = importerDir;
-            for (let i = 1; i < dotCount; i++) {
-              pythonDir = dirname3(pythonDir);
-            }
-            const pythonResolved = join3(pythonDir, modulePart).replace(/\\/g, "/");
-            const targetNoExtNoPy = targetModuleNoExt.replace(/\.py$/, "");
-            if (pythonResolved === targetNoExtNoPy || pythonResolved === targetModuleNoExt) {
-              resolved = true;
-            }
-          }
-        }
-      }
-      if (resolved) {
-        importers.push(otherFile);
-        break;
-      }
-    }
-  }
-  return {
-    importerCount: importers.length,
-    importers
-  };
-}
-async function analyzeCoupling(filePath, cwd2, tsconfigPaths) {
-  const index = await buildImportIndex(cwd2);
-  return lookupCoupling(filePath, index, tsconfigPaths);
-}
-
-// dist/shared/git-utils.js
-import { execFile as execFileCb } from "node:child_process";
-import { promisify } from "node:util";
-var execFilePromise = promisify(execFileCb);
-async function gitRun(args, cwd2, maxBuffer = 10 * 1024 * 1024) {
-  try {
-    const { stdout } = await execFilePromise("git", args, { cwd: cwd2, maxBuffer });
-    return { ok: true, stdout };
-  } catch (error2) {
-    const message = error2 instanceof Error ? error2.message : String(error2);
-    const reason = message.toLowerCase().includes("not a git repository") ? "not a git repository" : message;
-    return { ok: false, reason };
-  }
-}
-
-// dist/lenskit/src/analyzers/churn.js
-function normalizePath2(p) {
-  let result = p.replace(/\\/g, "/");
-  while (result.startsWith("./")) {
-    result = result.slice(2);
-  }
-  return result;
-}
-async function analyzeChurn(filePath, cwd2) {
-  let changes = 0;
-  let authors = 0;
-  const logResult = await gitRun(["log", "--oneline", "--since=6 months ago", "--", filePath], cwd2);
-  if (logResult.ok) {
-    changes = logResult.stdout.trim() === "" ? 0 : logResult.stdout.trim().split("\n").length;
-  }
-  const authorResult = await gitRun(["log", "--format=%an", "--since=6 months ago", "--", filePath], cwd2);
-  if (authorResult.ok) {
-    const authorLines = authorResult.stdout.trim() === "" ? [] : authorResult.stdout.trim().split("\n");
-    authors = new Set(authorLines).size;
-  }
-  return { changes, authors, period: "6 months" };
-}
-async function batchAnalyzeChurn(cwd2) {
-  const results = /* @__PURE__ */ new Map();
-  const changesByFile = /* @__PURE__ */ new Map();
-  const changesResult = await gitRun(["log", "--format=format:", "--name-only", "--since=6 months ago"], cwd2, 50 * 1024 * 1024);
-  if (changesResult.ok) {
-    for (const line of changesResult.stdout.split("\n")) {
-      const trimmed = normalizePath2(line.trim());
-      if (trimmed === "")
-        continue;
-      changesByFile.set(trimmed, (changesByFile.get(trimmed) ?? 0) + 1);
-    }
-  }
-  const authorsByFile = /* @__PURE__ */ new Map();
-  const authorsResult = await gitRun(["log", "--format=COMMIT_SEP %an", "--name-only", "--since=6 months ago"], cwd2, 50 * 1024 * 1024);
-  if (authorsResult.ok) {
-    let currentAuthor = "";
-    for (const line of authorsResult.stdout.split("\n")) {
-      const trimmed = line.trim();
-      if (trimmed === "")
-        continue;
-      if (trimmed.startsWith("COMMIT_SEP ")) {
-        currentAuthor = trimmed.slice("COMMIT_SEP ".length);
-        continue;
-      }
-      if (currentAuthor && trimmed !== "") {
-        const normalized = normalizePath2(trimmed);
-        if (!authorsByFile.has(normalized)) {
-          authorsByFile.set(normalized, /* @__PURE__ */ new Set());
-        }
-        authorsByFile.get(normalized).add(currentAuthor);
-      }
-    }
-  }
-  const allFiles = /* @__PURE__ */ new Set([...changesByFile.keys(), ...authorsByFile.keys()]);
-  for (const file of allFiles) {
-    results.set(file, {
-      changes: changesByFile.get(file) ?? 0,
-      authors: authorsByFile.get(file)?.size ?? 0,
-      period: "6 months"
-    });
-  }
-  const totalFiles = results.size;
-  if (totalFiles > 0) {
-    const zeroChurnCount = Array.from(results.values()).filter((r) => r.changes === 0).length;
-    if (zeroChurnCount / totalFiles > 0.8) {
-      results.__zeroChurnWarning = `Warning: ${Math.round(zeroChurnCount / totalFiles * 100)}% of files show zero churn. This may indicate git history is not being parsed correctly, or the project is very new.`;
-    }
-  }
-  return results;
-}
-
-// dist/lenskit/src/analyzers/test-coverage.js
-import { access } from "node:fs/promises";
-import { join as join4, dirname as dirname4, basename as basename3, extname as extname4 } from "node:path";
-async function fileExists(path2) {
-  try {
-    await access(path2);
-    return true;
-  } catch {
-    return false;
-  }
-}
-function generateTestCandidates(filePath) {
-  const ext = extname4(filePath);
-  const base = basename3(filePath, ext);
-  const dir = dirname4(filePath);
-  const candidates = [];
-  if (ext !== ".go") {
-    candidates.push(join4(dir, `${base}.test${ext}`));
-    candidates.push(join4(dir, `${base}.spec${ext}`));
-    candidates.push(join4(dir, "__tests__", `${base}${ext}`));
-    candidates.push(join4(dir, "__tests__", `${base}.test${ext}`));
-    candidates.push(join4(dir, "__tests__", `${base}.spec${ext}`));
-  }
-  const dirParts = dir.split("/");
-  let mirrorDir = dir;
-  if (dirParts[0] === "src" && dirParts.length > 1) {
-    mirrorDir = dirParts.slice(1).join("/");
-  }
-  if (ext !== ".go") {
-    for (const testRoot of ["tests", "test"]) {
-      const mirrorBase = mirrorDir === "." ? testRoot : join4(testRoot, mirrorDir);
-      candidates.push(join4(mirrorBase, `${base}.test${ext}`));
-      candidates.push(join4(mirrorBase, `${base}.spec${ext}`));
-      if (mirrorDir !== ".") {
-        candidates.push(join4(testRoot, `${base}.test${ext}`));
-        candidates.push(join4(testRoot, `${base}.spec${ext}`));
-      }
-    }
-  }
-  if (ext === ".go") {
-    candidates.push(join4(dir, `${base}_test.go`));
-  }
-  if (ext === ".py") {
-    candidates.push(join4(dir, `test_${base}.py`));
-    candidates.push(join4(dir, `${base}_test.py`));
-    for (const testRoot of ["tests", "test"]) {
-      const mirrorBase = mirrorDir === "." ? testRoot : join4(testRoot, mirrorDir);
-      candidates.push(join4(mirrorBase, `test_${base}.py`));
-      candidates.push(join4(mirrorBase, `${base}_test.py`));
-    }
-  }
-  return candidates;
-}
-async function analyzeTestCoverage(filePath, cwd2) {
-  const candidates = generateTestCandidates(filePath);
-  for (const candidate of candidates) {
-    const fullPath = join4(cwd2, candidate);
-    if (await fileExists(fullPath)) {
-      return { hasTests: true, testPath: candidate };
-    }
-  }
-  return { hasTests: false, testPath: null };
-}
-
-// dist/lenskit/src/analyzers/scoring.js
-function computeComplexityScore(metrics) {
-  const linePenalty = Math.min(metrics.lineCount / 500, 1) * 30;
-  const funcPenalty = Math.min(metrics.functionCount / 20, 1) * 25;
-  const nestPenalty = Math.min(metrics.maxNestingDepth / 6, 1) * 30;
-  const importPenalty = Math.min(metrics.importCount / 15, 1) * 15;
-  return linePenalty + funcPenalty + nestPenalty + importPenalty;
-}
-function computeChurnScore(churn) {
-  const changePenalty = Math.min(churn.changes / 30, 1) * 60;
-  const authorPenalty = Math.min(churn.authors / 5, 1) * 40;
-  return changePenalty + authorPenalty;
-}
-function computeCouplingScore(importerCount) {
-  return Math.min(importerCount / 10, 1) * 100;
-}
-function computeRiskScore(metrics, churn, importerCount) {
-  const complexityScore = computeComplexityScore(metrics);
-  const churnScore = computeChurnScore(churn);
-  const couplingScore = computeCouplingScore(importerCount);
-  const score = Math.round(churnScore * 0.4 + complexityScore * 0.4 + couplingScore * 0.2);
-  let risk;
-  if (score >= 75) {
-    risk = "Critical";
-  } else if (score >= 50) {
-    risk = "High";
-  } else if (score >= 25) {
-    risk = "Medium";
-  } else {
-    risk = "Low";
-  }
-  return {
-    score,
-    risk,
-    breakdown: {
-      complexityScore: Math.round(complexityScore),
-      churnScore: Math.round(churnScore),
-      couplingScore: Math.round(couplingScore)
-    }
-  };
-}
-
-// dist/lenskit/src/mcp/tools/analyze.js
-async function analyzeSingleFile(filePath, cwd2) {
-  const [metrics, coupling, churn, testCoverage] = await Promise.all([
-    analyzeFileMetrics(filePath, cwd2),
-    analyzeCoupling(filePath, cwd2),
-    analyzeChurn(filePath, cwd2),
-    analyzeTestCoverage(filePath, cwd2)
-  ]);
-  const riskScore = computeRiskScore(metrics, churn, coupling.importerCount);
-  return { path: filePath, metrics, coupling, churn, testCoverage, riskScore };
-}
-async function analyzeBatch(filePaths, cwd2) {
-  const [importIndex, churnIndex, tsconfigPaths] = await Promise.all([
-    buildImportIndex(cwd2, filePaths),
-    batchAnalyzeChurn(cwd2),
-    parseTsconfig(cwd2)
-  ]);
-  const results = await Promise.all(filePaths.map(async (filePath) => {
-    const [metrics, testCoverage] = await Promise.all([
-      analyzeFileMetrics(filePath, cwd2),
-      analyzeTestCoverage(filePath, cwd2)
-    ]);
-    const coupling = lookupCoupling(filePath, importIndex, tsconfigPaths);
-    const churn = churnIndex.get(normalizePath2(filePath)) ?? churnIndex.get(filePath) ?? { changes: 0, authors: 0, period: "6 months" };
-    const riskScore = computeRiskScore(metrics, churn, coupling.importerCount);
-    return { path: filePath, metrics, coupling, churn, testCoverage, riskScore };
-  }));
-  return results;
-}
-async function analyzeTool(args, cwd2) {
-  if (args.file) {
-    const file = await analyzeSingleFile(args.file, cwd2);
-    return {
-      files: [file],
-      summary: {
-        totalFiles: 1,
-        avgRiskScore: file.riskScore.score,
-        topRiskFiles: [{ path: file.path, score: file.riskScore.score, risk: file.riskScore.risk }]
-      }
-    };
-  }
-  const filePaths = await discoverSourceFiles(cwd2);
-  if (filePaths.length === 0) {
-    return {
-      files: [],
-      summary: { totalFiles: 0, avgRiskScore: 0, topRiskFiles: [] }
-    };
-  }
-  const files = await analyzeBatch(filePaths, cwd2);
-  const avgRiskScore = Math.round(files.reduce((sum, f) => sum + f.riskScore.score, 0) / files.length);
-  const topRiskFiles = files.map((f) => ({ path: f.path, score: f.riskScore.score, risk: f.riskScore.risk })).sort((a, b) => b.score - a.score).slice(0, 10);
-  return {
-    files,
-    summary: { totalFiles: files.length, avgRiskScore, topRiskFiles }
-  };
-}
-
 // dist/lenskit/src/analyzers/graph.js
-import { readFile as readFile4 } from "node:fs/promises";
-import { join as join5, dirname as dirname5 } from "node:path";
 var LAYER_PATTERNS = [
   // Entry points
   { pattern: /\broutes?\b/i, layer: "entry" },
@@ -24386,7 +24040,7 @@ function resolveImport(importPath, importerPath, fileSet, tsconfigPaths) {
         }
       }
       for (const ext of extensions2) {
-        const indexCandidate = join5(aliasResolved, "index" + ext);
+        const indexCandidate = join3(aliasResolved, "index" + ext);
         if (fileSet.has(indexCandidate)) {
           return indexCandidate;
         }
@@ -24396,8 +24050,8 @@ function resolveImport(importPath, importerPath, fileSet, tsconfigPaths) {
   if (!importPath.startsWith(".") && !importPath.startsWith("/")) {
     return null;
   }
-  const importerDir = dirname5(importerPath);
-  const resolved = join5(importerDir, importPath);
+  const importerDir = dirname3(importerPath);
+  const resolved = join3(importerDir, importPath);
   const extensions = ["", ".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".rb", ".java"];
   for (const ext of extensions) {
     const candidate = resolved + ext;
@@ -24408,7 +24062,7 @@ function resolveImport(importPath, importerPath, fileSet, tsconfigPaths) {
   const jsExtMatch = importPath.match(/\.(js|mjs|cjs)$/);
   if (jsExtMatch) {
     const pathWithoutJsExt = importPath.replace(/\.(js|mjs|cjs)$/, "");
-    const resolvedNoJs = join5(importerDir, pathWithoutJsExt);
+    const resolvedNoJs = join3(importerDir, pathWithoutJsExt);
     for (const ext of extensions) {
       const candidate = resolvedNoJs + ext;
       if (fileSet.has(candidate)) {
@@ -24417,7 +24071,7 @@ function resolveImport(importPath, importerPath, fileSet, tsconfigPaths) {
     }
   }
   for (const ext of extensions) {
-    const indexCandidate = join5(resolved, "index" + ext);
+    const indexCandidate = join3(resolved, "index" + ext);
     if (fileSet.has(indexCandidate)) {
       return indexCandidate;
     }
@@ -24473,10 +24127,10 @@ async function analyzeGraph(cwd2) {
     importerCount.set(file, 0);
   }
   for (const file of files) {
-    const fullPath = join5(cwd2, file);
+    const fullPath = join3(cwd2, file);
     let content;
     try {
-      content = await readFile4(fullPath, "utf-8");
+      content = await readFile3(fullPath, "utf-8");
     } catch {
       continue;
     }
@@ -24514,6 +24168,336 @@ async function analyzeGraph(cwd2) {
   };
 }
 
+// dist/lenskit/src/analyzers/coupling.js
+function getModuleName(filePath) {
+  const ext = extname3(filePath);
+  const base = basename2(filePath, ext);
+  if (base === "index") {
+    return dirname4(filePath);
+  }
+  return filePath.replace(ext, "");
+}
+function extractImportPaths(content) {
+  return extractImports(content).map((i) => i.path);
+}
+async function buildImportIndex(cwd2, files) {
+  const allFiles = files ?? await discoverSourceFiles(cwd2);
+  const index = /* @__PURE__ */ new Map();
+  await Promise.all(allFiles.map(async (filePath) => {
+    try {
+      const content = await readFile4(join4(cwd2, filePath), "utf-8");
+      index.set(filePath, extractImportPaths(content));
+    } catch {
+      index.set(filePath, []);
+    }
+  }));
+  return index;
+}
+function lookupCoupling(filePath, importIndex, tsconfigPaths) {
+  const targetModuleName = getModuleName(filePath);
+  const targetModuleNoExt = targetModuleName.replace(/\.[^.]+$/, "");
+  const importers = [];
+  for (const [otherFile, importPaths] of importIndex) {
+    if (otherFile === filePath)
+      continue;
+    const importerDir = dirname4(otherFile);
+    for (const importPath of importPaths) {
+      let resolved = false;
+      if (tsconfigPaths && tsconfigPaths.paths) {
+        const aliasResolved = resolveAliasedImport(importPath, tsconfigPaths.paths, tsconfigPaths.baseUrl);
+        if (aliasResolved) {
+          const aliasNoExt = aliasResolved.replace(/\.[^.]+$/, "");
+          if (aliasNoExt === targetModuleNoExt) {
+            resolved = true;
+          }
+        }
+      }
+      if (!resolved) {
+        const importPathNoExt = importPath.replace(/\.(ts|tsx|js|jsx|py|go|rs|rb|java|mjs|cjs)$/, "");
+        if (importPath.startsWith(".") || importPath.startsWith("/")) {
+          const resolvedPath = join4(importerDir, importPathNoExt);
+          const normalizedResolved = resolvedPath.replace(/\\/g, "/");
+          if (normalizedResolved === targetModuleNoExt) {
+            resolved = true;
+          }
+        }
+        if (!resolved && importPath.startsWith(".") && !importPath.startsWith("./") && !importPath.startsWith("../")) {
+          const dots = importPath.match(/^(\.+)/);
+          if (dots) {
+            const dotCount = dots[1].length;
+            const modulePart = importPath.slice(dotCount);
+            let pythonDir = importerDir;
+            for (let i = 1; i < dotCount; i++) {
+              pythonDir = dirname4(pythonDir);
+            }
+            const pythonResolved = join4(pythonDir, modulePart).replace(/\\/g, "/");
+            const targetNoExtNoPy = targetModuleNoExt.replace(/\.py$/, "");
+            if (pythonResolved === targetNoExtNoPy || pythonResolved === targetModuleNoExt) {
+              resolved = true;
+            }
+          }
+        }
+      }
+      if (resolved) {
+        importers.push(otherFile);
+        break;
+      }
+    }
+  }
+  return {
+    importerCount: importers.length,
+    importers
+  };
+}
+async function analyzeCoupling(filePath, cwd2, tsconfigPaths) {
+  const index = await buildImportIndex(cwd2);
+  return lookupCoupling(filePath, index, tsconfigPaths);
+}
+
+// dist/shared/git-utils.js
+import { execFile as execFileCb } from "node:child_process";
+import { promisify } from "node:util";
+var execFilePromise = promisify(execFileCb);
+async function gitRun(args, cwd2, maxBuffer = 10 * 1024 * 1024) {
+  try {
+    const { stdout } = await execFilePromise("git", args, { cwd: cwd2, maxBuffer });
+    return { ok: true, stdout };
+  } catch (error2) {
+    const message = error2 instanceof Error ? error2.message : String(error2);
+    const reason = message.toLowerCase().includes("not a git repository") ? "not a git repository" : message;
+    return { ok: false, reason };
+  }
+}
+
+// dist/lenskit/src/analyzers/churn.js
+function normalizePath2(p) {
+  let result = p.replace(/\\/g, "/");
+  while (result.startsWith("./")) {
+    result = result.slice(2);
+  }
+  return result;
+}
+async function analyzeChurn(filePath, cwd2) {
+  let changes = 0;
+  let authors = 0;
+  const logResult = await gitRun(["log", "--oneline", "--since=6 months ago", "--", filePath], cwd2);
+  if (logResult.ok) {
+    changes = logResult.stdout.trim() === "" ? 0 : logResult.stdout.trim().split("\n").length;
+  }
+  const authorResult = await gitRun(["log", "--format=%an", "--since=6 months ago", "--", filePath], cwd2);
+  if (authorResult.ok) {
+    const authorLines = authorResult.stdout.trim() === "" ? [] : authorResult.stdout.trim().split("\n");
+    authors = new Set(authorLines).size;
+  }
+  return { changes, authors, period: "6 months" };
+}
+async function batchAnalyzeChurn(cwd2) {
+  const results = /* @__PURE__ */ new Map();
+  const changesByFile = /* @__PURE__ */ new Map();
+  const changesResult = await gitRun(["log", "--format=format:", "--name-only", "--since=6 months ago"], cwd2, 50 * 1024 * 1024);
+  if (changesResult.ok) {
+    for (const line of changesResult.stdout.split("\n")) {
+      const trimmed = normalizePath2(line.trim());
+      if (trimmed === "")
+        continue;
+      changesByFile.set(trimmed, (changesByFile.get(trimmed) ?? 0) + 1);
+    }
+  }
+  const authorsByFile = /* @__PURE__ */ new Map();
+  const authorsResult = await gitRun(["log", "--format=COMMIT_SEP %an", "--name-only", "--since=6 months ago"], cwd2, 50 * 1024 * 1024);
+  if (authorsResult.ok) {
+    let currentAuthor = "";
+    for (const line of authorsResult.stdout.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed === "")
+        continue;
+      if (trimmed.startsWith("COMMIT_SEP ")) {
+        currentAuthor = trimmed.slice("COMMIT_SEP ".length);
+        continue;
+      }
+      if (currentAuthor && trimmed !== "") {
+        const normalized = normalizePath2(trimmed);
+        if (!authorsByFile.has(normalized)) {
+          authorsByFile.set(normalized, /* @__PURE__ */ new Set());
+        }
+        authorsByFile.get(normalized).add(currentAuthor);
+      }
+    }
+  }
+  const allFiles = /* @__PURE__ */ new Set([...changesByFile.keys(), ...authorsByFile.keys()]);
+  for (const file of allFiles) {
+    results.set(file, {
+      changes: changesByFile.get(file) ?? 0,
+      authors: authorsByFile.get(file)?.size ?? 0,
+      period: "6 months"
+    });
+  }
+  return results;
+}
+
+// dist/lenskit/src/analyzers/test-coverage.js
+import { access } from "node:fs/promises";
+import { join as join5, dirname as dirname5, basename as basename3, extname as extname4 } from "node:path";
+async function fileExists(path2) {
+  try {
+    await access(path2);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function generateTestCandidates(filePath) {
+  const ext = extname4(filePath);
+  const base = basename3(filePath, ext);
+  const dir = dirname5(filePath);
+  const candidates = [];
+  if (ext !== ".go") {
+    candidates.push(join5(dir, `${base}.test${ext}`));
+    candidates.push(join5(dir, `${base}.spec${ext}`));
+    candidates.push(join5(dir, "__tests__", `${base}${ext}`));
+    candidates.push(join5(dir, "__tests__", `${base}.test${ext}`));
+    candidates.push(join5(dir, "__tests__", `${base}.spec${ext}`));
+  }
+  const dirParts = dir.split("/");
+  let mirrorDir = dir;
+  if (dirParts[0] === "src" && dirParts.length > 1) {
+    mirrorDir = dirParts.slice(1).join("/");
+  }
+  if (ext !== ".go") {
+    for (const testRoot of ["tests", "test"]) {
+      const mirrorBase = mirrorDir === "." ? testRoot : join5(testRoot, mirrorDir);
+      candidates.push(join5(mirrorBase, `${base}.test${ext}`));
+      candidates.push(join5(mirrorBase, `${base}.spec${ext}`));
+      if (mirrorDir !== ".") {
+        candidates.push(join5(testRoot, `${base}.test${ext}`));
+        candidates.push(join5(testRoot, `${base}.spec${ext}`));
+      }
+    }
+  }
+  if (ext === ".go") {
+    candidates.push(join5(dir, `${base}_test.go`));
+  }
+  if (ext === ".py") {
+    candidates.push(join5(dir, `test_${base}.py`));
+    candidates.push(join5(dir, `${base}_test.py`));
+    for (const testRoot of ["tests", "test"]) {
+      const mirrorBase = mirrorDir === "." ? testRoot : join5(testRoot, mirrorDir);
+      candidates.push(join5(mirrorBase, `test_${base}.py`));
+      candidates.push(join5(mirrorBase, `${base}_test.py`));
+    }
+  }
+  return candidates;
+}
+async function analyzeTestCoverage(filePath, cwd2) {
+  const candidates = generateTestCandidates(filePath);
+  for (const candidate of candidates) {
+    const fullPath = join5(cwd2, candidate);
+    if (await fileExists(fullPath)) {
+      return { hasTests: true, testPath: candidate };
+    }
+  }
+  return { hasTests: false, testPath: null };
+}
+
+// dist/lenskit/src/analyzers/scoring.js
+function computeComplexityScore(metrics) {
+  const linePenalty = Math.min(metrics.lineCount / 500, 1) * 30;
+  const funcPenalty = Math.min(metrics.functionCount / 20, 1) * 25;
+  const nestPenalty = Math.min(metrics.maxNestingDepth / 6, 1) * 30;
+  const importPenalty = Math.min(metrics.importCount / 15, 1) * 15;
+  return linePenalty + funcPenalty + nestPenalty + importPenalty;
+}
+function computeChurnScore(churn) {
+  const changePenalty = Math.min(churn.changes / 30, 1) * 60;
+  const authorPenalty = Math.min(churn.authors / 5, 1) * 40;
+  return changePenalty + authorPenalty;
+}
+function computeCouplingScore(importerCount) {
+  return Math.min(importerCount / 10, 1) * 100;
+}
+function computeRiskScore(metrics, churn, importerCount) {
+  const complexityScore = computeComplexityScore(metrics);
+  const churnScore = computeChurnScore(churn);
+  const couplingScore = computeCouplingScore(importerCount);
+  const score = Math.round(churnScore * 0.4 + complexityScore * 0.4 + couplingScore * 0.2);
+  let risk;
+  if (score >= 75) {
+    risk = "Critical";
+  } else if (score >= 50) {
+    risk = "High";
+  } else if (score >= 25) {
+    risk = "Medium";
+  } else {
+    risk = "Low";
+  }
+  return {
+    score,
+    risk,
+    breakdown: {
+      complexityScore: Math.round(complexityScore),
+      churnScore: Math.round(churnScore),
+      couplingScore: Math.round(couplingScore)
+    }
+  };
+}
+
+// dist/lenskit/src/mcp/tools/analyze.js
+async function analyzeSingleFile(filePath, cwd2) {
+  const [metrics, coupling, churn, testCoverage] = await Promise.all([
+    analyzeFileMetrics(filePath, cwd2),
+    analyzeCoupling(filePath, cwd2),
+    analyzeChurn(filePath, cwd2),
+    analyzeTestCoverage(filePath, cwd2)
+  ]);
+  const riskScore = computeRiskScore(metrics, churn, coupling.importerCount);
+  return { path: filePath, metrics, coupling, churn, testCoverage, riskScore };
+}
+async function analyzeBatch(filePaths, cwd2) {
+  const [importIndex, churnIndex, tsconfigPaths] = await Promise.all([
+    buildImportIndex(cwd2, filePaths),
+    batchAnalyzeChurn(cwd2),
+    parseTsconfig(cwd2)
+  ]);
+  const results = await Promise.all(filePaths.map(async (filePath) => {
+    const [metrics, testCoverage] = await Promise.all([
+      analyzeFileMetrics(filePath, cwd2),
+      analyzeTestCoverage(filePath, cwd2)
+    ]);
+    const coupling = lookupCoupling(filePath, importIndex, tsconfigPaths);
+    const churn = churnIndex.get(normalizePath2(filePath)) ?? churnIndex.get(filePath) ?? { changes: 0, authors: 0, period: "6 months" };
+    const riskScore = computeRiskScore(metrics, churn, coupling.importerCount);
+    return { path: filePath, metrics, coupling, churn, testCoverage, riskScore };
+  }));
+  return results;
+}
+async function analyzeTool(args, cwd2) {
+  if (args.file) {
+    const file = await analyzeSingleFile(args.file, cwd2);
+    return {
+      files: [file],
+      summary: {
+        totalFiles: 1,
+        avgRiskScore: file.riskScore.score,
+        topRiskFiles: [{ path: file.path, score: file.riskScore.score, risk: file.riskScore.risk }]
+      }
+    };
+  }
+  const filePaths = await discoverSourceFiles(cwd2);
+  if (filePaths.length === 0) {
+    return {
+      files: [],
+      summary: { totalFiles: 0, avgRiskScore: 0, topRiskFiles: [] }
+    };
+  }
+  const files = await analyzeBatch(filePaths, cwd2);
+  const avgRiskScore = Math.round(files.reduce((sum, f) => sum + f.riskScore.score, 0) / files.length);
+  const topRiskFiles = files.map((f) => ({ path: f.path, score: f.riskScore.score, risk: f.riskScore.risk })).sort((a, b) => b.score - a.score).slice(0, 10);
+  return {
+    files,
+    summary: { totalFiles: files.length, avgRiskScore, topRiskFiles }
+  };
+}
+
 // dist/lenskit/src/mcp/tools/graph.js
 async function graphTool(cwd2) {
   return analyzeGraph(cwd2);
@@ -24521,7 +24505,7 @@ async function graphTool(cwd2) {
 
 // dist/lenskit/src/mcp/tools/status.js
 import { extname as extname5 } from "node:path";
-async function statusTool(cwd2) {
+async function statusTool(cwd2, detailed) {
   const allFiles = await glob(["**/*"], {
     cwd: cwd2,
     ignore: IGNORE_PATTERNS,
@@ -24544,18 +24528,37 @@ async function statusTool(cwd2) {
   const fileCount = sourceFiles.length;
   const testFileCount = testFiles.length;
   const testCoverageRatio = fileCount > 0 ? Math.round(testFileCount / fileCount * 100) / 100 : 0;
-  const testCoverageDisclaimer = "Test coverage is estimated by file naming conventions only (e.g., *.test.ts, test_*.py, *_test.go). It does not verify that tests actually exercise the source file. Actual coverage may be lower.";
-  const parts = [];
-  parts.push(`${fileCount} source files`);
-  parts.push(`${testFileCount} test files`);
-  parts.push(`Test coverage: ~${Math.round(testCoverageRatio * 100)}%`);
-  parts.push("Use lenskit_analyze for risk scores and lenskit_graph for dependency analysis");
-  return {
+  const testCoverageDisclaimer = "Test coverage is estimated by file naming conventions only (e.g., *.test.ts, test_*.py, *_test.go). It does not verify that tests actually exercise the source file. Use testkit_map for verified source mapping.";
+  const summaryParts = [];
+  summaryParts.push(`${fileCount} source files`);
+  summaryParts.push(`${testFileCount} test files`);
+  summaryParts.push(`Test coverage: ~${Math.round(testCoverageRatio * 100)}%`);
+  const baseResult = {
     fileCount,
     testFileCount,
     testCoverageRatio,
     testCoverageDisclaimer,
-    quickSummary: parts.join(" | ")
+    quickSummary: ""
+  };
+  if (!detailed) {
+    summaryParts.push("Use lenskit_status with detailed=true, or lenskit_analyze/lenskit_graph for full metrics");
+    baseResult.quickSummary = summaryParts.join(" | ");
+    return baseResult;
+  }
+  const [analyzeResult, graphResult] = await Promise.all([
+    analyzeTool({}, cwd2),
+    graphTool(cwd2)
+  ]);
+  summaryParts.push(`Avg risk: ${analyzeResult.summary.avgRiskScore}`);
+  summaryParts.push(`${graphResult.circularDeps.length} circular deps`);
+  summaryParts.push(`${graphResult.hubs.length} hubs`);
+  baseResult.quickSummary = summaryParts.join(" | ");
+  return {
+    ...baseResult,
+    avgRiskScore: analyzeResult.summary.avgRiskScore,
+    topRiskFiles: analyzeResult.summary.topRiskFiles,
+    circularDepCount: graphResult.circularDeps.length,
+    hubCount: graphResult.hubs.length
   };
 }
 
@@ -24605,9 +24608,11 @@ server.tool("lenskit_graph", "Build a dependency graph for the project. Detects 
     };
   }
 });
-server.tool("lenskit_status", "Lightweight project health probe: file count, test file count, and estimated test coverage ratio. Fast (sub-second). Use lenskit_analyze for risk scores and lenskit_graph for dependency analysis.", {}, async () => {
+server.tool("lenskit_status", "Project health probe. Default: file count, test file count, estimated test coverage (fast, sub-second). With detailed=true: also returns avgRiskScore, topRiskFiles, circularDepCount, hubCount (slower \u2014 runs full analysis + graph).", {
+  detailed: external_exports.boolean().optional().describe("When true, enriches the response with risk scores, top risk files, circular dependency count, and hub count. Slower than the default lightweight probe.")
+}, async (args) => {
   try {
-    const result = await statusTool(cwd);
+    const result = await statusTool(cwd, args.detailed);
     return {
       content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
     };

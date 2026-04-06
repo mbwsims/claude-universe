@@ -68,6 +68,7 @@ function classifyMessage(message: string): keyof CommitClassification {
   }
 
   if (
+    /\bfix(ed|es|ing)?\b(?!:|\()/.test(lower) ||
     /\b(bug|resolve|patch|correct|repair)\b/.test(lower) ||
     /\b(closes|fixes)\s+#\d+/.test(lower)
   ) {
@@ -145,20 +146,6 @@ function computeMonthsDiff(sinceDate: string, untilDate: string): number {
   }
 
   return Math.max(months, 1);
-}
-
-async function getCommitMessages(
-  since: string,
-  cwd: string,
-  file?: string,
-): Promise<string[]> {
-  const args = ['log', '--format=%s', `--since=${since}`];
-  if (file) {
-    args.push('--', file);
-  }
-  const result = await gitRun(args, cwd);
-  if (!result.ok) return [];
-  return result.stdout.trim().split('\n').filter(Boolean);
 }
 
 async function getCommitCount(

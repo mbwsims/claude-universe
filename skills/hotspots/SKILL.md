@@ -37,15 +37,16 @@ If unavailable, perform full manual analysis as described below.
 
 ### 0.5. Quick Health Probe
 
-If `lenskit_status` is available, call it FIRST before the detailed analysis. It returns
-in seconds and gives you:
+If `lenskit_status` is available, call it with `detailed: true` FIRST before the detailed
+analysis. With `detailed: true` it returns:
 - Total file count and average risk score (calibration: is this a large/complex project?)
-- Top 5 hotspots (you may already have your answer)
+- Top risk files with scores (you may already have your answer)
 - Circular dependency count (structural issue to note)
+- Hub count (coupling signal)
 - Test coverage ratio (context for risk assessment)
 
-If the status result already provides a clear answer (e.g., obvious top hotspots with
-high risk scores), you may skip the manual git analysis and jump to presenting findings.
+If the status result already provides a clear answer (e.g., obvious top risk files with
+high scores), you may skip the manual git analysis and jump to presenting findings.
 
 ### 1. Measure Churn
 

@@ -62,10 +62,9 @@ export async function analyzeChurn(filePath: string, cwd: string): Promise<Churn
 /**
  * Batch churn analysis. Runs 2 git commands total (not 2N), then indexes results.
  * Returns a map: filePath -> ChurnResult.
- * Attaches __zeroChurnWarning to the map if >80% of files show zero churn.
  */
 export async function batchAnalyzeChurn(cwd: string): Promise<Map<string, ChurnResult>> {
-  const results = new Map<string, ChurnResult>() as Map<string, ChurnResult> & { __zeroChurnWarning?: string };
+  const results = new Map<string, ChurnResult>();
 
   // One git log for all file change counts
   const changesByFile = new Map<string, number>();
@@ -116,17 +115,6 @@ export async function batchAnalyzeChurn(cwd: string): Promise<Map<string, ChurnR
       authors: authorsByFile.get(file)?.size ?? 0,
       period: '6 months',
     });
-  }
-
-  // Sanity check: warn if >80% files show zero churn
-  const totalFiles = results.size;
-  if (totalFiles > 0) {
-    const zeroChurnCount = Array.from(results.values()).filter(r => r.changes === 0).length;
-    if (zeroChurnCount / totalFiles > 0.8) {
-      (results as any).__zeroChurnWarning =
-        `Warning: ${Math.round((zeroChurnCount / totalFiles) * 100)}% of files show zero churn. ` +
-        `This may indicate git history is not being parsed correctly, or the project is very new.`;
-    }
   }
 
   return results;
