@@ -38,6 +38,13 @@ export interface GraphResult {
 
 export type LayerName = 'entry' | 'logic' | 'data' | 'utilities' | 'presentation' | 'unknown';
 
+export type LayerConfidence = 'high' | 'medium' | 'low';
+
+export interface LayerClassification {
+  layer: LayerName;
+  confidence: LayerConfidence;
+}
+
 export type ImportKind = 'value' | 'type' | 'side-effect';
 
 export interface ImportInfo {
@@ -112,18 +119,44 @@ function inferLayerFromPatterns(hints?: { exports: string[]; imports: string[] }
 
 /**
  * Classify a file's architectural layer based on its path.
- * Optionally accepts export/import hints for unknown-path inference.
+ *
+ * Uses specificity-based tiebreaking: when multiple layer patterns match,
+ * the pattern matching the DEEPEST path segment wins (closest to the file).
+ * Returns confidence: 'high' (single match), 'low' (ambiguous/tiebroken),
+ * 'medium' (inferred from export/import hints).
  */
 export function classifyLayer(
   filePath: string,
   hints?: { exports: string[]; imports: string[] },
-): LayerName {
+): LayerClassification {
+  const segments = filePath.split('/');
+  const matches: Array<{ layer: LayerName; depth: number }> = [];
+
   for (const { pattern, layer } of LAYER_PATTERNS) {
-    if (pattern.test(filePath)) {
-      return layer;
+    // Find the deepest (rightmost) matching segment for this pattern
+    for (let i = segments.length - 1; i >= 0; i--) {
+      if (pattern.test(segments[i])) {
+        matches.push({ layer, depth: i });
+        break;
+      }
     }
   }
-  return inferLayerFromPatterns(hints);
+
+  if (matches.length === 0) {
+    const inferred = inferLayerFromPatterns(hints);
+    return {
+      layer: inferred,
+      confidence: inferred === 'unknown' ? 'low' : 'medium',
+    };
+  }
+
+  if (matches.length === 1) {
+    return { layer: matches[0].layer, confidence: 'high' };
+  }
+
+  // Multiple matches — deepest segment wins (closest to the file)
+  matches.sort((a, b) => b.depth - a.depth);
+  return { layer: matches[0].layer, confidence: 'low' };
 }
 
 /**
@@ -443,10 +476,15 @@ export async function analyzeGraph(cwd: string): Promise<GraphResult> {
   // Detect layer violations using expanded 5-type detection
   const layerViolations: LayerViolation[] = [];
   for (const edge of edges) {
-    const fromLayer = classifyLayer(edge.from);
-    const toLayer = classifyLayer(edge.to);
+    const fromClassification = classifyLayer(edge.from);
+    const toClassification = classifyLayer(edge.to);
 
-    const violation = detectLayerViolation(fromLayer, toLayer, edge.from, edge.to);
+    const violation = detectLayerViolation(
+      fromClassification.layer,
+      toClassification.layer,
+      edge.from,
+      edge.to,
+    );
     if (violation) {
       layerViolations.push(violation);
     }

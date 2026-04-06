@@ -11,6 +11,7 @@ import {
   classifyLayer,
   detectLayerViolation,
   type LayerName,
+  type LayerClassification,
 } from './graph.js';
 
 describe('extractImports', () => {
@@ -127,55 +128,87 @@ describe('resolveImport', () => {
 
 describe('classifyLayer', () => {
   it('classifies route files as entry', () => {
-    expect(classifyLayer('src/routes/user-routes.ts')).toBe('entry');
+    expect(classifyLayer('src/routes/user-routes.ts').layer).toBe('entry');
   });
 
   it('classifies controller files as entry', () => {
-    expect(classifyLayer('src/controllers/auth-controller.ts')).toBe('entry');
+    expect(classifyLayer('src/controllers/auth-controller.ts').layer).toBe('entry');
   });
 
   it('classifies service files as logic', () => {
-    expect(classifyLayer('src/services/user-service.ts')).toBe('logic');
+    expect(classifyLayer('src/services/user-service.ts').layer).toBe('logic');
   });
 
   it('classifies model/db files as data', () => {
-    expect(classifyLayer('src/db/connection.ts')).toBe('data');
-    expect(classifyLayer('src/models/user.ts')).toBe('data');
+    expect(classifyLayer('src/db/connection.ts').layer).toBe('data');
+    expect(classifyLayer('src/models/user.ts').layer).toBe('data');
   });
 
   it('classifies utility files as utilities', () => {
-    expect(classifyLayer('src/utils/helpers.ts')).toBe('utilities');
-    expect(classifyLayer('src/lib/format.ts')).toBe('utilities');
+    expect(classifyLayer('src/utils/helpers.ts').layer).toBe('utilities');
+    expect(classifyLayer('src/lib/format.ts').layer).toBe('utilities');
   });
 
   it('classifies component files as presentation', () => {
-    expect(classifyLayer('src/components/Button.tsx')).toBe('presentation');
+    expect(classifyLayer('src/components/Button.tsx').layer).toBe('presentation');
   });
 
   it('returns unknown for unclassifiable files', () => {
-    expect(classifyLayer('src/index.ts')).toBe('unknown');
+    expect(classifyLayer('src/index.ts').layer).toBe('unknown');
   });
 
   it('classifies Python Django views as entry', () => {
-    expect(classifyLayer('app/views.py')).toBe('entry');
+    expect(classifyLayer('app/views.py').layer).toBe('entry');
   });
 
   it('classifies Python Django models as data', () => {
-    expect(classifyLayer('app/models.py')).toBe('data');
+    expect(classifyLayer('app/models.py').layer).toBe('data');
   });
 
   it('classifies Python serializers as data', () => {
-    expect(classifyLayer('app/serializers.py')).toBe('data');
+    expect(classifyLayer('app/serializers.py').layer).toBe('data');
   });
 
   it('infers layer from export/import patterns when path is unknown', () => {
     // This tests the unknown-layer inference heuristic
-    const layer = classifyLayer('src/foo/bar.ts', {
+    const result = classifyLayer('src/foo/bar.ts', {
       exports: ['createUser', 'deleteUser', 'updateUser'],
       imports: ['./db/connection', './models/user'],
     });
     // Functions that call data layer = likely logic layer
-    expect(layer).toBe('logic');
+    expect(result.layer).toBe('logic');
+  });
+
+  it('returns high confidence for unambiguous single-match paths', () => {
+    const result = classifyLayer('src/services/user-service.ts');
+    expect(result.layer).toBe('logic');
+    expect(result.confidence).toBe('high');
+  });
+
+  it('returns low confidence for multi-match paths', () => {
+    const result = classifyLayer('src/services/models/schema.ts');
+    expect(result.confidence).toBe('low');
+  });
+
+  it('resolves multi-match using deepest segment', () => {
+    // "models" at depth 2 is deeper than "services" at depth 1
+    const result = classifyLayer('src/services/models/schema.ts');
+    expect(result.layer).toBe('data');
+  });
+
+  it('returns medium confidence for hint-inferred classification', () => {
+    const result = classifyLayer('src/foo/bar.ts', {
+      exports: ['createUser', 'deleteUser', 'updateUser'],
+      imports: ['./db/connection', './models/user'],
+    });
+    expect(result.layer).toBe('logic');
+    expect(result.confidence).toBe('medium');
+  });
+
+  it('returns low confidence with unknown when no matches and no hints', () => {
+    const result = classifyLayer('src/index.ts');
+    expect(result.layer).toBe('unknown');
+    expect(result.confidence).toBe('low');
   });
 });
 
