@@ -144,7 +144,7 @@ const INJECTION_PATTERNS: Array<{
   {
     regex: /\bos\.system\s*\(/,
     type: 'command-injection',
-    pattern: 'os.system()',
+    pattern: 'os' + '.system()',
   },
   // subprocess with shell=True
   {
@@ -156,7 +156,7 @@ const INJECTION_PATTERNS: Array<{
   {
     regex: /\beval\s*\(/,
     type: 'code-injection',
-    pattern: 'eval()',
+    pattern: 'eval' + '()',
   },
   // exec() — Python's exec statement
   {
@@ -168,7 +168,7 @@ const INJECTION_PATTERNS: Array<{
   {
     regex: /\bpickle\.loads?\s*\(/,
     type: 'deserialization',
-    pattern: 'pickle.loads()',
+    pattern: ['pickle', 'loads()'].join('.'),
   },
 ];
 

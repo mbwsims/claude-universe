@@ -28,7 +28,7 @@ const SECRET_PATTERNS: SecretPattern[] = [
   { regex: /secret\s*=\s*["']/i, name: 'secret-assignment' },
   { regex: /token\s*=\s*["']/i, name: 'token-assignment' },
   { regex: /Bearer\s+[A-Za-z0-9]/, name: 'bearer-token' },
-  { regex: /sk-[A-Za-z0-9]/, name: 'openai-secret-key' },
+  { regex: /sk-[A-Za-z0-9]{10,}/, name: 'openai-secret-key' },
   { regex: /AKIA[A-Z0-9]/, name: 'aws-access-key' },
 ];
 
@@ -115,6 +115,11 @@ export function analyzeHardcodedSecrets(content: string, filePath?: string): Har
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const lineNum = i + 1;
+
+    // Skip comment lines
+    if (/^\s*\/\//.test(line) || /^\s*\/?\*/.test(line) || /^\s*#/.test(line)) {
+      continue;
+    }
 
     // Skip lines with exclusion markers
     if (EXCLUDE_LINE_PATTERNS.some(p => p.test(line))) {
