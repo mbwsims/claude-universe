@@ -5,7 +5,7 @@ description: >-
   "are my rules being followed", "is Claude following my instructions", "how effective is my
   CLAUDE.md", "rule compliance", "instruction effectiveness", "how are my rules performing",
   "which rules are being violated", "audit my rules", "check my CLAUDE.md",
-  mentions "/check-rules", mentions "/check",
+  mentions "/check-rules",
   or wants to know whether their coding agent instruction rules are actually being followed
   across Claude Code sessions.
 allowed-tools:

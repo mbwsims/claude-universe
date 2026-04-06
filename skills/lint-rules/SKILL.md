@@ -3,8 +3,7 @@ name: lint-rules
 description: >-
   This skill should be used when the user asks to "lint instructions", "lint my CLAUDE.md",
   "check instruction quality", "review my rules", "analyze my CLAUDE.md", "find issues in my
-  instructions", "improve my rules", "instruction quality", mentions "/lint-rules",
-  mentions "/lint", or wants to
+  instructions", "improve my rules", "instruction quality", mentions "/lint-rules", or wants to
   check the quality of their coding agent instruction files (CLAUDE.md, .cursorrules, AGENTS.md,
   .claude/rules/, .claude/agents/, .claude/skills/).
 allowed-tools:
