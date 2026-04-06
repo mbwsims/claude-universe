@@ -86,13 +86,20 @@ For the top 3-5 most important modules, explain each one:
 - Note "things to know before changing"
 - Identify test coverage status
 
-**Selecting modules by user relevance:**
+**Selecting modules — decision criteria:**
 - If the user mentioned a specific area ("I'll be working on payments"), prioritize
   modules related to that area
-- If no specific area, select by centrality: choose the modules that appear most
-  frequently as dependencies in the graph (hub files), plus the highest-risk hotspot
-- Always include at least one data access module and one business logic module --
-  these are the most important for understanding how the system works
+- If no specific area, select using these concrete criteria in priority order:
+  1. **Hub files** — files with the most importers (from `lenskit_graph` hubs list, or
+     by grepping for the most-imported paths). These are highest-impact for understanding.
+  2. **Highest-risk hotspot** — the file with the top risk score from Phase 2. This is
+     where problems concentrate.
+  3. **One data access module** — a db/, models/, or repository/ file that shows how
+     state is managed
+  4. **One business logic module** — a services/ or domain/ file that shows how decisions
+     are made
+- A file that appears in multiple criteria (hub AND hotspot) gets priority over one that
+  appears in only one
 - Deprioritize utility/helper modules unless they are a hotspot
 
 ### Phase 4: Report
