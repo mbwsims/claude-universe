@@ -24271,12 +24271,28 @@ function inferLayerFromPatterns(hints) {
   return "unknown";
 }
 function classifyLayer(filePath, hints) {
+  const segments = filePath.split("/");
+  const matches = [];
   for (const { pattern, layer } of LAYER_PATTERNS) {
-    if (pattern.test(filePath)) {
-      return layer;
+    for (let i = segments.length - 1; i >= 0; i--) {
+      if (pattern.test(segments[i])) {
+        matches.push({ layer, depth: i });
+        break;
+      }
     }
   }
-  return inferLayerFromPatterns(hints);
+  if (matches.length === 0) {
+    const inferred = inferLayerFromPatterns(hints);
+    return {
+      layer: inferred,
+      confidence: inferred === "unknown" ? "low" : "medium"
+    };
+  }
+  if (matches.length === 1) {
+    return { layer: matches[0].layer, confidence: "high" };
+  }
+  matches.sort((a, b) => b.depth - a.depth);
+  return { layer: matches[0].layer, confidence: "low" };
 }
 function detectLayerViolation(fromLayer, toLayer, fromFile, toFile) {
   if (fromLayer === "unknown" || toLayer === "unknown")
@@ -24481,9 +24497,9 @@ async function analyzeGraph(cwd2) {
   const leaves = Array.from(importerCount.entries()).filter(([, count]) => count === 0).map(([file]) => file);
   const layerViolations = [];
   for (const edge of edges) {
-    const fromLayer = classifyLayer(edge.from);
-    const toLayer = classifyLayer(edge.to);
-    const violation = detectLayerViolation(fromLayer, toLayer, edge.from, edge.to);
+    const fromClassification = classifyLayer(edge.from);
+    const toClassification = classifyLayer(edge.to);
+    const violation = detectLayerViolation(fromClassification.layer, toClassification.layer, edge.from, edge.to);
     if (violation) {
       layerViolations.push(violation);
     }

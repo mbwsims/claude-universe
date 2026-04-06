@@ -24093,7 +24093,7 @@ server.tool("timewarp_history", "Git history analysis for a file or the whole pr
     };
   }
 });
-server.tool("timewarp_trends", "Trend computation for growth rates and acceleration. Samples files at multiple time points to compute line/function growth, detect acceleration patterns (accelerating/linear/decelerating/flat), and project future size.", {
+server.tool("timewarp_trends", "Trend computation for growth rates and acceleration. Samples files at multiple time points to compute line/function growth, detect acceleration patterns (accelerating/linear/decelerating/flat), and project future size. Returns per-file trend data: growth.{linesPerMonth, percentPerMonth, pattern}, churn.{firstHalf, secondHalf, pattern}, projection.{linesIn3Months, linesIn6Months, crossesThreshold}, samples[].{date, lines, functions}.", {
   file: external_exports.string().optional().describe("Path to a specific file to analyze. If omitted, analyzes the top 20 most-changed files."),
   months: external_exports.number().optional().describe("Analysis period in months. Defaults to 6.")
 }, async (args) => {

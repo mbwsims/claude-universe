@@ -23993,7 +23993,14 @@ var AUTH_PATTERNS = [
   /@login_required\b/,
   /@permission_required\b/,
   /@requires_auth\b/,
-  /@jwt_required\b/
+  /@jwt_required\b/,
+  // Middleware-level auth (app.use / router.use with auth)
+  /\b(?:app|router)\.use\s*\(\s*(?:auth|requireAuth|authenticate|withAuth|isAuthenticated|checkAuth|authMiddleware|verifyAuth|ensureAuth|authHandler)\b/,
+  /\b(?:app|router)\.use\s*\(\s*\w*[Aa]uth\w*\s*[\),]/,
+  /\bpassport\.initialize\b/,
+  // Django middleware auth
+  /AuthenticationMiddleware/,
+  /LoginRequiredMiddleware/
 ];
 var ROUTE_FILE_PATTERNS = [
   /route\.(ts|js|tsx|jsx)$/,
@@ -24386,9 +24393,15 @@ function computeRiskLevel(findings) {
   const hasCritical = activeSeverities.some((f) => f.severity === "critical");
   const hasHigh = activeSeverities.some((f) => f.severity === "high");
   const hasMedium = activeSeverities.some((f) => f.severity === "medium");
+  const totalHigh = activeSeverities.filter((f) => f.severity === "high").reduce((sum, f) => sum + f.count, 0);
+  const totalMedium = activeSeverities.filter((f) => f.severity === "medium").reduce((sum, f) => sum + f.count, 0);
   if (hasCritical)
     return "critical";
+  if (hasHigh && totalHigh > 10)
+    return "critical";
   if (hasHigh)
+    return "high";
+  if (hasMedium && totalMedium > 15)
     return "high";
   if (hasMedium)
     return "medium";
