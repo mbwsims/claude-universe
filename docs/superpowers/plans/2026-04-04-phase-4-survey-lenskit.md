@@ -170,7 +170,7 @@ describe('buildImportIndex', () => {
 
 - [ ] **Step 2: Run test to confirm failure**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/coupling.test.ts 2>&1 | tail -20`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/coupling.test.ts 2>&1 | tail -20`
 
 Expected: Multiple FAIL lines -- basename disambiguation tests fail because of the `endsWith('/' + basename(pattern))` bug, tsconfig tests fail because the parameter does not exist, Python tests fail.
 
@@ -311,13 +311,13 @@ export async function analyzeCoupling(
 
 - [ ] **Step 5: Run tests to confirm all pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/coupling.test.ts 2>&1 | tail -20`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/coupling.test.ts 2>&1 | tail -20`
 
 Expected: All 12 tests PASS
 
 - [ ] **Step 6: Typecheck**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
+Run: `cd mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
 
 Expected: No errors
 
@@ -578,7 +578,7 @@ describe('detectLayerViolation', () => {
 
 - [ ] **Step 2: Run test to confirm failure**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/graph.test.ts 2>&1 | tail -20`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/graph.test.ts 2>&1 | tail -20`
 
 Expected: FAIL -- functions are not exported, side-effect/type import kinds don't exist, classifyLayer doesn't accept hints, detectLayerViolation doesn't exist.
 
@@ -989,19 +989,19 @@ export async function analyzeGraph(cwd: string): Promise<GraphResult> {
 
 - [ ] **Step 9: Run tests to confirm all pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/graph.test.ts 2>&1 | tail -25`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/graph.test.ts 2>&1 | tail -25`
 
 Expected: All 15 tests PASS
 
 - [ ] **Step 10: Run coupling tests to ensure nothing broke**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/ 2>&1 | tail -20`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/ 2>&1 | tail -20`
 
 Expected: All tests in both coupling.test.ts and graph.test.ts PASS
 
 - [ ] **Step 11: Typecheck**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
+Run: `cd mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
 
 Expected: No errors
 
@@ -1243,7 +1243,7 @@ describe('computeMaxNestingDepth', () => {
 
 - [ ] **Step 2: Run test to confirm failure**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/file-metrics.test.ts 2>&1 | tail -20`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/file-metrics.test.ts 2>&1 | tail -20`
 
 Expected: FAIL -- countFunctions and computeMaxNestingDepth are not exported, don't accept language parameter.
 
@@ -1499,19 +1499,19 @@ import { join, extname } from 'node:path';
 
 - [ ] **Step 8: Run tests to confirm all pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/file-metrics.test.ts 2>&1 | tail -25`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/file-metrics.test.ts 2>&1 | tail -25`
 
 Expected: All 10 tests PASS
 
 - [ ] **Step 9: Run all analyzer tests to ensure nothing broke**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/ 2>&1 | tail -20`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/ 2>&1 | tail -20`
 
 Expected: All tests PASS across coupling, graph, and file-metrics
 
 - [ ] **Step 10: Typecheck**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
+Run: `cd mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
 
 Expected: No errors
 
@@ -1590,7 +1590,7 @@ describe('batchAnalyzeChurn', () => {
 
 - [ ] **Step 2: Run test to confirm failure**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/churn.test.ts 2>&1 | tail -20`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/churn.test.ts 2>&1 | tail -20`
 
 Expected: FAIL -- normalizePath is not exported, no __zeroChurnWarning property.
 
@@ -1695,13 +1695,13 @@ export async function batchAnalyzeChurn(cwd: string): Promise<Map<string, ChurnR
 
 - [ ] **Step 4: Run tests to confirm all pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/churn.test.ts 2>&1 | tail -20`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/churn.test.ts 2>&1 | tail -20`
 
 Expected: All 6 tests PASS (or 5 path tests pass + churn test is conditional)
 
 - [ ] **Step 5: Typecheck**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
+Run: `cd mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
 
 Expected: No errors
 
@@ -1784,7 +1784,7 @@ describe('generateTestCandidates', () => {
 
 - [ ] **Step 2: Run test to confirm failure**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/test-coverage.test.ts 2>&1 | tail -20`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/test-coverage.test.ts 2>&1 | tail -20`
 
 Expected: FAIL -- generateTestCandidates is not exported, doesn't exist.
 
@@ -1897,13 +1897,13 @@ export async function analyzeTestCoverage(filePath: string, cwd: string): Promis
 
 - [ ] **Step 4: Run tests to confirm all pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/test-coverage.test.ts 2>&1 | tail -20`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/test-coverage.test.ts 2>&1 | tail -20`
 
 Expected: All 8 tests PASS
 
 - [ ] **Step 5: Typecheck**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
+Run: `cd mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
 
 Expected: No errors
 
@@ -1978,7 +1978,7 @@ describe('discoverSourceFiles', () => {
 
 - [ ] **Step 2: Run test to confirm failure**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/discovery.test.ts 2>&1 | tail -20`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/discovery.test.ts 2>&1 | tail -20`
 
 Expected: FAIL on Python test file exclusion (test_*.py not filtered) and .d.ts may pass or fail depending on fixture state.
 
@@ -2046,19 +2046,19 @@ export async function discoverSourceFiles(cwd: string): Promise<string[]> {
 
 - [ ] **Step 4: Run tests to confirm all pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/discovery.test.ts 2>&1 | tail -20`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/discovery.test.ts 2>&1 | tail -20`
 
 Expected: All 7 tests PASS
 
 - [ ] **Step 5: Run all analyzer tests to ensure nothing broke**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/ 2>&1 | tail -25`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/ 2>&1 | tail -25`
 
 Expected: All tests PASS
 
 - [ ] **Step 6: Typecheck**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
+Run: `cd mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
 
 Expected: No errors
 
@@ -2100,7 +2100,7 @@ Replace with:
 
 - [ ] **Step 2: Typecheck**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
+Run: `cd mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
 
 Expected: No errors
 
@@ -2171,7 +2171,7 @@ With:
 
 - [ ] **Step 2: Typecheck**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
+Run: `cd mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
 
 Expected: No errors
 
@@ -2830,19 +2830,19 @@ describe('integration: fixture project analysis', () => {
 
 - [ ] **Step 2: Run integration tests**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run src/analyzers/integration.test.ts 2>&1 | tail -30`
+Run: `cd mcp/lenskit && npx vitest run src/analyzers/integration.test.ts 2>&1 | tail -30`
 
 Expected: All 9 integration tests PASS (requires Phase 0 fixtures to exist)
 
 - [ ] **Step 3: Run ALL lenskit tests**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run 2>&1 | tail -30`
+Run: `cd mcp/lenskit && npx vitest run 2>&1 | tail -30`
 
 Expected: All ~51 tests across all test files PASS
 
 - [ ] **Step 4: Full typecheck**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
+Run: `cd mcp/lenskit && npx tsc --noEmit 2>&1 | tail -10`
 
 Expected: No errors
 
@@ -2859,24 +2859,24 @@ git commit -m "test(lenskit): add integration tests against Phase 0 fixture proj
 
 - [ ] **Step 1: Run all MCP server tests from root**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin && npm run test:lenskit 2>&1 | tail -30`
+Run: `npm run test:lenskit 2>&1 | tail -30`
 
 Expected: All lenskit tests PASS
 
 - [ ] **Step 2: Build the lenskit server**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npm run build 2>&1 | tail -10`
+Run: `cd mcp/lenskit && npm run build 2>&1 | tail -10`
 
 Expected: Build succeeds with no errors
 
 - [ ] **Step 3: Verify no untracked files that should be committed**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin && git status`
+Run: `git status`
 
 Expected: Working tree clean (all changes committed in previous tasks)
 
 - [ ] **Step 4: Verify test count matches expectations**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/lenskit && npx vitest run 2>&1 | grep -E "Tests|Test Files"`
+Run: `cd mcp/lenskit && npx vitest run 2>&1 | grep -E "Tests|Test Files"`
 
 Expected: ~51 tests across 7 test files (coupling: 12, graph: 15, file-metrics: 10, churn: 6, test-coverage: 8, discovery: 7, integration: 9). Some counts may vary slightly based on conditional tests.

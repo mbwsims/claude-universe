@@ -58,7 +58,7 @@ describe('hardcoded-secrets', () => {
 
 - [ ] **Step 2: Run test, verify it fails**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -20`
 
 Expected: The `pk_test_` and `pk_live_` tests FAIL because the current code flags them.
 
@@ -86,7 +86,7 @@ const SECRET_PATTERNS: SecretPattern[] = [
 
 - [ ] **Step 4: Run test, verify it passes**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -20`
 
 Expected: All 3 tests pass.
 
@@ -154,7 +154,7 @@ Append to the `describe` block in `mcp/shieldkit/src/__tests__/hardcoded-secrets
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -30`
 
 Expected: The uppercase/mixed-case tests FAIL.
 
@@ -178,7 +178,7 @@ Note: `Bearer`, `sk-`, and `AKIA` are not made case-insensitive because they are
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -20`
 
 Expected: All tests pass.
 
@@ -251,7 +251,7 @@ Append to the `describe` block in `mcp/shieldkit/src/__tests__/hardcoded-secrets
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -30`
 
 Expected: Empty string, short value, and placeholder tests FAIL.
 
@@ -335,7 +335,7 @@ export function analyzeHardcodedSecrets(content: string, filePath?: string): Har
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -20`
 
 Expected: All tests pass.
 
@@ -403,7 +403,7 @@ Append to the `describe` block in `mcp/shieldkit/src/__tests__/hardcoded-secrets
 
 - [ ] **Step 2: Run tests, verify entropy tests fail**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -30`
 
 Expected: The "high-entropy strings in secret-like assignments" test FAILS.
 
@@ -507,7 +507,7 @@ Then update the `analyzeHardcodedSecrets` function to add an entropy check pass 
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -20`
 
 Expected: All tests pass.
 
@@ -707,7 +707,7 @@ def get_user(user_id):
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/missing-auth.test.ts 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/missing-auth.test.ts 2>&1 | tail -30`
 
 Expected: Multiple failures -- `analyzeHandlerAuth` does not exist yet, expanded auth patterns not matched.
 
@@ -942,13 +942,13 @@ export function buildMissingAuthResult(files: Array<{ path: string; hasAuth: boo
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/missing-auth.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/missing-auth.test.ts 2>&1 | tail -20`
 
 Expected: All tests pass.
 
 - [ ] **Step 5: Verify TypeScript compiles**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx tsc --noEmit 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx tsc --noEmit 2>&1 | tail -20`
 
 Expected: No type errors. Other files that import from `missing-auth.ts` should still work because we kept all existing exports and only added new ones.
 
@@ -1115,7 +1115,7 @@ describe('sql-injection', () => {
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/sql-injection.test.ts 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/sql-injection.test.ts 2>&1 | tail -30`
 
 Expected: Test file exclusion, comment stripping, Python, and nested template tests FAIL.
 
@@ -1419,7 +1419,7 @@ function findTemplateBlocks(content: string): Array<{ text: string; startLine: n
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/sql-injection.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/sql-injection.test.ts 2>&1 | tail -20`
 
 Expected: All tests pass.
 
@@ -1585,7 +1585,7 @@ describe('dangerous-functions', () => {
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/dangerous-functions.test.ts 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/dangerous-functions.test.ts 2>&1 | tail -30`
 
 Expected: New pattern tests fail, severity tests fail (no `severity` field on locations).
 
@@ -1710,13 +1710,13 @@ export function analyzeDangerousFunctions(content: string): DangerousFunctionsRe
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/dangerous-functions.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/dangerous-functions.test.ts 2>&1 | tail -20`
 
 Expected: All tests pass.
 
 - [ ] **Step 5: Verify TypeScript compiles**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx tsc --noEmit 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx tsc --noEmit 2>&1 | tail -20`
 
 Expected: Clean compilation. Note: other files consuming `DangerousFunctionLocation` will need to handle the new `severity` field. This is fine because we are adding a field, not removing one.
 
@@ -1865,7 +1865,7 @@ app.use(cors(corsOptions));`;
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/cors-config.test.ts 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/cors-config.test.ts 2>&1 | tail -30`
 
 Expected: Variable-stored config, expanded context, credentials+wildcard tests FAIL.
 
@@ -1988,7 +1988,7 @@ export function analyzeCorsConfig(content: string): CorsConfigResult {
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/cors-config.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/cors-config.test.ts 2>&1 | tail -20`
 
 Expected: All tests pass.
 
@@ -2082,7 +2082,7 @@ describe('discovery', () => {
 
 - [ ] **Step 2: Run tests, verify ** glob and negation tests fail**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/discovery.test.ts 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/discovery.test.ts 2>&1 | tail -30`
 
 Expected: The `**` glob and negation tests FAIL.
 
@@ -2303,7 +2303,7 @@ export async function discoverDbFiles(cwd: string): Promise<string[]> {
 
 - [ ] **Step 6: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/discovery.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/discovery.test.ts 2>&1 | tail -20`
 
 Expected: All tests pass.
 
@@ -2414,7 +2414,7 @@ describe('scoring', () => {
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/scoring.test.ts 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/scoring.test.ts 2>&1 | tail -30`
 
 Expected: `buildScoringResultFromFindings` does not exist yet, so tests fail.
 
@@ -2451,7 +2451,7 @@ export function buildScoringResultFromFindings(findings: FindingSeverity[]): Sco
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/scoring.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/scoring.test.ts 2>&1 | tail -20`
 
 Expected: All tests pass.
 
@@ -2549,7 +2549,7 @@ describe('tools/scan', () => {
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/tools-scan.test.ts 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/tools-scan.test.ts 2>&1 | tail -30`
 
 Expected: The `missingAuth` field test fails because `FileFindings` doesn't have it. The empty project test should pass.
 
@@ -2707,13 +2707,13 @@ export async function scanTool(args: { file?: string }, cwd: string): Promise<Sc
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/tools-scan.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/tools-scan.test.ts 2>&1 | tail -20`
 
 Expected: Tests pass (fixture-dependent tests are skipped if fixtures not present).
 
 - [ ] **Step 5: Verify TypeScript compiles**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx tsc --noEmit 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx tsc --noEmit 2>&1 | tail -20`
 
 Expected: Clean compilation.
 
@@ -2792,7 +2792,7 @@ describe('tools/status', () => {
 
 - [ ] **Step 2: Run tests, verify sorting test might fail**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/tools-status.test.ts 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/tools-status.test.ts 2>&1 | tail -30`
 
 Expected: If fixtures exist and findings are present in non-sorted order, the sort test fails.
 
@@ -2833,7 +2833,7 @@ Replace with:
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/tools-status.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/tools-status.test.ts 2>&1 | tail -20`
 
 Expected: All tests pass.
 
@@ -3614,7 +3614,7 @@ Append to the existing test file `mcp/shieldkit/src/__tests__/hardcoded-secrets.
 
 - [ ] **Step 2: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/hardcoded-secrets.test.ts 2>&1 | tail -20`
 
 Expected: All false-positive regression tests pass.
 
@@ -3678,7 +3678,7 @@ Append to the existing test file `mcp/shieldkit/src/__tests__/sql-injection.test
 
 - [ ] **Step 2: Run tests, verify they pass**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/sql-injection.test.ts 2>&1 | tail -20`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/sql-injection.test.ts 2>&1 | tail -20`
 
 Expected: All false-positive regression tests pass.
 
@@ -3797,7 +3797,7 @@ export async function GET(req) {
 
 - [ ] **Step 4: Run all tests**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run 2>&1 | tail -30`
 
 Expected: All tests across all test files pass.
 
@@ -3921,7 +3921,7 @@ describe.skipIf(!hasFixtures)('integration: status against test-fixtures', () =>
 
 - [ ] **Step 2: Run integration tests**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run src/__tests__/integration.test.ts 2>&1 | tail -30`
+Run: `cd mcp/shieldkit && npx vitest run src/__tests__/integration.test.ts 2>&1 | tail -30`
 
 Expected: If Phase 0 fixtures exist, all tests pass. If not, all tests are skipped.
 
@@ -3945,25 +3945,25 @@ Skipped automatically if test-fixtures directory is not present."
 
 - [ ] **Step 1: Run all shieldkit tests**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx vitest run 2>&1`
+Run: `cd mcp/shieldkit && npx vitest run 2>&1`
 
 Expected: All tests pass. Should be approximately 80-100+ tests across 8 test files.
 
 - [ ] **Step 2: Verify TypeScript compilation**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npx tsc --noEmit 2>&1`
+Run: `cd mcp/shieldkit && npx tsc --noEmit 2>&1`
 
 Expected: No type errors.
 
 - [ ] **Step 3: Build the project**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin/mcp/shieldkit && npm run build 2>&1`
+Run: `cd mcp/shieldkit && npm run build 2>&1`
 
 Expected: Clean build, dist/ directory updated.
 
 - [ ] **Step 4: Run root test script (if Phase 0 created it)**
 
-Run: `cd /Users/msims/Documents/GitHub/claude-universe-plugin && npm test 2>&1 | tail -30`
+Run: `npm test 2>&1 | tail -30`
 
 Expected: All server tests pass (or at least shieldkit passes).
 
