@@ -10,7 +10,7 @@ allowed-tools: []
 
 # Claude Universe
 
-5 systems, 20 commands. Just describe what you need — you don't have to memorize commands.
+5 systems, 19 commands. Just describe what you need — you don't have to memorize commands.
 
 ## Navigate — instruction intelligence
 

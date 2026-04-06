@@ -1,6 +1,6 @@
 # Claude Universe
 
-5 systems, 20 commands, 1 universe.
+5 systems, 19 commands, 1 universe.
 
 [claudeuniverse.com](https://claudeuniverse.com)
 
