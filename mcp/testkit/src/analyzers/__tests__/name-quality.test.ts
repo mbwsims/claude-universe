@@ -113,6 +113,31 @@ test('also works', () => {});`;
   });
 });
 
+describe('inner quotes do not truncate test names', () => {
+  it('handles double quotes inside single-quoted test name', () => {
+    const content = `it('classifies "feat: add user auth" as feature', () => {});`;
+    const result = analyzeNameQuality(content);
+    expect(result.total).toBe(1);
+    expect(result.vague).toBe(0);
+    // The full name should be extracted, not truncated at the inner "
+    expect(result.vagueNames).toHaveLength(0);
+  });
+
+  it('handles single quotes inside double-quoted test name', () => {
+    const content = `it("rejects email with 'invalid' format", () => {});`;
+    const result = analyzeNameQuality(content);
+    expect(result.total).toBe(1);
+    expect(result.vague).toBe(0);
+  });
+
+  it('handles single quotes inside backtick test name', () => {
+    const content = "it(`handles the 'edge' case for empty input`, () => {});";
+    const result = analyzeNameQuality(content);
+    expect(result.total).toBe(1);
+    expect(result.vague).toBe(0);
+  });
+});
+
 describe('analyzeNameQuality — Python patterns', () => {
   it('extracts Python test names from def test_ prefix', () => {
     const content = `

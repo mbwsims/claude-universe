@@ -17,7 +17,8 @@ const GENERIC_TERMS = new Set([
 ]);
 
 // Match test('...') or it('...') or test(`...`) or it(`...`)
-const TEST_NAME_REGEX = /(?:test|it)\s*\(\s*['"`]([^'"`]+)['"`]/g;
+// Uses alternation per quote type so inner quotes of a different type don't truncate the name
+const TEST_NAME_REGEX = /(?:test|it)\s*\(\s*(?:'([^']*)'|"([^"]*)"|`([^`]*)`)/g;
 
 // Match Python test functions: def test_something_descriptive(self?):
 const PYTHON_TEST_NAME_REGEX = /def\s+(test_\w+)\s*\(/g;
@@ -94,7 +95,7 @@ export function analyzeNameQuality(content: string): NameQualityResult {
     let match;
     while ((match = TEST_NAME_REGEX.exec(line)) !== null) {
       total++;
-      const name = match[1];
+      const name = match[1] ?? match[2] ?? match[3];
       const nameResult = isVagueName(name);
       if (nameResult.vague) {
         vagueNames.push({ line: i + 1, name, reason: nameResult.reason });

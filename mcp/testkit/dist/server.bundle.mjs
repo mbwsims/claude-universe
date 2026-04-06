@@ -23059,7 +23059,7 @@ var GENERIC_TERMS = /* @__PURE__ */ new Set([
   // Note: 'handles' removed -- it is commonly used in legitimate descriptive names
   // like 'handles concurrent requests gracefully'
 ]);
-var TEST_NAME_REGEX = /(?:test|it)\s*\(\s*['"`]([^'"`]+)['"`]/g;
+var TEST_NAME_REGEX = /(?:test|it)\s*\(\s*(?:'([^']*)'|"([^"]*)"|`([^`]*)`)/g;
 var PYTHON_TEST_NAME_REGEX = /def\s+(test_\w+)\s*\(/g;
 function isDomainSpecificWord(word) {
   if (/[a-z][A-Z]/.test(word))
@@ -23110,7 +23110,7 @@ function analyzeNameQuality(content) {
     let match;
     while ((match = TEST_NAME_REGEX.exec(line)) !== null) {
       total++;
-      const name = match[1];
+      const name = match[1] ?? match[2] ?? match[3];
       const nameResult = isVagueName(name);
       if (nameResult.vague) {
         vagueNames.push({ line: i + 1, name, reason: nameResult.reason });
