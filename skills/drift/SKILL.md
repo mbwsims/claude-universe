@@ -29,12 +29,15 @@ obvious when you compare the first version to the current one.
 - **No argument:** Auto-detect. Use `timewarp_history` (if available) or git log to find
   files whose scope has changed the most — large increases in line count and commit
   frequency relative to their original size. Analyze the top 3 most-drifted modules.
-  Note: `timewarp_history` returns commit counts, authors, and file change frequency —
-  it does NOT return export or import counts. You must read the file directly to count
-  exports and imports.
   If MCP is unavailable, pick the 3 largest files in core source directories and analyze
   those.
 - **With argument:** Analyze the specified module or directory.
+
+> **timewarp_history data boundary:** `timewarp_history` returns commit counts, authors,
+> most-changed files, and file change frequency. It does NOT return export counts, import
+> counts, or file content. You must read each file directly (via Read) to count exports,
+> imports, and assess responsibilities. This applies to both auto-detect and targeted
+> analysis.
 
 ### 2. Understand What It IS (Current State)
 
