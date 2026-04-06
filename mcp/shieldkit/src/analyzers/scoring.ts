@@ -40,8 +40,18 @@ export function computeRiskLevel(findings: FindingSeverity[]): RiskLevel {
   const hasHigh = activeSeverities.some(f => f.severity === 'high');
   const hasMedium = activeSeverities.some(f => f.severity === 'medium');
 
+  // Count-based escalation: volume of findings can raise the risk level
+  const totalHigh = activeSeverities
+    .filter(f => f.severity === 'high')
+    .reduce((sum, f) => sum + f.count, 0);
+  const totalMedium = activeSeverities
+    .filter(f => f.severity === 'medium')
+    .reduce((sum, f) => sum + f.count, 0);
+
   if (hasCritical) return 'critical';
+  if (hasHigh && totalHigh > 10) return 'critical';
   if (hasHigh) return 'high';
+  if (hasMedium && totalMedium > 15) return 'high';
   if (hasMedium) return 'medium';
   return 'low';
 }

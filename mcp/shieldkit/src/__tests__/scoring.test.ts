@@ -52,6 +52,28 @@ describe('scoring', () => {
       expect(result.riskLevel).toBe('critical');
       expect(result.findings).toHaveLength(2);
     });
+
+    it('escalates to critical when high-severity finding count exceeds 10', () => {
+      const result = buildScoringResult({
+        'missing-auth': 12,
+        'dangerous-functions': 5,
+      });
+      expect(result.riskLevel).toBe('critical');
+    });
+
+    it('does not escalate when high-severity count is under threshold', () => {
+      const result = buildScoringResult({
+        'missing-auth': 3,
+      });
+      expect(result.riskLevel).toBe('high');
+    });
+
+    it('escalates to high when medium-severity count exceeds 15', () => {
+      const result = buildScoringResult({
+        'cors-config': 16,
+      });
+      expect(result.riskLevel).toBe('high');
+    });
   });
 
   describe('buildScoringResultFromFindings (per-finding severity)', () => {
