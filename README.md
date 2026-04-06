@@ -105,15 +105,10 @@ For enhanced instruction tracking across sessions, the external `alignkit` MCP
 server provides session-based adherence data. It activates automatically via the
 plugin's `.mcp.json` configuration.
 
-## Individual systems
+## Navigate standalone
 
-Each system is also available as a standalone plugin:
-
-- [alignkit](https://github.com/mbwsims/alignkit-plugin) — Navigate
-- [testkit](https://github.com/mbwsims/testkit-plugin) — Diagnose
-- [shieldkit](https://github.com/mbwsims/shieldkit-plugin) — Shield
-- [lenskit](https://github.com/mbwsims/lenskit-plugin) — Survey
-- [timewarp](https://github.com/mbwsims/timewarp-plugin) — Timewarp
+The Navigate system is also available as a standalone plugin:
+[alignkit](https://github.com/mbwsims/alignkit-plugin)
 
 ## License
 
