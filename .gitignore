@@ -2,5 +2,6 @@ node_modules/
 .timewarp/
 .DS_Store
 docs/superpowers/
+**/package-lock.json
 mcp/*/dist/**
 !mcp/*/dist/server.bundle.mjs
