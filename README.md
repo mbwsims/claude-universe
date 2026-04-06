@@ -64,23 +64,24 @@ Each system includes an autonomous agent for comprehensive analysis:
 
 ## MCP servers
 
-Six MCP servers provide deterministic analysis and activate automatically:
+Five bundled MCP servers provide deterministic analysis and activate automatically
+with zero setup:
 
-| Server | Type | Tools |
-|--------|------|-------|
-| alignkit-local | Bundled | `alignkit_local_lint`, `alignkit_local_check`, `alignkit_local_status` |
-| testkit | Bundled | `testkit_analyze`, `testkit_map`, `testkit_status` |
-| shieldkit | Bundled | `shieldkit_scan`, `shieldkit_surface`, `shieldkit_status` |
-| lenskit | Bundled | `lenskit_analyze`, `lenskit_graph`, `lenskit_status` |
-| timewarp | Bundled | `timewarp_history`, `timewarp_trends` |
-| alignkit | External | `alignkit_lint`, `alignkit_check`, `alignkit_status` |
-
-The five bundled servers run locally with zero setup. The external `alignkit` server
-provides session-based adherence tracking across conversations (requires npm).
+| System | What it computes |
+|--------|-----------------|
+| Navigate | Instruction parsing, diagnostic detection, conformance checking |
+| Diagnose | Shallow assertion detection, error coverage ratios, mock health, test mapping |
+| Shield | SQL injection, hardcoded secrets, missing auth, CORS, dangerous functions |
+| Survey | Dependency graphs, file metrics, churn analysis, coupling, risk scoring |
+| Timewarp | Commit history analysis, growth/churn trend computation |
 
 When MCP servers are unavailable, every command gracefully falls back to manual
 analysis. A single availability probe in the post-edit hook prevents cascading
 failures.
+
+For session-based rule adherence tracking across conversations, the optional
+[alignkit](https://github.com/mbwsims/alignkit) npm package provides enhanced
+`/check-rules` data. It activates automatically via the plugin's MCP configuration.
 
 ## Automatic checks
 
