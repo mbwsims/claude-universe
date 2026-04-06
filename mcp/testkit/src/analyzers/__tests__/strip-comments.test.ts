@@ -32,4 +32,48 @@ describe('stripComments', () => {
     const input = 'tag = "#hashtag"';
     expect(stripComments(input)).toBe(input);
   });
+
+  // M2: // inside strings should NOT be stripped
+  it('does NOT strip // inside single-quoted strings', () => {
+    const input = "const url = 'http://example.com/path';";
+    expect(stripComments(input)).toBe(input);
+  });
+
+  it('does NOT strip // inside double-quoted strings', () => {
+    const input = 'const url = "http://example.com/path";';
+    expect(stripComments(input)).toBe(input);
+  });
+
+  it('does NOT strip // inside template literals', () => {
+    const input = 'const url = `http://example.com/path`;';
+    expect(stripComments(input)).toBe(input);
+  });
+
+  // M3: # mid-string should NOT be stripped
+  it('does NOT strip # mid-string (page#anchor)', () => {
+    const input = "url = 'page#anchor'";
+    expect(stripComments(input)).toBe(input);
+  });
+
+  it('does NOT strip # mid-string in double quotes', () => {
+    const input = 'url = "page#anchor"';
+    expect(stripComments(input)).toBe(input);
+  });
+
+  // Mixed: string then comment on same line
+  it('preserves string content but strips trailing comment', () => {
+    const input = "const x = 'hello'; // greeting";
+    expect(stripComments(input)).toBe("const x = 'hello'; ");
+  });
+
+  it('preserves string with // then strips Python comment', () => {
+    const input = "url = 'http://example.com'  # the url";
+    expect(stripComments(input)).toBe("url = 'http://example.com'  ");
+  });
+
+  // Escaped quotes inside strings
+  it('handles escaped quotes inside strings', () => {
+    const input = "const s = 'it\\'s a // test';";
+    expect(stripComments(input)).toBe(input);
+  });
 });
