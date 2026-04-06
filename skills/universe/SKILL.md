@@ -10,59 +10,59 @@ allowed-tools: []
 
 # Claude Universe
 
-5 systems, 19 commands. Just describe what you need — you don't have to memorize commands.
+5 systems, 20 commands. Just describe what you need — you don't have to memorize commands.
 
 ## Navigate — instruction intelligence
 
-| Command | What it does |
-|---------|-------------|
-| `/discover` | Find unwritten conventions in your code and suggest rules |
-| `/lint-rules` | Check instruction file quality (CLAUDE.md, rules, skills) |
-| `/check-rules` | Verify whether the codebase actually follows the rules |
+| Command | When to use | What it does |
+|---------|------------|-------------|
+| `/discover` | "What conventions does my code follow?" | Infer rules from code patterns |
+| `/lint-rules` | "Is my CLAUDE.md any good?" | Check instruction file quality |
+| `/check-rules` | "Are the rules being followed?" | Verify codebase conformance |
 
 Agent: **"review my CLAUDE.md"** runs all three as a comprehensive instruction audit.
 
 ## Diagnose — testing intelligence
 
-| Command | What it does |
-|---------|-------------|
-| `/test` | Write tests that catch real bugs — runs autonomously |
-| `/test-review` | Grade an existing test file across 6 quality dimensions |
-| `/test-plan` | Plan what to test before writing code |
+| Command | When to use | What it does |
+|---------|------------|-------------|
+| `/test` | "Write tests for this" | Generate tests autonomously |
+| `/test-review` | "How good are these tests?" | Grade a test file across 6 dimensions |
+| `/test-plan` | "What should I test?" | Plan test strategy before writing code |
 
 Agent: **"audit my tests"** runs a project-wide test quality assessment.
 
 ## Shield — security intelligence
 
-| Command | What it does |
-|---------|-------------|
-| `/scan` | Find vulnerabilities: injection, secrets, missing auth, CORS |
-| `/security-review` | Attacker-minded code review with data flow tracing |
-| `/threat-model` | STRIDE threat model for a feature or system |
+| Command | When to use | What it does |
+|---------|------------|-------------|
+| `/scan` | "Is anything vulnerable?" | Automated pattern scan across the project |
+| `/security-review` | "Is this specific code safe?" | Deep code review with data flow tracing |
+| `/threat-model` | "What could go wrong with this feature?" | STRIDE risk assessment at design level |
 
-Agent: **"security audit"** maps the attack surface and scans everything.
+Agent: **"security audit"** runs all three as a comprehensive assessment.
 
 ## Survey — codebase intelligence
 
-| Command | What it does |
-|---------|-------------|
-| `/map` | Map the architecture: layers, boundaries, dependencies |
-| `/trace` | Follow a feature through the codebase end to end |
-| `/hotspots` | Find high-risk files (churn x complexity) |
-| `/impact` | Check blast radius before changing a file |
-| `/explain` | Explain a module: purpose, history, things to know |
+| Command | When to use | What it does |
+|---------|------------|-------------|
+| `/map` | "What's the architecture?" | Map layers, boundaries, dependencies |
+| `/trace` | "How does this feature work?" | Follow a feature through the codebase |
+| `/hotspots` | "Where are the risky areas?" | Find high-risk files (churn x complexity) |
+| `/impact` | "What breaks if I change this?" | Check blast radius before editing a file |
+| `/explain` | "What does this file do?" | Explain purpose, history, things to know |
 
 Agent: **"help me understand this codebase"** produces a full onboarding report.
 
 ## Timewarp — temporal intelligence
 
-| Command | What it does |
-|---------|-------------|
-| `/recap` | Summarize recent changes across the codebase |
-| `/drift` | Detect modules that have shifted from their original purpose |
-| `/dissect` | Find when and why a file became complex |
-| `/forecast` | Predict which files are about to become problems |
-| `/rewind` | Compare a file now vs. a point in history |
+| Command | When to use | What it does |
+|---------|------------|-------------|
+| `/recap` | "What changed recently?" | Summarize recent changes across the codebase |
+| `/drift` | "Has this module lost focus?" | Detect purpose shifts over time |
+| `/dissect` | "Why is this file so complex?" | Trace when and why complexity was added |
+| `/forecast` | "What's about to become a problem?" | Predict files on concerning trajectories |
+| `/rewind` | "What did this look like before?" | Compare a file now vs. a point in history |
 
 Agent: **"how has this project evolved"** produces a full temporal health report.
 
