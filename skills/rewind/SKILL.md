@@ -129,7 +129,7 @@ Example: `src/services/auth-service.ts` becomes `src--services--auth-service.ts`
 **Read existing caches:** Before starting, check `.timewarp/` for:
 - `drift-*` files — if the same file has drift data, note whether changes align with drift
 - `forecast-*` files — if the file is on a concerning trajectory, mention it
-- `bisect-*` files — if complexity archaeology exists, reference the structural commits
+- `dissect-*` files — if complexity archaeology exists, reference the structural commits
 
 ## Guidelines
 
@@ -144,7 +144,7 @@ Example: `src/services/auth-service.ts` becomes `src--services--auth-service.ts`
 
 ## Related Skills
 
-- **`/bisect`** — For deeper analysis of HOW a specific complexity layer was added
+- **`/dissect`** — For deeper analysis of HOW a specific complexity layer was added
 - **lenskit `/explain`** — For understanding the current code in full context
 
 ## Additional Resources

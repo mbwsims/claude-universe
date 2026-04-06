@@ -18,7 +18,7 @@ Run `/universe` to see all commands, or just describe what you need in plain Eng
 | **Diagnose** (testkit) | Testing intelligence | `/test` `/test-review` `/test-plan` |
 | **Shield** (shieldkit) | Security intelligence | `/scan` `/threat-model` `/security-review` |
 | **Survey** (lenskit) | Codebase intelligence | `/trace` `/hotspots` `/impact` `/explain` `/map` |
-| **Timewarp** | Temporal intelligence | `/recap` `/drift` `/bisect` `/forecast` `/rewind` |
+| **Timewarp** | Temporal intelligence | `/recap` `/drift` `/dissect` `/forecast` `/rewind` |
 
 ## What each system does
 

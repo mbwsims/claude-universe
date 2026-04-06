@@ -161,7 +161,7 @@ When `timewarp_history` is unavailable, degrade gracefully:
 
 ## Related Skills
 
-- **`/bisect`** — Trace when specific complexity was added to a drifted module
+- **`/dissect`** — Trace when specific complexity was added to a drifted module
 - **`/forecast`** — See if the drift is accelerating
 - **lenskit `/map`** — Understand where the module fits in the architecture
 

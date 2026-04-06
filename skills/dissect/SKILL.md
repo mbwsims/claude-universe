@@ -1,9 +1,9 @@
 ---
-name: bisect
+name: dissect
 description: >-
   This skill should be used when the user asks "when did this get complicated", "why is
   this file so complex", "how did this evolve", "complexity history", "trace the evolution",
-  "what happened to this code", mentions "/bisect", or wants to understand how a file or
+  "what happened to this code", "dissect this file", mentions "/dissect", or wants to understand how a file or
   function became complex by tracing its evolution through git history.
 allowed-tools:
   - Read
@@ -15,10 +15,10 @@ allowed-tools:
 argument-hint: "[file-or-function]"
 ---
 
-# Bisect
+# Dissect
 
-Trace the evolution of a file from simple to complex. Not git bisect (finding which commit
-broke something) — conceptual bisecting: identify the moments where complexity was added,
+Trace the evolution of a file from simple to complex. Identify the moments where complexity
+was added,
 understand WHY it was added, and assess whether each layer is still necessary. Essential
 for refactoring: you need to understand the history before you can safely simplify.
 
@@ -28,7 +28,7 @@ for refactoring: you need to understand the history before you can safely simpli
 
 - **No argument:** Auto-detect. Use `timewarp_trends` (if available) to find the file with
   the steepest complexity growth. If MCP is unavailable, find the largest source file
-  (by line count, excluding generated/vendor files) and bisect that.
+  (by line count, excluding generated/vendor files) and dissect that.
 - **With argument:** Bisect the specified file. If a function name is given, focus on that
   function's evolution within the file.
 
@@ -126,7 +126,7 @@ because it's doing things it wasn't designed for.
 2. ...
 ```
 
-**Save results** to `.timewarp/bisect-{sanitized-file}-{date}.json`.
+**Save results** to `.timewarp/dissect-{sanitized-file}-{date}.json`.
 
 > **`.timewarp/` directory:** Create the directory if it doesn't exist. Results older than
 > 30 days are stale — prefer re-running the analysis over consuming old data. Other

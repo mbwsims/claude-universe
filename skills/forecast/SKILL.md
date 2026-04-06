@@ -68,7 +68,7 @@ For files on concerning trajectories, project the trend forward:
 
 ### 5. Check for Cached Data
 
-Read `.timewarp/` for existing drift or bisect data on trending files. If a file is both
+Read `.timewarp/` for existing drift or dissect data on trending files. If a file is both
 drifting AND growing, that's a stronger signal — note the connection.
 
 ### 6. Present and Save

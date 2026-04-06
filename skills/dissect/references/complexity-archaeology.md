@@ -22,7 +22,7 @@ A commit is structural if it:
 **Detection:** Look at `git log --stat` — structural commits tend to have a high ratio of
 additions to deletions (adding new code) or balanced adds/deletes (restructuring). Pure
 additions of 50+ lines are almost always structural. Use 50 lines as the threshold for
-identifying structural commits (consistent with bisect skill's filter of >20 lines for
+identifying structural commits (consistent with dissect skill's filter of >20 lines for
 "significant" and 50+ lines for "almost always structural").
 
 ### Cosmetic (skip these)

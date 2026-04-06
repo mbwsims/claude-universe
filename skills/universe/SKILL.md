@@ -60,7 +60,7 @@ Agent: **"help me understand this codebase"** produces a full onboarding report.
 |---------|-------------|
 | `/recap` | Summarize recent changes across the codebase |
 | `/drift` | Detect modules that have shifted from their original purpose |
-| `/bisect` | Find when and why a file became complex |
+| `/dissect` | Find when and why a file became complex |
 | `/forecast` | Predict which files are about to become problems |
 | `/rewind` | Compare a file now vs. a point in history |
 
