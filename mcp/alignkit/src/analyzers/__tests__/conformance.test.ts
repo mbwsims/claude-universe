@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { classifyRule, checkConformance, type RuleVerdict } from '../conformance.js';
-import type { ParsedRule } from '../discovery.js';
+import { classifyRule, checkConformance, checkToolDeclarations, type RuleVerdict } from '../conformance.js';
+import type { ParsedRule, InstructionFile } from '../discovery.js';
 import { join } from 'node:path';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 
@@ -154,5 +154,142 @@ describe('checkConformance', () => {
     expect(results[0]).toHaveProperty('text');
     expect(results[0]).toHaveProperty('verdict');
     expect(results[0]).toHaveProperty('evidence');
+  });
+});
+
+function makeSkill(content: string, relativePath = '.claude/skills/test/SKILL.md'): InstructionFile {
+  return {
+    relativePath,
+    absolutePath: `/fake/${relativePath}`,
+    content,
+    type: 'skill',
+  };
+}
+
+describe('checkToolDeclarations', () => {
+  it('passes when declared MCP tools are referenced in body', () => {
+    const skill = makeSkill([
+      '---',
+      'name: test',
+      'description: test skill',
+      'allowed-tools:',
+      '  - Read',
+      '  - mcp__lenskit__lenskit_graph',
+      '---',
+      '',
+      'Call `lenskit_graph` to get the dependency graph.',
+    ].join('\n'));
+    const verdicts = checkToolDeclarations([skill]);
+    expect(verdicts.filter(v => v.verdict === 'violates')).toHaveLength(0);
+  });
+
+  it('flags declared MCP tool not referenced in body', () => {
+    const skill = makeSkill([
+      '---',
+      'name: test',
+      'description: test skill',
+      'allowed-tools:',
+      '  - Read',
+      '  - mcp__lenskit__lenskit_graph',
+      '  - mcp__lenskit__lenskit_analyze',
+      '---',
+      '',
+      'Call `lenskit_graph` to get the dependency graph.',
+    ].join('\n'));
+    const verdicts = checkToolDeclarations([skill]);
+    const violations = verdicts.filter(v => v.verdict === 'violates');
+    expect(violations).toHaveLength(1);
+    expect(violations[0].evidence).toContain('lenskit_analyze');
+  });
+
+  it('flags MCP tool used in body but not declared', () => {
+    const skill = makeSkill([
+      '---',
+      'name: test',
+      'description: test skill',
+      'allowed-tools:',
+      '  - Read',
+      '---',
+      '',
+      'Use mcp__shieldkit__shieldkit_scan to find vulnerabilities.',
+    ].join('\n'));
+    const verdicts = checkToolDeclarations([skill]);
+    const violations = verdicts.filter(v => v.verdict === 'violates');
+    expect(violations).toHaveLength(1);
+    expect(violations[0].evidence).toContain('shieldkit_scan');
+  });
+
+  it('flags built-in tool referenced in body but not declared', () => {
+    const skill = makeSkill([
+      '---',
+      'name: test',
+      'description: test skill',
+      'allowed-tools:',
+      '  - Read',
+      '---',
+      '',
+      'Use Grep to search for patterns, then use WebSearch for docs.',
+    ].join('\n'));
+    const verdicts = checkToolDeclarations([skill]);
+    const violations = verdicts.filter(v => v.verdict === 'violates');
+    expect(violations.some(v => v.evidence.includes('Grep'))).toBe(true);
+    expect(violations.some(v => v.evidence.includes('WebSearch'))).toBe(true);
+  });
+
+  it('does NOT flag built-in tools for direction (a) — implicit usage is expected', () => {
+    const skill = makeSkill([
+      '---',
+      'name: test',
+      'description: test skill',
+      'allowed-tools:',
+      '  - Read',
+      '  - Glob',
+      '  - Grep',
+      '  - Bash',
+      '---',
+      '',
+      'Analyze the project files.',
+    ].join('\n'));
+    const verdicts = checkToolDeclarations([skill]);
+    expect(verdicts.filter(v => v.verdict === 'violates')).toHaveLength(0);
+  });
+
+  it('skips non-skill files', () => {
+    const ruleFile: InstructionFile = {
+      relativePath: '.claude/rules/test.md',
+      absolutePath: '/fake/.claude/rules/test.md',
+      content: '---\nname: test\n---\n\nSome rule content.',
+      type: 'rule',
+    };
+    const verdicts = checkToolDeclarations([ruleFile]);
+    expect(verdicts).toHaveLength(0);
+  });
+
+  it('skips skills without allowed-tools', () => {
+    const skill = makeSkill([
+      '---',
+      'name: test',
+      'description: test skill',
+      '---',
+      '',
+      'Use mcp__lenskit__lenskit_graph for analysis.',
+    ].join('\n'));
+    const verdicts = checkToolDeclarations([skill]);
+    expect(verdicts).toHaveLength(0);
+  });
+
+  it('matches MCP tools by full name in body', () => {
+    const skill = makeSkill([
+      '---',
+      'name: test',
+      'description: test skill',
+      'allowed-tools:',
+      '  - mcp__lenskit__lenskit_graph',
+      '---',
+      '',
+      'Call mcp__lenskit__lenskit_graph to get data.',
+    ].join('\n'));
+    const verdicts = checkToolDeclarations([skill]);
+    expect(verdicts.filter(v => v.verdict === 'violates')).toHaveLength(0);
   });
 });

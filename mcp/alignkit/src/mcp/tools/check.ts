@@ -6,7 +6,7 @@
  */
 
 import { discoverInstructionFiles, parseRules, type ParsedRule } from '../../analyzers/discovery.js';
-import { checkConformance, type RuleVerdict } from '../../analyzers/conformance.js';
+import { checkConformance, checkToolDeclarations, type RuleVerdict } from '../../analyzers/conformance.js';
 
 export interface CheckResult {
   rules: RuleVerdict[];
@@ -42,6 +42,10 @@ export async function checkTool(args: { file?: string }, cwd: string): Promise<C
 
   // Run conformance checks
   const verdicts = await checkConformance(allRules, cwd);
+
+  // Run bidirectional tool-declaration checks for skill files
+  const toolDeclVerdicts = checkToolDeclarations(filesToAnalyze);
+  verdicts.push(...toolDeclVerdicts);
 
   // Build summary
   const summary = {

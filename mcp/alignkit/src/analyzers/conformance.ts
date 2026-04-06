@@ -13,9 +13,9 @@
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { globby } from 'globby';
+import { glob } from 'tinyglobby';
 
-import type { ParsedRule } from './discovery.js';
+import type { ParsedRule, InstructionFile } from './discovery.js';
 
 export type RuleType =
   | 'file-structure'
@@ -130,7 +130,7 @@ async function readFileOrNull(path: string): Promise<string | null> {
 }
 
 async function grepFiles(cwd: string, pattern: RegExp, fileGlob: string): Promise<Array<{ path: string; line: number; text: string }>> {
-  const files = await globby(fileGlob, { cwd, ignore: IGNORE_PATTERNS, absolute: false });
+  const files = await glob(fileGlob, { cwd, ignore: IGNORE_PATTERNS, absolute: false });
   const matches: Array<{ path: string; line: number; text: string }> = [];
 
   for (const filePath of files) {
@@ -316,12 +316,12 @@ async function checkFileStructureRule(rule: ParsedRule, cwd: string): Promise<Ru
   // Check "co-locate test files" / "test files next to source"
   if (/\btest\b.+\b(next to|co-?locate|adjacent|alongside)\b/i.test(rule.text) ||
       /\b(co-?locate|adjacent)\b.+\btest/i.test(rule.text)) {
-    const testFiles = await globby(['**/*.test.*', '**/*.spec.*'], {
+    const testFiles = await glob(['**/*.test.*', '**/*.spec.*'], {
       cwd,
       ignore: IGNORE_PATTERNS,
       absolute: false,
     });
-    const sourceFiles = await globby(['**/*.{ts,tsx,js,jsx}'], {
+    const sourceFiles = await glob(['**/*.{ts,tsx,js,jsx}'], {
       cwd,
       ignore: [...IGNORE_PATTERNS, '**/*.test.*', '**/*.spec.*', '**/*.d.ts'],
       absolute: false,
@@ -397,4 +397,137 @@ export async function checkConformance(rules: ParsedRule[], cwd: string): Promis
   }
 
   return results;
+}
+
+// --- Tool declaration checking for skill files ---
+
+// Built-in Claude Code tool names (case-sensitive to avoid false positives on common English words)
+const BUILTIN_TOOLS = new Set([
+  'Read', 'Glob', 'Grep', 'Bash', 'Edit', 'Write', 'Agent',
+  'WebSearch', 'WebFetch', 'AskUserQuestion',
+  'TaskCreate', 'TaskUpdate', 'TaskList', 'TaskGet',
+  'NotebookEdit', 'NotebookRead',
+]);
+
+/**
+ * Parse allowed-tools from YAML frontmatter.
+ * Returns the tool list and the body text (everything after frontmatter).
+ */
+function parseFrontmatterTools(content: string): { tools: string[]; body: string } | null {
+  const lines = content.split('\n');
+  if (lines[0]?.trim() !== '---') return null;
+
+  let endIndex = -1;
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i].trim() === '---') {
+      endIndex = i;
+      break;
+    }
+  }
+  if (endIndex === -1) return null;
+
+  const frontmatterLines = lines.slice(1, endIndex);
+  const body = lines.slice(endIndex + 1).join('\n');
+
+  const tools: string[] = [];
+  let inToolsSection = false;
+
+  for (const line of frontmatterLines) {
+    if (/^allowed-tools:\s*$/.test(line)) {
+      inToolsSection = true;
+      continue;
+    }
+    if (inToolsSection) {
+      const toolMatch = line.match(/^\s+-\s+(.+)$/);
+      if (toolMatch) {
+        tools.push(toolMatch[1].trim());
+      } else {
+        inToolsSection = false;
+      }
+    }
+  }
+
+  return { tools, body };
+}
+
+/**
+ * Extract the short tool name from an MCP tool identifier.
+ * e.g., "mcp__lenskit__lenskit_graph" -> "lenskit_graph"
+ */
+function mcpShortName(tool: string): string | null {
+  const match = tool.match(/^mcp__\w+__(\w+)$/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Bidirectional tool-declaration check for skill files.
+ *
+ * (a) Declared MCP tools must be referenced in the skill body (catches stale declarations).
+ * (b) Tool references in the body must be declared in allowed-tools (catches undeclared usage).
+ *
+ * Built-in tools (Read, Glob, etc.) are only checked in direction (b) since skills use
+ * them implicitly through instructions without naming them.
+ */
+export function checkToolDeclarations(files: InstructionFile[]): RuleVerdict[] {
+  const verdicts: RuleVerdict[] = [];
+
+  for (const file of files) {
+    if (file.type !== 'skill') continue;
+
+    const parsed = parseFrontmatterTools(file.content);
+    if (!parsed || parsed.tools.length === 0) continue;
+
+    const { tools, body } = parsed;
+    const declaredSet = new Set(tools);
+
+    // Direction (a): declared MCP tools must appear in body
+    for (const tool of tools) {
+      if (!tool.startsWith('mcp__')) continue;
+
+      const shortName = mcpShortName(tool);
+      const inBody = body.includes(tool) || (shortName !== null && body.includes(shortName));
+
+      if (!inBody) {
+        verdicts.push({
+          text: `[${file.relativePath}] declared tool "${tool}" not referenced in skill body`,
+          type: 'tool-constraint',
+          verdict: 'violates',
+          evidence: `Tool "${tool}" is in allowed-tools but never mentioned in the skill instructions`,
+        });
+      }
+    }
+
+    // Direction (b): MCP tool references in body must be declared
+    const mcpPattern = /\bmcp__\w+__\w+\b/g;
+    const seenMcp = new Set<string>();
+    let match;
+    while ((match = mcpPattern.exec(body)) !== null) {
+      const toolName = match[0];
+      if (!seenMcp.has(toolName) && !declaredSet.has(toolName)) {
+        seenMcp.add(toolName);
+        verdicts.push({
+          text: `[${file.relativePath}] references undeclared tool "${toolName}"`,
+          type: 'tool-constraint',
+          verdict: 'violates',
+          evidence: `Tool "${toolName}" is used in skill body but missing from allowed-tools`,
+        });
+      }
+    }
+
+    // Direction (b): built-in tool references in body must be declared
+    for (const tool of BUILTIN_TOOLS) {
+      if (declaredSet.has(tool)) continue;
+      const regex = new RegExp(`\\b${tool}\\b`);
+      if (regex.test(body)) {
+        verdicts.push({
+          text: `[${file.relativePath}] references undeclared tool "${tool}"`,
+          type: 'tool-constraint',
+          verdict: 'violates',
+          evidence: `Tool "${tool}" appears in skill body but missing from allowed-tools`,
+        });
+      }
+    }
+  }
+
+  return verdicts;
 }
