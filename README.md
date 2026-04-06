@@ -42,6 +42,7 @@ are about to become problems, and recap recent changes across the codebase.
 **MCP server analysis** (deterministic pattern matching, dependency graphs, trend computation):
 - **JavaScript / TypeScript** — full support including tsconfig path alias resolution
 - **Python** — function detection, import parsing, test frameworks (pytest, unittest), security patterns (f-string injection, dangerous functions)
+- Support for more languages coming soon...
 
 **Skill-guided analysis** (Claude reads and reasons about code):
 - **Any language** — all 19 commands work with any language Claude can read
