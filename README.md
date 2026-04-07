@@ -1,5 +1,7 @@
 # Claude Universe
 
+The deep analysis toolkit for Claude Code.
+
 5 systems, 19 commands, 1 universe.
 
 [claudeuniverse.com](https://claudeuniverse.com)
