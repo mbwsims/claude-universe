@@ -1,5 +1,5 @@
 {
-  "name": "claude-universe",
+  "name": "universe",
   "version": "0.4.0",
   "description": "Five intelligence systems in one plugin: align instructions, test behavior, shield against attacks, understand your codebase, and analyze its evolution.",
   "author": {
@@ -9,12 +9,12 @@
   "homepage": "https://github.com/mbwsims/claude-universe",
   "repository": "https://github.com/mbwsims/claude-universe",
   "license": "MIT",
-  "keywords": 
+  "keywords": [
     "instruction-quality",
     "testing",
     "security",
     "codebase-intelligence",
     "temporal-analysis",
-    "code-evolution",
+    "code-evolution"
   ]
 }

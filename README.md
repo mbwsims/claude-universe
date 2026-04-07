@@ -6,12 +6,13 @@ The deep analysis toolkit for Claude Code.
 
 [claudeuniverse.com](https://claudeuniverse.com)
 
-```bash
-claude plugin add mbwsims/claude-universe
+```
+/plugin marketplace add mbwsims/claude-universe
+/plugin install universe@claude-universe
 ```
 
-Run `/universe` to see all commands, or just describe what you need in plain English.
-
+Commands are prefixed with `universe:` (e.g. `/universe:scan`). You can also just
+describe what you need in plain English — the right command activates automatically.
 
 ## The Systems
 

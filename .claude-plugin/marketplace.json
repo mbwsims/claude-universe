@@ -1,0 +1,32 @@
+{
+  "name": "claude-universe",
+  "owner": {
+    "name": "Matthew Sims"
+  },
+  "metadata": {
+    "description": "The deep analysis toolkit for Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "universe",
+      "source": ".",
+      "description": "Five intelligence systems in one plugin: align instructions, test behavior, shield against attacks, understand your codebase, and analyze its evolution.",
+      "version": "0.4.0",
+      "author": {
+        "name": "Matthew Sims"
+      },
+      "homepage": "https://claudeuniverse.com",
+      "repository": "https://github.com/mbwsims/claude-universe",
+      "license": "MIT",
+      "keywords": [
+        "instruction-quality",
+        "testing",
+        "security",
+        "codebase-intelligence",
+        "temporal-analysis",
+        "code-evolution"
+      ],
+      "category": "code-quality"
+    }
+  ]
+}
