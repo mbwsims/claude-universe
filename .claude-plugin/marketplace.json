@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "universe",
-      "source": ".",
+      "source": "./",
       "description": "Five intelligence systems in one plugin: align instructions, test behavior, shield against attacks, understand your codebase, and analyze its evolution.",
       "version": "0.4.0",
       "author": {
