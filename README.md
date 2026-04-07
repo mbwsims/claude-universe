@@ -1,8 +1,8 @@
 # Claude Universe
 
-The power user toolkit for Claude Code.
+Teach Claude Code to think systematically.
 
-5 systems, 19 commands, 1 universe.
+5 layer of systematic intelligence, 19 commands, 1 universe.
 
 [claudeuniverse.com](https://claudeuniverse.com)
 
