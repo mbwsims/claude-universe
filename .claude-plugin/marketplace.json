@@ -10,7 +10,7 @@
     {
       "name": "universe",
       "source": "./",
-      "description": "Five intelligence systems in one plugin: align instructions, test behavior, shield against attacks, understand your codebase, and analyze its evolution.",
+      "description": "Teach Claude Code to think systematically. 19 commands and 5 agents for instruction quality, test depth, security, codebase structure, and code evolution.",
       "version": "0.4.0",
       "author": {
         "name": "Matthew Sims"
