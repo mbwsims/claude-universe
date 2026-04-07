@@ -1,29 +1,20 @@
 {
   "name": "claude-universe",
   "version": "0.4.0",
-  "description": "Five intelligence systems in one install. Align instructions, test behavior, shield against attacks, understand your codebase, and analyze its evolution. 19 commands, 5 agents, 6 MCP servers. JavaScript/TypeScript and Python analysis.",
+  "description": "Five intelligence systems in one plugin: align instructions, test behavior, shield against attacks, understand your codebase, and analyze its evolution.",
   "author": {
-    "name": "Matt Sims",
+    "name": "Matthew Sims",
     "url": "https://github.com/mbwsims"
   },
   "homepage": "https://github.com/mbwsims/claude-universe",
   "repository": "https://github.com/mbwsims/claude-universe",
   "license": "MIT",
-  "keywords": [
-    "alignkit",
-    "testkit",
-    "shieldkit",
-    "lenskit",
-    "timewarp",
+  "keywords": 
     "instruction-quality",
     "testing",
     "security",
     "codebase-intelligence",
-    "temporal",
-    "evolution",
-    "forecast",
-    "python",
-    "typescript",
-    "claude-code"
+    "temporal-analysis",
+    "code-evolution",
   ]
 }
