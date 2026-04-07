@@ -10,6 +10,7 @@ claude plugin add mbwsims/claude-universe
 
 Run `/universe` to see all commands, or just describe what you need in plain English.
 
+
 ## The Systems
 
 | System | Domain | Commands |
@@ -19,6 +20,7 @@ Run `/universe` to see all commands, or just describe what you need in plain Eng
 | **Shield** | Security intelligence | `/scan` `/threat-model` `/security-review` |
 | **Survey** | Codebase intelligence | `/trace` `/hotspots` `/impact` `/explain` `/map` |
 | **Timewarp** | Temporal intelligence | `/recap` `/drift` `/dissect` `/forecast` `/rewind` |
+
 
 ## What each system does
 
@@ -37,6 +39,20 @@ map architecture, and understand impact before changing code.
 **Timewarp** — Trace the evolution. Detect architectural drift, forecast which files
 are about to become problems, and recap recent changes across the codebase.
 
+
+## How it works
+
+Each command combines two layers: MCP servers handle the quantitative
+analysis (pattern matching, dependency graphs, scoring), and skills guide
+Claude's reasoning with structured methodology and domain expertise. The
+skills are what make the output consistently deeper than asking Claude
+the same question directly.
+
+For enhanced instruction tracking across sessions, the external [alignkit](https://github.com/mbwsims/alignkit) MCP
+server provides session-based adherence data. It activates automatically via the
+plugin's `.mcp.json` configuration.
+
+
 ## Language support
 
 **MCP server analysis** (deterministic pattern matching, dependency graphs, trend computation):
@@ -51,6 +67,7 @@ The MCP servers provide structured data that skills use to guide analysis. When 
 servers aren't available (e.g., in restricted environments), every skill falls back
 to manual analysis using Glob, Grep, and Read.
 
+
 ## Agents
 
 Each system includes an autonomous agent for comprehensive analysis:
@@ -62,6 +79,7 @@ Each system includes an autonomous agent for comprehensive analysis:
 | security-auditor | Shield | Comprehensive security audit with data flow tracing |
 | codebase-analyst | Survey | Architecture mapping with health assessment |
 | evolution-analyst | Timewarp | Temporal health report with drift and forecasting |
+
 
 ## MCP servers
 
@@ -76,13 +94,21 @@ with zero setup:
 | Survey | Dependency graphs, file metrics, churn analysis, coupling, risk scoring |
 | Timewarp | Commit history analysis, growth/churn trend computation |
 
-When MCP servers are unavailable, every command gracefully falls back to manual
-analysis. A single availability probe in the post-edit hook prevents cascading
-failures.
+Every command works without MCP servers. Each has a manual fallback using Glob,
+Grep, and Read. But MCP servers add a layer that Claude's reasoning alone can't
+replicate:
 
-For session-based rule adherence tracking across conversations, the optional
-[alignkit](https://github.com/mbwsims/alignkit) npm package provides enhanced
-`/check-rules` data. It activates automatically via the plugin's MCP configuration.
+- **Deterministic** — same patterns checked the same way every time, not dependent
+  on what Claude notices in a given run
+- **Batch** — scores every file in a project in one pass with shared indexes, instead
+  of Claude reading files one at a time and burning context
+- **Computed** — growth rate acceleration, entropy-based secret detection, weighted
+  risk scores. Metrics Claude won't compute manually.
+
+The fallbacks however are a real safety net, not a degraded mode. For small projects or
+single-file analysis, they're often sufficient. MCP servers matter most on larger
+codebases where batch analysis and quantitative scoring justify the tooling.
+
 
 ## Automatic checks
 
@@ -97,20 +123,12 @@ appropriate check:
 
 All checks are 1-2 sentences. They nudge, not nag.
 
-## How it works
-
-Every command works immediately with no setup. Five bundled MCP servers provide
-deterministic analysis (pattern matching, dependency graphs, trend computation) and
-activate automatically when the plugin is installed.
-
-For enhanced instruction tracking across sessions, the external `alignkit` MCP
-server provides session-based adherence data. It activates automatically via the
-plugin's `.mcp.json` configuration.
 
 ## Navigate standalone
 
 The Navigate system is also available as a standalone plugin:
 [alignkit](https://github.com/mbwsims/alignkit-plugin)
+
 
 ## License
 
