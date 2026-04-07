@@ -6,13 +6,15 @@ The deep analysis toolkit for Claude Code.
 
 [claudeuniverse.com](https://claudeuniverse.com)
 
+Run these once inside a Claude Code session (`claude` in your terminal):
+
 ```
 /plugin marketplace add mbwsims/claude-universe
 /plugin install universe@claude-universe
 ```
 
-Commands are prefixed with `universe:` (e.g. `/universe:scan`). You can also just
-describe what you need in plain English — the right command activates automatically.
+The plugin is available in every session after that.
+
 
 ## The Systems
 
@@ -24,6 +26,8 @@ describe what you need in plain English — the right command activates automati
 | **Survey** | Codebase intelligence | `/trace` `/hotspots` `/impact` `/explain` `/map` |
 | **Timewarp** | Temporal intelligence | `/recap` `/drift` `/dissect` `/forecast` `/rewind` |
 
+Commands are prefixed with `universe:` (e.g. `/universe:scan`). You can also just
+describe what you need in plain English, the right command activates automatically.
 
 ## What each system does
 
