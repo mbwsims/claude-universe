@@ -10,7 +10,15 @@ allowed-tools: []
 
 # Claude Universe
 
-5 systems, 19 commands. Just describe what you need — you don't have to memorize commands.
+5 systems, 20 commands. Just describe what you need — you don't have to memorize commands.
+
+## Orbit — cross-system orchestrator
+
+| Command | When to use | What it does |
+|---------|------------|-------------|
+| `/orbit` | "How's my project?" | Dispatch all 5 agents in parallel, unified report |
+| `/orbit security tests` | "Review security and tests" | Dispatch selected agents in parallel |
+| `/orbit quick` | "Quick project dashboard" | Fast MCP-only health check across all areas |
 
 ## Navigate — instruction intelligence
 
@@ -75,7 +83,7 @@ appropriate check. You don't need to invoke anything — it nudges when it finds
 
 - **You don't need slash commands.** Describe what you need in plain English and the
   right command activates automatically.
-- **Start broad, then narrow.** Use `/map` or an agent first, then drill into specific
+- **Start broad, then narrow.** Use `/orbit` for a full sweep, then drill into specific
   commands for areas that need attention.
 - **Commands compose.** Each command's output suggests related commands for natural
   follow-up workflows.
