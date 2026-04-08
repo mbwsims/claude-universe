@@ -59,12 +59,12 @@ If no scope keywords are found and no arguments given, ask the user what they wa
 ## Quick Mode
 
 Call the MCP tools for all selected scopes **in parallel** (multiple tool calls in a single
-message). Then synthesize into a summary:
+message). Then synthesize into a dashboard:
 
 ```
 # Orbit — {project name} (quick)
 
-## Overview
+## Dashboard
 
 | Area | Status | Key Finding |
 |------|--------|-------------|
@@ -113,7 +113,7 @@ After all agents return, produce a unified report:
 ```
 # Orbit — {project name}
 
-## Overview
+## Dashboard
 
 | Area | Risk | Findings | Top Issue |
 |------|------|----------|-----------|
