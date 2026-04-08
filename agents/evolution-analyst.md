@@ -35,8 +35,11 @@ Map the project's temporal shape:
 - Periods of high and low activity (releases, sprints, quiet periods)
 - Overall growth trajectory (total lines/files over time)
 
-**With timewarp-mcp:** Call `timewarp_history` for structured commit data.
+**With timewarp-mcp:** Call `timewarp_history` to accelerate data gathering.
 **Without:** Run git log analysis manually.
+
+Regardless of which approach, manually verify the top 10 contributors by sampling their
+recent commits. MCP results are starting points, not final answers.
 
 **Save intermediate results** to `.timewarp/evolution-phase1-{date}.json` with:
 `{ totalCommits, age, frequency, contributors, activityPeriods, growthTrajectory }`.
@@ -49,13 +52,32 @@ Compute growth trends for the top 20 most-active source files:
 - Churn rate and acceleration
 - Complexity trajectory (are files getting more tangled?)
 
-**With timewarp-mcp:** Call `timewarp_trends` for computed growth rates.
+**With timewarp-mcp:** Call `timewarp_trends` for initial trend classification.
 **Without:** Sample git history at 3 time points (6 months ago, 3 months ago, now).
+
+**After MCP output, manually verify the top 3 files marked "accelerating":**
+- Check their recent commits (last 20) to confirm the trend is real, not noise
+- Verify that growth isn't from test fixtures, generated code, or vendored deps
+- If the acceleration is based on fewer than 6 total commits, treat as unreliable
+
+Do NOT treat MCP classifications as definitive verdicts.
 
 Identify files on concerning trajectories (accelerating growth or churn).
 
 **Save intermediate results** to `.timewarp/evolution-phase2-{date}.json` with:
 `{ files: [{ file, growth, churn, projection }], concerningFiles: [...] }`.
+
+### Phases 3–5 are REQUIRED
+
+These phases are mandatory regardless of whether timewarp-mcp returned results.
+timewarp tools compute trend classifications using heuristic thresholds (e.g., 1.5x
+ratio = "accelerating"). They cannot assess:
+- Whether acceleration is signal or noise (small sample sizes inflate ratios)
+- Whether growth is from production code vs. generated/vendored/test files
+- Drift intent — whether a module's purpose shift was deliberate refactoring or organic creep
+- Architectural impact — how a drifting module affects its dependents
+
+Even if timewarp reports clean trends, complete Phases 3–5 before writing the report.
 
 ### Phase 3: Drift Detection
 
@@ -78,7 +100,8 @@ For these modules:
 For files on concerning trajectories from Phase 2:
 - Project growth forward (when will they cross size/complexity thresholds?)
 - Prioritize by impact (files with many dependents are more urgent)
-- Combine with drift data — drifting + accelerating growth is the strongest signal
+- Combine with drift data — drifting + accelerating growth is the strongest signal,
+  but verify the acceleration is real (see Phase 2 validation) before escalating priority
 
 ### Phase 5: Evolution Patterns
 

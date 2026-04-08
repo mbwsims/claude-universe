@@ -64,6 +64,20 @@ strategically — most recently modified, largest, covering core logic), manuall
 
 Record per-file metrics for aggregation.
 
+### Phases 3–5 are REQUIRED
+
+These phases are mandatory regardless of whether testkit-mcp returned results.
+testkit_analyze provides deterministic metrics (assertion counts, mock ratios, name
+quality). It cannot measure:
+- Input coverage — whether tests go beyond the happy path (empty, null, boundary, invalid)
+- Independence — shared mutable state, missing cleanup, order dependencies
+- Criticality alignment — whether test quality matches the importance of the code being tested
+- Systemic patterns — project-wide habits visible only when aggregating across many files
+- Code pattern gaps — testing patterns that should exist based on production code but don't
+
+testkit_analyze leaves inputCoverage and independence as null — these dimensions MUST be
+evaluated manually in Phase 4. Even if testkit_analyze grades every file, complete Phases 3–5.
+
 ### Phase 3: Criticality Assessment
 
 Classify each source file by criticality to weight the audit priorities.
@@ -213,8 +227,10 @@ Focus on systemic improvements, not individual file fixes.}
 
 ## Guidelines
 
-- Be thorough but efficient. Use testkit_analyze for deterministic metrics; reserve manual
-  reading for semantic dimensions and representative sampling.
+- Be thorough but efficient. Use testkit_analyze for deterministic metrics; manual reading
+  for semantic dimensions and representative sampling is REQUIRED, not optional. Do not skip
+  Phase 4 (Semantic Review) or Phase 4.5 (Code Pattern Discovery) even if testkit_analyze
+  returns grades — these phases catch gaps that deterministic analysis cannot detect.
 - Grade the PROJECT, not individual files. A project with one A-grade test file and ten
   D-grade files is a D project.
 - Weight priorities by criticality. A C-grade test on auth code is a bigger problem than
@@ -226,3 +242,8 @@ Focus on systemic improvements, not individual file fixes.}
 - The report should be useful to a tech lead deciding where to invest testing effort.
 - If testkit-mcp is unavailable, note this in the report and perform manual analysis.
   The audit should still be valuable without the MCP server.
+- When testkit_analyze returns grades, validate them against your Phase 4 semantic findings.
+  If Phase 4 reveals brittle assertions but testkit_analyze graded assertion depth as "B",
+  note the discrepancy — deterministic metrics can be optimistic.
+- Verify testkit_map's coverage ratio by spot-checking 5-10 test files. The ratio may
+  undercount if test naming conventions differ from source paths.

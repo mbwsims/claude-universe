@@ -42,8 +42,8 @@ Note which files exist and their approximate size.
 ### Phase 2: Static Quality Analysis
 
 Call `alignkit_local_lint` first (bundled server, no external dependency). If unavailable,
-fall back to `alignkit_lint` (external server). If neither tool is available, perform manual
-lint analysis:
+fall back to `alignkit_lint` (external server). If BOTH are unavailable, you MUST perform
+manual lint analysis — this phase cannot be skipped:
 
 1. Find instruction files using Glob: `CLAUDE.md`, `.claude/rules/**/*.md`, `.claude/agents/**/*.md`, `.claude/skills/**/SKILL.md`
 2. Read each file and parse rules (lines starting with `-`, `*`, or `N.` under headings). Strip YAML frontmatter first.
@@ -69,6 +69,17 @@ Analyze the results:
 2. **Token budget**: Note token count and context window percentage
 3. **Quick wins**: Identify the highest-impact, lowest-effort improvements
 
+### Phases 2–5 are REQUIRED
+
+These phases are mandatory regardless of MCP tool availability. If a tool fails, perform
+manual analysis for that phase. A report that skips entire phases due to tool unavailability
+is not acceptable — perform the manual fallback instead.
+
+alignkit lint diagnostics (VAGUE, CONFLICT, etc.) use regex-based heuristics and may produce
+false positives. For any rule flagged VAGUE, re-read it in context before downgrading — a
+rule saying "Consider using TypeScript" may be contextually specific despite matching the
+VAGUE pattern. Do not blindly convert lint diagnostics into effectiveness ratings.
+
 ### Phase 3: Effectiveness Analysis
 
 Using the project context from the lint results (dependencies, tsconfig, directory tree),
@@ -77,6 +88,10 @@ rate each rule's effectiveness:
 - **HIGH**: Concrete, actionable, relevant to this project's stack
 - **MEDIUM**: Reasonable but generic or missing project-specific details
 - **LOW**: Vague, references absent tools, or states what Claude already knows
+
+**For any rule rated MEDIUM or LOW, manually re-read the rule and verify your assessment
+against the actual codebase** — is it truly irrelevant, or did the heuristics miss
+project-specific context?
 
 ### Phase 4: Adherence Analysis
 
@@ -88,7 +103,12 @@ session history adherence data (if available). Analyze:
 3. **Unresolved rules**: Evaluate unresolved rules against session action evidence
 4. **Trend**: Is adherence improving or declining?
 
-If no session history exists, note this and skip to recommendations.
+**For any rule marked "violates", manually verify by reading the relevant code** — spot-check
+2-3 files to confirm the violation is real. For "unverifiable" verdicts, try alternate
+verification (Glob, Grep) before accepting.
+
+If no session history exists, note this limitation but still complete conformance analysis
+using alignkit_local_check. Do NOT skip Phase 4 entirely.
 
 ### Phase 5: Convention Discovery
 
@@ -150,9 +170,9 @@ actionable with the exact change to make.}
 
 ## Guidelines
 
-- If any phase fails or returns empty data (MCP unavailable, no instruction files, no
-  git history), proceed to the next phase. In the report, note which phases completed
-  and which were skipped. A partial report is more valuable than no report.
+- If an MCP tool fails, perform manual analysis for that phase (see Phase 2 manual steps).
+  Do not skip the phase. In the report, note which phases used MCP vs. manual analysis.
+  If no instruction files exist at all, say so directly — that IS the finding.
 - Be thorough but concise — this is a professional audit, not a verbose essay
 - Prioritize ruthlessly — put the highest-impact findings first
 - Every finding must cite specific rules, files, or evidence
