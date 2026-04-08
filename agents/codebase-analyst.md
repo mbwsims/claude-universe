@@ -43,7 +43,23 @@ Use this data to calibrate the rest of the analysis:
 
 If `lenskit_status` is unavailable, proceed directly to Phase 1 with manual analysis.
 
-**Without lenskit-mcp (any phase):** All phases have manual alternatives:
+### Phases 1–3 are REQUIRED
+
+These phases are mandatory regardless of whether lenskit-mcp returned results.
+lenskit tools provide structure (dependency graphs, risk scores, hotspot rankings).
+They cannot assess:
+- Architecture intent — whether high coupling is by design (adapter, facade, shared utility)
+  or a god module with mixed concerns
+- Churn context — whether recent churn is active development vs. instability
+- Complexity nuance — whether high LOC is well-structured (20 clean functions) or
+  deeply nested (3 tangled functions)
+- Business importance — which modules matter most for the project's actual goals
+
+lenskit accelerates these phases by narrowing the search space. It does not replace
+the reasoning. For each top-scoring file, read the code to determine if the score
+reflects actual risk or a false signal (e.g., a widely-imported adapter).
+
+**Without lenskit-mcp (fallback):**
 - Phase 0: Skip — proceed to Phase 1 with `ls`, `find`, and `wc -l`
 - Phase 1: Use Grep to find `import` and `from` patterns to manually trace dependencies
 - Phase 2: Use `git log --format=format: --name-only` for churn, `wc -l` for complexity
@@ -93,8 +109,12 @@ For the top 3-5 most important modules, explain each one:
 - If no specific area, select using these concrete criteria in priority order:
   1. **Hub files** — files with the most importers (from `lenskit_graph` hubs list, or
      by grepping for the most-imported paths). These are highest-impact for understanding.
-  2. **Highest-risk hotspot** — the file with the top risk score from Phase 2. This is
-     where problems concentrate.
+     Confirm these are intentional integration points (adapters, facades, shared utilities)
+     rather than god modules with mixed concerns — read the file to assess actual vs. scored risk.
+  2. **Highest-risk hotspot** — the file with the top risk score from Phase 2. Validate
+     that the score reflects genuine risk (poor separation, instability) not false signals
+     like high coupling in an intentional shared module or completed features with historical
+     churn. Read the top 3 risk-scored files and prioritize by actual issues, not score alone.
   3. **One data access module** — a db/, models/, or repository/ file that shows how
      state is managed
   4. **One business logic module** — a services/ or domain/ file that shows how decisions
