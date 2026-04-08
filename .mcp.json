@@ -1,24 +1,39 @@
 {
   "mcpServers": {
     "alignkit-local": {
-      "command": "node",
-      "args": ["mcp/alignkit/dist/server.bundle.mjs"]
+      "command": "sh",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/scripts/run-mcp.sh",
+        "${CLAUDE_PLUGIN_ROOT}/mcp/alignkit/dist/server.bundle.mjs"
+      ]
     },
     "testkit": {
-      "command": "node",
-      "args": ["mcp/testkit/dist/server.bundle.mjs"]
+      "command": "sh",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/scripts/run-mcp.sh",
+        "${CLAUDE_PLUGIN_ROOT}/mcp/testkit/dist/server.bundle.mjs"
+      ]
     },
     "shieldkit": {
-      "command": "node",
-      "args": ["mcp/shieldkit/dist/server.bundle.mjs"]
+      "command": "sh",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/scripts/run-mcp.sh",
+        "${CLAUDE_PLUGIN_ROOT}/mcp/shieldkit/dist/server.bundle.mjs"
+      ]
     },
     "lenskit": {
-      "command": "node",
-      "args": ["mcp/lenskit/dist/server.bundle.mjs"]
+      "command": "sh",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/scripts/run-mcp.sh",
+        "${CLAUDE_PLUGIN_ROOT}/mcp/lenskit/dist/server.bundle.mjs"
+      ]
     },
     "timewarp": {
-      "command": "node",
-      "args": ["mcp/timewarp/dist/server.bundle.mjs"]
+      "command": "sh",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/scripts/run-mcp.sh",
+        "${CLAUDE_PLUGIN_ROOT}/mcp/timewarp/dist/server.bundle.mjs"
+      ]
     },
     "alignkit": {
       "command": "npx",
