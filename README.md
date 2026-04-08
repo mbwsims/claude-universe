@@ -6,12 +6,16 @@ Teach Claude Code to think systematically.
 
 [claudeuniverse.com](https://claudeuniverse.com)
 
-Run these once inside a Claude Code session (`claude` in your terminal):
+Run these separately once inside a Claude Code session (`claude` in your terminal):
 
 ```
 /plugin marketplace add mbwsims/claude-universe
+```
+
+```
 /plugin install universe@claude-universe
 ```
+
 
 The plugin is available in every session after that.
 
