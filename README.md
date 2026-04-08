@@ -23,7 +23,7 @@ The plugin is available in every session after that.
 ## Start here
 
 `/orbit` sweeps the whole project — security, tests, code quality, evolution, and
-instructions — in parallel. Use `/orbit quick` for a fast dashboard or
+instructions — in parallel. Use `/orbit quick` for a fast health check or
 `/orbit security tests` to focus on specific areas.
 
 

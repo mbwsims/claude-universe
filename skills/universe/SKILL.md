@@ -16,9 +16,9 @@ allowed-tools: []
 
 | Command | When to use | What it does |
 |---------|------------|-------------|
-| `/orbit` | "How's my project?" | Dispatch all 5 agents in parallel, unified report |
+| `/orbit` | "Review the whole project" | Dispatch all 5 agents in parallel, unified report |
 | `/orbit security tests` | "Review security and tests" | Dispatch selected agents in parallel |
-| `/orbit quick` | "Quick project dashboard" | Fast MCP-only health check across all areas |
+| `/orbit quick` | "Quick project health check" | Fast MCP-only sweep across all areas |
 
 ## Navigate — instruction intelligence
 

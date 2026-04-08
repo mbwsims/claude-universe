@@ -1,12 +1,12 @@
 ---
 name: orbit
 description: >-
-  This skill should be used when the user asks for a "project review", "full review",
-  "review everything", "how's my project", "project health", "audit everything",
-  "orbit the project", "orbit security and tests", "quick orbit", "project dashboard",
-  "run all agents", "check everything", mentions "/orbit", or wants a combined assessment
-  across any combination of security, tests, code quality, evolution, and instructions.
-  Supports scoping to specific areas and quick mode for fast MCP-only checks.
+  This skill should be used when the user asks to "review the whole project", "full project
+  review", "audit everything", "orbit the project", "orbit security and tests", "quick orbit",
+  "run all agents", "check everything", "review security and tests together", mentions "/orbit",
+  or wants a combined assessment across any combination of security, tests, code quality,
+  evolution, and instructions. Supports scoping to specific areas and quick mode for fast
+  MCP-only health checks.
 allowed-tools:
   - Read
   - Glob
@@ -59,12 +59,12 @@ If no scope keywords are found and no arguments given, ask the user what they wa
 ## Quick Mode
 
 Call the MCP tools for all selected scopes **in parallel** (multiple tool calls in a single
-message). Then synthesize into a dashboard:
+message). Then synthesize into a summary:
 
 ```
 # Orbit — {project name} (quick)
 
-## Dashboard
+## Overview
 
 | Area | Status | Key Finding |
 |------|--------|-------------|
@@ -113,7 +113,7 @@ After all agents return, produce a unified report:
 ```
 # Orbit — {project name}
 
-## Dashboard
+## Overview
 
 | Area | Risk | Findings | Top Issue |
 |------|------|----------|-----------|
@@ -169,8 +169,8 @@ critical code, then structural improvements.}
   The synthesis section is where `/orbit` provides insight no single agent can.
 - **Be honest about gaps.** If an agent or MCP tool was unavailable, say so. Don't
   fabricate results for missing areas.
-- **Quick mode is a dashboard, not an audit.** Quick mode provides a snapshot for
-  "how's the project looking?" — it's not a substitute for deep mode. If quick mode
-  reveals concerning signals, suggest running deep mode on those areas.
+- **Quick mode is a snapshot, not an audit.** Quick mode provides a fast overview using
+  MCP tools only — it's not a substitute for deep mode. If quick mode reveals concerning
+  signals, suggest running deep mode on those areas.
 - **Default to all.** If the user just says `/orbit` with no arguments, default to
-  all areas rather than asking. They can narrow down after seeing the dashboard.
+  all areas rather than asking. They can narrow scope after seeing the results.
