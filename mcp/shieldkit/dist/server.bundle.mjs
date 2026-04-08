@@ -24643,7 +24643,18 @@ import { join as join4 } from "node:path";
 
 // dist/analyzers/surface.js
 import { readFile as readFile3 } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { join as join3 } from "node:path";
+var execFileAsync = promisify(execFile);
+async function wasCommittedToGit(cwd2, filePath) {
+  try {
+    const { stdout } = await execFileAsync("git", ["log", "--all", "--oneline", "--", filePath], { cwd: cwd2, timeout: 5e3 });
+    return stdout.trim().length > 0;
+  } catch {
+    return false;
+  }
+}
 async function analyzeSurface(cwd2) {
   const [routeFiles, envFiles, dbFiles, framework] = await Promise.all([
     discoverRouteFiles(cwd2),
@@ -24663,8 +24674,11 @@ async function analyzeSurface(cwd2) {
   }
   const envFileInfos = [];
   for (const envFile of envFiles) {
-    const gitignored = await checkGitignore(cwd2, envFile);
-    envFileInfos.push({ path: envFile, gitignored });
+    const [gitignored, committedToGit] = await Promise.all([
+      checkGitignore(cwd2, envFile),
+      wasCommittedToGit(cwd2, envFile)
+    ]);
+    envFileInfos.push({ path: envFile, gitignored, committedToGit });
   }
   return {
     endpoints,
@@ -24692,6 +24706,7 @@ async function statusTool(cwd2) {
   const totalFindings = scanResult.scoring.findings.reduce((s, f) => s + f.count, 0);
   const unprotectedEndpoints = surfaceResult.endpoints.filter((e) => !e.hasAuth).length;
   const ungitignored = surfaceResult.envFiles.filter((e) => !e.gitignored).length;
+  const committedSecrets = surfaceResult.envFiles.filter((e) => e.committedToGit).length;
   const severityOrder = {
     critical: 0,
     high: 1,
@@ -24708,6 +24723,9 @@ async function statusTool(cwd2) {
   }
   if (ungitignored > 0) {
     topIssues.push(`${ungitignored} .env file(s) not in .gitignore`);
+  }
+  if (committedSecrets > 0) {
+    topIssues.push(`${committedSecrets} .env file(s) found in git history \u2014 secrets may be exposed`);
   }
   const parts = [];
   parts.push(`Risk: ${scanResult.scoring.riskLevel}`);
@@ -24730,6 +24748,7 @@ async function statusTool(cwd2) {
     unprotectedEndpoints,
     envFiles: surfaceResult.envFiles.length,
     ungitignored,
+    committedSecrets,
     dbAccessFiles: surfaceResult.dbAccessFiles,
     topIssues,
     quickSummary: parts.join(" | ")

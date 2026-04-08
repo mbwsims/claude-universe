@@ -31,9 +31,9 @@ overall security posture, and produce a prioritized report with remediation plan
 of the project's security posture -- risk level, finding counts, endpoint protection status.
 Use this to prioritize which areas need deeper investigation.
 
-If the project is clean (no findings, all endpoints protected), note this and proceed with
-a lighter-touch audit focusing on logic flaws and design issues that pattern matching cannot
-detect.
+If the project is clean (no findings, all endpoints protected), note this — but still
+complete all phases. A clean ShieldKit result means no pattern-based findings, not that
+the project is secure.
 
 ### Phase 1: Reconnaissance
 
@@ -51,18 +51,42 @@ mapping — all endpoints, their auth status, database access patterns, and exte
 - Check configuration and secrets management
 - Note external service integrations
 
+#### Secrets in Environment Files
+
+When `shieldkit_surface` reports env files, check the `gitignored` and `committedToGit` fields:
+- `gitignored: true` + `committedToGit: false` → **Low** (local-only concern, note but don't escalate)
+- `gitignored: true` + `committedToGit: true` → **Critical** (secret in git history, rotation required)
+- `gitignored: false` → **Critical** (secret exposed in repository)
+
+Without shieldkit, verify manually with `git log --all --oneline -- <file>`.
+Do NOT classify a properly gitignored, never-committed env file as Critical.
+
 ### Phase 2: Vulnerability Scan
 
 **With shieldkit-mcp (preferred):** Call `shieldkit_scan` for deterministic pattern detection
-across all files. Use the structured findings as the foundation, then supplement with
-semantic analysis for issues the tool cannot detect (logic flaws, broken access control
-that requires understanding business rules).
+across all files. For each finding, manually read the code to verify exploitability and
+trace the data flow. Then independently scan for semantic vulnerabilities — SSRF, broken
+access control, path traversal, injection via external API responses — that ShieldKit
+cannot detect.
 
 **Without shieldkit-mcp:** For each security-critical file, manually:
 - Check against OWASP Top 10 categories
 - Verify auth and authorization on every endpoint
 - Check for secrets in code and configuration
 - Review error handling for information disclosure
+
+### Phases 3–6 are REQUIRED
+
+These phases are mandatory regardless of whether shieldkit-mcp found findings.
+ShieldKit detects patterns (injection points, hardcoded secrets, dangerous functions).
+It cannot detect:
+- SSRF / private IP fetching (requires understanding URL flow from user input to fetch)
+- Path traversal via API responses (requires tracing external data into URL construction)
+- Logic flaws in auth/authz (requires understanding business rules)
+- Prompt injection via untrusted content flowing into LLM calls
+- Race conditions, timing attacks, crypto misuse
+
+Even if ShieldKit reports zero findings, complete Phases 3–6 before writing the report.
 
 ### Phase 3: Data Flow Tracing
 

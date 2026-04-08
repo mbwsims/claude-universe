@@ -18,6 +18,7 @@ export interface StatusResult {
   unprotectedEndpoints: number;
   envFiles: number;
   ungitignored: number;
+  committedSecrets: number;
   dbAccessFiles: number;
   topIssues: string[];
   quickSummary: string;
@@ -46,6 +47,7 @@ export async function statusTool(cwd: string): Promise<StatusResult> {
 
   const unprotectedEndpoints = surfaceResult.endpoints.filter(e => !e.hasAuth).length;
   const ungitignored = surfaceResult.envFiles.filter(e => !e.gitignored).length;
+  const committedSecrets = surfaceResult.envFiles.filter(e => e.committedToGit).length;
 
   // Build top issues, sorted by severity (critical first)
   const severityOrder: Record<string, number> = {
@@ -68,6 +70,9 @@ export async function statusTool(cwd: string): Promise<StatusResult> {
   }
   if (ungitignored > 0) {
     topIssues.push(`${ungitignored} .env file(s) not in .gitignore`);
+  }
+  if (committedSecrets > 0) {
+    topIssues.push(`${committedSecrets} .env file(s) found in git history — secrets may be exposed`);
   }
 
   // Build summary
@@ -93,6 +98,7 @@ export async function statusTool(cwd: string): Promise<StatusResult> {
     unprotectedEndpoints,
     envFiles: surfaceResult.envFiles.length,
     ungitignored,
+    committedSecrets,
     dbAccessFiles: surfaceResult.dbAccessFiles,
     topIssues,
     quickSummary: parts.join(' | '),
