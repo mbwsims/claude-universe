@@ -1,12 +1,12 @@
 {
   "hooks": {
-    "PostToolUse": [
+    "PreToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Check if the file just modified is an instruction file (CLAUDE.md, .claude.local.md, or any file under .claude/rules/, .claude/agents/, .claude/skills/). If it is NOT an instruction file, do nothing — stop here, produce no output.\n\nIf it IS an instruction file, call `alignkit_local_lint` with the file path. If the tool is unavailable or fails, do a quick manual check for conflicting rules or vague language instead.\n\nSurface the 1-3 most important findings. If no issues found, say nothing.\n\nIf you already surfaced the same warning for this exact file earlier in this session, say nothing. Keep all output to 1-2 sentences maximum."
+            "prompt": "You are a silent pre-tool-use check. Your ONLY job is to detect when a Bash command is about to create a pull request and nudge the user to run /orbit pr first.\n\nLook at the Bash command about to execute. Is it creating a pull request? Specifically, does it contain `gh pr create` (with any arguments)?\n\nIf NO: produce ZERO output. Not a word. No 'allowing', no 'skipping', no 'not applicable', no acknowledgement. Empty response. Every Bash command that isn't `gh pr create` must pass through invisibly.\n\nIf YES: block the tool call and respond with exactly this message (and nothing else):\n\n💡 About to create a pull request. Want to run `/orbit pr` first? It reviews your branch diff for security issues, test coverage gaps, impact, and rule conformance — takes 30-60 seconds.\n\nReply **yes** to run `/orbit pr` before creating the PR, or **proceed** to create the PR without it.\n\nDo not add explanation. Do not narrate. Do not append anything. Just the literal message above, or complete silence."
           }
         ]
       }
