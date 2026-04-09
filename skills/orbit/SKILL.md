@@ -27,7 +27,6 @@ allowed-tools:
   - mcp__alignkit_local__alignkit_local_lint
   - mcp__alignkit_local__alignkit_local_check
 argument-hint: "[pr [--base branch] | quick | deep] [scope: all|security|tests|code|evolution|instructions]"
-context: fork
 ---
 
 # Orbit
@@ -49,13 +48,14 @@ Parse the user's input to determine **mode** and **scope**:
 
 | Mode | What it runs | How long | Answers |
 |------|-------------|----------|---------|
-| Quick | Status tools only (one per area) | ~10 sec | "Is anything broken?" |
-| Standard (default) | Status + primary analysis tools per area | ~30-60 sec | "What should I know?" |
-| Deep | All 5 agents in parallel with full phases | ~5-15 min | "Comprehensive audit" |
+| Quick | Status tools only, inline | ~10 sec | "Is anything broken?" |
+| Standard (default) | Dispatches `orbit-orchestrator` subagent | ~30-90 sec | "What should I know?" |
+| Deep | Dispatches all 5 full-phase agents in parallel | ~5-15 min | "Comprehensive audit" |
 
-Standard is the daily-driver default — it produces real findings without the overhead
-of agent dispatch. Use Quick for a 10-second glance. Use Deep when you want the full
-audit with cross-cutting observations.
+Standard is the daily-driver default. It dispatches a single orchestrator subagent
+that runs MCP tools across all areas and verifies top findings by reading code.
+Subagent dispatch gives fresh tool manifest access, bypassing ToolSearch deferral
+that can affect inline execution.
 
 **PR mode arguments** (only when `pr` detected):
 - `--base {branch}` → compare against that branch instead of `main`
@@ -254,136 +254,67 @@ glance. Triggered by the `quick` keyword. Launch all status tool calls **in para
 Run `/orbit` for a fuller dashboard with detailed findings, or `/orbit deep` for a full audit.
 ```
 
-Because this skill uses `context: fork`, you are running in a fresh subagent
-context with a tool manifest that includes every MCP tool listed in `allowed-tools`.
-If a tool call returns an actual error (not just missing from manifest), report
-the area as "MCP unreachable — check `/plugin` Errors tab" and continue. Never
-report bundled MCPs as "not installed" — they ship with claude-universe.
+Quick mode runs inline in the user's current turn. If some MCP tools aren't in
+the tool manifest (deferred by ToolSearch), attempt the calls anyway — if they
+fail, fall back to native tools (git, Grep, Read) for those areas. Be transparent
+about which areas used MCP vs native. Never report bundled MCPs as "not
+installed" — they ship with claude-universe.
+
+For a more thorough analysis that guarantees fresh MCP tool access, use `/orbit`
+(Standard mode, dispatches the orchestrator subagent) or `/orbit deep` (full
+agent audit).
 
 ## Standard Mode
 
-Standard mode is the default when users run `/orbit` with no arguments. It runs MCP
-tools, then does inline verification and intelligent synthesis — producing real
-findings you can trust without dispatching full agents. Expected runtime: 30-90 seconds
-on a medium project.
+Standard mode is the default when users run `/orbit` with no arguments. It
+dispatches the `orbit-orchestrator` subagent to run MCP tools and do inline
+verification in a fresh context. Expected runtime: 30-90 seconds on a medium
+project.
 
-### Step 1: Gather MCP Data (parallel)
+### Why subagent dispatch?
 
-Launch ALL tool calls across all selected areas **in parallel** (multiple tool calls
-in a single message). The table in Argument Parsing shows which tools to run per area.
+When Claude Code has many plugins installed, MCP tool schemas can be deferred by
+ToolSearch, and the current turn's tool manifest may not include every bundled
+claude-universe MCP tool. Dispatching `orbit-orchestrator` as a subagent gives
+it a fresh tool manifest initialized from its own frontmatter — all bundled MCP
+tools are available to the orchestrator regardless of what's in the parent
+turn's manifest.
 
-Because this skill uses `context: fork`, you are running in a fresh subagent context
-with a tool manifest that includes every MCP tool listed in `allowed-tools`. You
-should be able to invoke every bundled MCP tool (`shieldkit_*`, `testkit_*`,
-`lenskit_*`, `timewarp_*`, `alignkit_local_*`) directly without ToolSearch deferral
-concerns.
+### Dispatch
 
-**If an MCP tool call actually fails** (returns an error rather than just being
-absent from the manifest), that indicates a runtime startup failure of the MCP
-server itself. In that case, report the area as "MCP unreachable — check `/plugin`
-Errors tab for details" and continue with the other areas.
+Use the Agent tool to launch `universe:orbit-orchestrator` with a prompt
+describing the user's scope. Example:
 
-**Never suggest installing a plugin that's already part of claude-universe.**
-The Navigate/Diagnose/Shield/Survey/Timewarp MCP servers ship bundled with this
-plugin. If they fail, the plugin is installed but the MCP subprocess had a startup
-problem — that's a runtime issue, not a missing install.
+- No arguments → prompt: "Run Standard mode orbit across all 5 areas (security,
+  tests, code, evolution, instructions). Return the full dashboard."
+- `/orbit security tests` → prompt: "Run Standard mode orbit scoped to security
+  and tests only. Return the dashboard covering just those areas."
 
-### Step 2: Verify and Interpret (the intelligence layer)
+The orchestrator runs the 4-step process (gather → verify → cross-reference →
+synthesize) autonomously and returns a complete dashboard. Your job is to
+dispatch it once and render its output directly — do NOT reformat or condense
+the orchestrator's response, it's already been synthesized for the user.
 
-This is what makes Standard mode actually useful rather than just an MCP data dump.
-After the tools return, do inline verification work — this is NOT agent dispatch,
-it's targeted reading in the current context.
+### If the orchestrator agent is unavailable
 
-For each area, identify the top 2-3 concerning findings from the MCP results, then
-**read the actual code** to verify or contextualize them:
+If `universe:orbit-orchestrator` can't be dispatched for any reason (agent not
+registered, Agent tool unavailable, etc.), fall back to running the MCP tools
+inline yourself:
 
-- **Security** — For each critical/high finding from `shieldkit_scan`, read the file
-  and trace the data flow. Is the input actually user-controlled? Is there
-  sanitization upstream the tool missed? Classify as confirmed, likely, or false
-  positive. Do NOT include false positives in the dashboard.
+1. Attempt to invoke each area's MCP tools directly. Tools not in the current
+   manifest may be deferred — if they return an error, note the failure and
+   continue.
+2. For areas where MCP tools aren't available, use native tools (git log, Grep,
+   Read, Glob) to produce the best analysis you can.
+3. Be transparent in the dashboard about which areas used MCP tools vs native
+   fallback. Never report bundled MCPs as "not installed" — they ship with the
+   plugin.
+4. At the bottom of the dashboard, note: "Orbit orchestrator dispatch failed —
+   used inline fallback. Check `/plugin` Errors tab if MCP tools should be
+   available."
 
-- **Tests** — For the lowest-grade test files from `testkit_analyze`, read the test
-  content. Is it genuinely shallow, or does it use a pattern the tool doesn't
-  understand? For untested source files from `testkit_map`, read the source to
-  assess criticality (auth/payment/data mutation = high, config/types = low).
-
-- **Code** — For the highest-risk files from `lenskit_analyze`, read the file to
-  see what's driving the score. Is it inherent complexity (parser, state machine)
-  or accidental complexity (god module, copy-pasted logic)? Note which kind.
-
-- **Evolution** — For accelerating files from `timewarp_trends`, read the recent
-  commits to see what's driving the growth. Is it a new feature being actively
-  developed (expected) or scope creep on an old module (concerning)?
-
-- **Instructions** — For the top diagnostics from `alignkit_local_lint`, read the
-  actual rules to verify they're really problematic in context. Vague rules can
-  be legitimate when the project's conventions require flexibility.
-
-**Budget guidance:** Read at most 2-3 files per area. If a finding is obviously
-valid from the tool output alone, don't read the file. The goal is verification,
-not re-analysis. Total file reads should stay under 10-15 across all areas.
-
-**Verify by reading, not by executing.** Use Read, Grep, and Glob only during
-verification. Do NOT write or run ad-hoc scripts (Python, Node, shell one-liners)
-to test regex behavior, execute exploit payloads, or validate sanitizer logic.
-This triggers permission prompts and isn't needed — read the code and reason
-about it.
-
-### Step 3: Cross-Reference
-
-Look across areas for connections the individual tools can't see:
-- Security finding + low test coverage on the same file → higher priority
-- Hotspot + accelerating complexity + recent edits → refactor candidate
-- Missing test + critical code path (auth/payment) → blocking gap
-- Rule violation + area where tools found related issues → systemic pattern
-
-These are only real if they show up in the data. Don't invent connections.
-
-### Step 4: Synthesize the Dashboard
-
-Produce the output using VERIFIED findings (from Step 2) and CROSS-REFERENCED
-patterns (from Step 3), not just raw MCP output:
-
-```
-# Orbit — {project name}
-
-## Dashboard
-
-| Area | Status | Key Findings |
-|------|--------|-------------|
-| Security | {risk level} | {top 2 issues from scan results} |
-| Tests | {grade} | {coverage ratio + top gap from analyze + map} |
-| Code | {avg risk} | {top hotspot + circular dep count from analyze + graph} |
-| Evolution | {trend} | {growth pattern + commit frequency from history + trends} |
-| Instructions | {issue count} | {top diagnostic + conformance status from lint + check} |
-
-## Details
-
-{For each area: 3-5 bullet points from the combined MCP tool results. Include
-concrete findings with file paths and line numbers where available.}
-
-## Cross-Cutting Signals
-
-{Light version of Deep mode's cross-cutting observations — only flag patterns that
-are clearly visible from the MCP data without needing agent reasoning. Examples:
-"auth.ts has both security findings and low test coverage", "billing.ts is a
-hotspot AND accelerating". If nothing stands out, omit this section.}
-
-## Suggested Next Steps
-
-{Based on findings, suggest the most useful follow-up:
-- `/orbit deep {area}` for areas with concerning signals
-- `/orbit pr` if the user is about to merge a branch
-- A specific system command (e.g. `/security-review`) for a single file
-
-If an area was unreachable (MCP server startup failure), suggest checking the
-`/plugin` Errors tab rather than telling the user to install something. The
-Navigate/Diagnose/Shield/Survey/Timewarp MCPs ship bundled with the plugin.}
-```
-
-If an area is unreachable, note it as "MCP unreachable — check `/plugin` Errors
-tab" rather than "skipped (MCP unavailable)". Never say "not installed" for any
-of the five bundled systems.
+The fallback is honest degradation, not deception. Real findings from native
+tools beat fake findings from fabricated MCP output.
 
 ## Deep Mode
 
@@ -476,16 +407,16 @@ critical code, then structural improvements.}
 - **Be honest about gaps.** If an MCP tool call returns an error, say so. Don't
   fabricate results for missing areas.
 - **Never report bundled MCPs as "not installed".** The Navigate/Diagnose/Shield/
-  Survey/Timewarp MCP servers all ship with claude-universe. This skill uses
-  `context: fork` so it runs in a fresh subagent context with all MCP tools
-  available in its manifest — deferred-tool issues should not occur. If a tool
-  fails, it's a runtime issue (check `/plugin` Errors tab), not a missing install.
+  Survey/Timewarp MCP servers all ship with claude-universe. In Standard mode,
+  dispatching `universe:orbit-orchestrator` gives you fresh tool access. If MCP
+  tools still fail, it's a runtime startup issue (check `/plugin` Errors tab),
+  not a missing install.
 - **Quick is a glance, Standard is a check, Deep is an audit.** Pick the right level:
   Quick for "is anything broken right now", Standard for "what should I know about
   this codebase", Deep for "comprehensive audit with cross-cutting findings".
-- **Standard mode must verify, not just aggregate.** The difference between Standard
-  and Quick is that Standard reads the actual code for top findings to confirm
-  they're real. Never ship a Standard report that's just MCP output reformatted —
-  that's Quick mode. Standard means Claude did the intelligence work.
+- **Standard mode dispatches an orchestrator subagent.** Don't run Standard mode
+  inline in the user's turn — dispatch `universe:orbit-orchestrator` via the
+  Agent tool and render its output directly. Inline execution is subject to
+  ToolSearch deferral; subagent dispatch gets a fresh tool manifest.
 - **PR mode is diff-scoped.** `/orbit pr` analyzes only changed files on the branch.
   See the PR Mode section for PR-specific workflow and guidelines.
