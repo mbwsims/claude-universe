@@ -28,7 +28,7 @@ allowed-tools:
   - mcp__alignkit_local__alignkit_local_status
   - mcp__alignkit_local__alignkit_local_lint
   - mcp__alignkit_local__alignkit_local_check
-argument-hint: "[pr [--base branch] | scope: all|security|tests|code|evolution|instructions] [quick]"
+argument-hint: "[pr [--base branch] | quick | deep] [scope: all|security|tests|code|evolution|instructions]"
 ---
 
 # Orbit
@@ -40,28 +40,43 @@ collects results, and synthesizes a unified report with cross-cutting observatio
 
 Parse the user's input to determine **mode** and **scope**:
 
-**Mode** — check for `pr` keyword FIRST, then fall through:
+**Mode** — check keywords in this order:
 - `pr` keyword present → **PR mode** (diff-aware branch analysis — see PR Mode below)
-- `quick` keyword present (without `pr`) → **Quick mode** (MCP tools only, fast dashboard)
-- Neither → **Deep mode** (full agent dispatch with all phases)
+- `deep` keyword present → **Deep mode** (full agent dispatch, ~5-15 minutes)
+- `quick` keyword present → **Quick mode** (status tools only, ~10 seconds)
+- No mode keyword → **Standard mode** (default: status + primary analysis tools, ~30-60 seconds)
+
+**The three modes:**
+
+| Mode | What it runs | How long | Answers |
+|------|-------------|----------|---------|
+| Quick | Status tools only (one per area) | ~10 sec | "Is anything broken?" |
+| Standard (default) | Status + primary analysis tools per area | ~30-60 sec | "What should I know?" |
+| Deep | All 5 agents in parallel with full phases | ~5-15 min | "Comprehensive audit" |
+
+Standard is the daily-driver default — it produces real findings without the overhead
+of agent dispatch. Use Quick for a 10-second glance. Use Deep when you want the full
+audit with cross-cutting observations.
 
 **PR mode arguments** (only when `pr` detected):
 - `--base {branch}` → compare against that branch instead of `main`
 - `quick` → MCP-only fast scan, skip deep analysis on flagged items
 - Scope keywords are **ignored** in PR mode — it checks all systems based on file type
 
-**Scope** (only for Quick and Deep modes) — match any of these keywords (multiple allowed):
+**Scope** (for Quick, Standard, and Deep modes) — match any of these keywords (multiple allowed):
 
-| Keyword | Aliases | Deep: Agent | Quick: MCP tools |
-|---------|---------|-------------|-----------------|
-| `security` | `sec`, `shield` | security-auditor | `shieldkit_status` + `shieldkit_scan` |
-| `tests` | `test`, `testing`, `diagnose` | test-auditor | `testkit_status` + `testkit_map` |
-| `code` | `codebase`, `architecture`, `survey` | codebase-analyst | `lenskit_status` + `lenskit_graph` |
-| `evolution` | `temporal`, `timewarp`, `history` | evolution-analyst | `timewarp_history` + `timewarp_trends` |
-| `instructions` | `rules`, `navigate`, `claude-md` | instruction-advisor | `alignkit_local_status` + `alignkit_local_lint` |
-| `all` | (no args also defaults to all) | all 5 agents | all status + primary tools |
+| Keyword | Aliases | Quick (1 tool) | Standard (2-3 tools) | Deep (agent) |
+|---------|---------|---------------|---------------------|--------------|
+| `security` | `sec`, `shield` | `shieldkit_status` | `shieldkit_status` + `shieldkit_scan` + `shieldkit_surface` | security-auditor |
+| `tests` | `test`, `testing`, `diagnose` | `testkit_status` | `testkit_status` + `testkit_map` + `testkit_analyze` | test-auditor |
+| `code` | `codebase`, `architecture`, `survey` | `lenskit_status` | `lenskit_status` + `lenskit_analyze` + `lenskit_graph` | codebase-analyst |
+| `evolution` | `temporal`, `timewarp`, `history` | `timewarp_history` | `timewarp_history` + `timewarp_trends` | evolution-analyst |
+| `instructions` | `rules`, `navigate`, `claude-md` | `alignkit_local_status` | `alignkit_local_status` + `alignkit_local_lint` + `alignkit_local_check` | instruction-advisor |
+| `all` | (no scope args defaults to all) | all status tools | all status + analysis tools | all 5 agents |
 
-If no scope keywords are found and no arguments given, default to all areas.
+If no scope keywords are found, default to all areas. Combined with the default Standard
+mode, `/orbit` with no arguments runs status + primary analysis tools across all 5
+systems in parallel — the daily-driver dashboard.
 
 ## PR Mode
 
@@ -222,37 +237,129 @@ If nothing stands out, omit this section entirely rather than manufacturing prai
 
 ## Quick Mode
 
-Call the MCP tools for all selected scopes **in parallel** (multiple tool calls in a single
-message). Then synthesize into a dashboard:
+Quick mode runs ONLY the status tool for each selected area — the fastest possible
+glance. Triggered by the `quick` keyword. Launch all status tool calls **in parallel**
+(multiple tool calls in a single message). Then synthesize into a minimal dashboard:
 
 ```
-# Orbit — {project name} (quick)
+# Orbit — {project name} (quick glance)
+
+| Area | Status | Top Signal |
+|------|--------|-----------|
+| Security | {risk level} | {top issue} |
+| Tests | {grade} | {coverage ratio} |
+| Code | {avg risk} | {file count + risk summary} |
+| Evolution | {trend} | {commit frequency} |
+| Instructions | {issue count} | {top diagnostic} |
+
+Run `/orbit` for a fuller dashboard with detailed findings, or `/orbit deep` for a full audit.
+```
+
+Skip any area whose MCP tools are unavailable — note it as "skipped (MCP unavailable)."
+
+## Standard Mode
+
+Standard mode is the default when users run `/orbit` with no arguments. It runs MCP
+tools, then does inline verification and intelligent synthesis — producing real
+findings you can trust without dispatching full agents. Expected runtime: 30-90 seconds
+on a medium project.
+
+### Step 1: Gather MCP Data (parallel)
+
+Launch ALL tool calls across all selected areas **in parallel** (multiple tool calls
+in a single message). The table in Argument Parsing shows which tools to run per area.
+
+### Step 2: Verify and Interpret (the intelligence layer)
+
+This is what makes Standard mode actually useful rather than just an MCP data dump.
+After the tools return, do inline verification work — this is NOT agent dispatch,
+it's targeted reading in the current context.
+
+For each area, identify the top 2-3 concerning findings from the MCP results, then
+**read the actual code** to verify or contextualize them:
+
+- **Security** — For each critical/high finding from `shieldkit_scan`, read the file
+  and trace the data flow. Is the input actually user-controlled? Is there
+  sanitization upstream the tool missed? Classify as confirmed, likely, or false
+  positive. Do NOT include false positives in the dashboard.
+
+- **Tests** — For the lowest-grade test files from `testkit_analyze`, read the test
+  content. Is it genuinely shallow, or does it use a pattern the tool doesn't
+  understand? For untested source files from `testkit_map`, read the source to
+  assess criticality (auth/payment/data mutation = high, config/types = low).
+
+- **Code** — For the highest-risk files from `lenskit_analyze`, read the file to
+  see what's driving the score. Is it inherent complexity (parser, state machine)
+  or accidental complexity (god module, copy-pasted logic)? Note which kind.
+
+- **Evolution** — For accelerating files from `timewarp_trends`, read the recent
+  commits to see what's driving the growth. Is it a new feature being actively
+  developed (expected) or scope creep on an old module (concerning)?
+
+- **Instructions** — For the top diagnostics from `alignkit_local_lint`, read the
+  actual rules to verify they're really problematic in context. Vague rules can
+  be legitimate when the project's conventions require flexibility.
+
+**Budget guidance:** Read at most 2-3 files per area. If a finding is obviously
+valid from the tool output alone, don't read the file. The goal is verification,
+not re-analysis. Total file reads should stay under 10-15 across all areas.
+
+### Step 3: Cross-Reference
+
+Look across areas for connections the individual tools can't see:
+- Security finding + low test coverage on the same file → higher priority
+- Hotspot + accelerating complexity + recent edits → refactor candidate
+- Missing test + critical code path (auth/payment) → blocking gap
+- Rule violation + area where tools found related issues → systemic pattern
+
+These are only real if they show up in the data. Don't invent connections.
+
+### Step 4: Synthesize the Dashboard
+
+Produce the output using VERIFIED findings (from Step 2) and CROSS-REFERENCED
+patterns (from Step 3), not just raw MCP output:
+
+```
+# Orbit — {project name}
 
 ## Dashboard
 
-| Area | Status | Key Finding |
+| Area | Status | Key Findings |
 |------|--------|-------------|
-| Security | {risk level} | {top issue from shieldkit_status} |
-| Tests | {grade} | {coverage ratio + top gap from testkit_status} |
-| Code | {avg risk} | {top hotspot from lenskit_status} |
-| Evolution | {trend} | {growth pattern from timewarp_trends} |
-| Instructions | {issue count} | {top diagnostic from alignkit_local_lint} |
+| Security | {risk level} | {top 2 issues from scan results} |
+| Tests | {grade} | {coverage ratio + top gap from analyze + map} |
+| Code | {avg risk} | {top hotspot + circular dep count from analyze + graph} |
+| Evolution | {trend} | {growth pattern + commit frequency from history + trends} |
+| Instructions | {issue count} | {top diagnostic + conformance status from lint + check} |
 
 ## Details
 
-{For each area: 3-5 bullet points from the MCP tool results}
+{For each area: 3-5 bullet points from the combined MCP tool results. Include
+concrete findings with file paths and line numbers where available.}
 
-## Suggested Deep Dives
+## Cross-Cutting Signals
 
-{Based on findings, suggest which areas warrant a full `/orbit` (deep mode)}
+{Light version of Deep mode's cross-cutting observations — only flag patterns that
+are clearly visible from the MCP data without needing agent reasoning. Examples:
+"auth.ts has both security findings and low test coverage", "billing.ts is a
+hotspot AND accelerating". If nothing stands out, omit this section.}
+
+## Suggested Next Steps
+
+{Based on findings, suggest the most useful follow-up:
+- `/orbit deep {area}` for areas with concerning signals
+- `/orbit pr` if the user is about to merge a branch
+- A specific system command (e.g. `/security-review`) for a single file}
 ```
 
 Skip any area whose MCP tools are unavailable — note it as "skipped (MCP unavailable)."
 
 ## Deep Mode
 
-Dispatch the selected agents **in parallel** using the Agent tool. Each agent runs its
-full multi-phase process autonomously.
+Deep mode is triggered by the `deep` keyword (e.g., `/orbit deep`, `/orbit deep security tests`).
+It dispatches the selected agents **in parallel** using the Agent tool. Each agent runs
+its full multi-phase process autonomously. This takes several minutes — it's the
+comprehensive audit, not the daily check.
 
 ### Dispatch
 
@@ -324,19 +431,25 @@ critical code, then structural improvements.}
 
 ## Guidelines
 
-- **Parallel is the point.** Always dispatch agents simultaneously, never sequentially.
-  The whole value of `/orbit` is running multiple audits concurrently.
-- **Condense agent reports.** Each agent produces a full report — your job is to extract
-  the key findings, not reproduce the entire output. Link to the full report if the user
-  wants details.
+- **Parallel is the point.** In every mode, launch tool calls and agent dispatches
+  simultaneously (multiple in a single message), never sequentially. The whole value
+  of `/orbit` is running multiple audits concurrently.
+- **Default to Standard mode across all areas.** If the user just says `/orbit` with
+  no arguments, immediately run Standard mode across all 5 systems. Do not ask what
+  they want to review — produce the dashboard first, let them narrow scope or
+  escalate to Deep/PR mode from there.
+- **Condense agent reports.** In Deep mode, each agent produces a full report — your
+  job is to extract the key findings, not reproduce the entire output.
 - **Cross-cutting is the unique value.** Individual agents can't see across domains.
-  The synthesis section is where `/orbit` provides insight no single agent can.
+  The synthesis section is where `/orbit` provides insight no single tool can.
 - **Be honest about gaps.** If an agent or MCP tool was unavailable, say so. Don't
   fabricate results for missing areas.
-- **Quick mode is a snapshot, not an audit.** Quick mode provides a fast overview using
-  MCP tools only — it's not a substitute for deep mode. If quick mode reveals concerning
-  signals, suggest running deep mode on those areas.
-- **Default to all.** If the user just says `/orbit` with no arguments, default to
-  all areas rather than asking. They can narrow scope after seeing the results.
+- **Quick is a glance, Standard is a check, Deep is an audit.** Pick the right level:
+  Quick for "is anything broken right now", Standard for "what should I know about
+  this codebase", Deep for "comprehensive audit with cross-cutting findings".
+- **Standard mode must verify, not just aggregate.** The difference between Standard
+  and Quick is that Standard reads the actual code for top findings to confirm
+  they're real. Never ship a Standard report that's just MCP output reformatted —
+  that's Quick mode. Standard means Claude did the intelligence work.
 - **PR mode is diff-scoped.** `/orbit pr` analyzes only changed files on the branch.
   See the PR Mode section for PR-specific workflow and guidelines.
