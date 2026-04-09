@@ -127,14 +127,16 @@ single-file analysis, they're often sufficient. MCP servers matter most on large
 codebases where batch analysis and quantitative scoring justify the tooling.
 
 
-## Automatic checks
+## PR guard
 
-A hook runs after every file edit to lint instruction files (CLAUDE.md, rules,
-agents, skills). If you modify an instruction file, it surfaces the 1-3 most
-important quality issues. For everything else, it stays silent.
+When you ask Claude to create a pull request, a hook catches the `gh pr create`
+command and asks whether you want to run `/orbit pr` first. Reply **yes** to
+review the diff for security issues, test coverage gaps, impact, and rule
+conformance before the PR is opened, or **proceed** to create the PR without it.
 
-For comprehensive checks across security, tests, code quality, and evolution,
-use `/orbit pr` before merging — it analyzes only your changed files.
+The hook is silent for every other Bash command — it only activates at PR
+creation time, which is the right moment to catch issues before code leaves
+your branch.
 
 
 ## Navigate standalone
