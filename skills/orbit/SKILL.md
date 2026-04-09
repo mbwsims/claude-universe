@@ -27,6 +27,7 @@ allowed-tools:
   - mcp__alignkit_local__alignkit_local_lint
   - mcp__alignkit_local__alignkit_local_check
 argument-hint: "[pr [--base branch] | quick | deep] [scope: all|security|tests|code|evolution|instructions]"
+context: fork
 ---
 
 # Orbit
@@ -131,8 +132,8 @@ After the per-file calls complete, also run:
 
 For newly added files (status `A`), skip `timewarp_trends` — there is no history to analyze.
 
-If any MCP tool fails or is unavailable, note it as "skipped" in the report and continue
-with the tools that do work.
+If any MCP tool call returns an error, note the specific tool failure in the report
+and continue with the tools that do work. Never report a bundled MCP as "not installed".
 
 ### Step 3: Deep analysis (skip if `quick`)
 
@@ -253,11 +254,11 @@ glance. Triggered by the `quick` keyword. Launch all status tool calls **in para
 Run `/orbit` for a fuller dashboard with detailed findings, or `/orbit deep` for a full audit.
 ```
 
-**Deferred tools are not unavailable.** Claude Code may defer MCP tool schemas via
-ToolSearch when many plugins are installed. A tool not in the live tool list can
-still be invoked — the first call promotes it. Always attempt each tool before
-concluding an area is unavailable. If an area genuinely can't be reached, note it
-as "MCP unreachable — check /plugin Errors tab" rather than "not installed".
+Because this skill uses `context: fork`, you are running in a fresh subagent
+context with a tool manifest that includes every MCP tool listed in `allowed-tools`.
+If a tool call returns an actual error (not just missing from manifest), report
+the area as "MCP unreachable — check `/plugin` Errors tab" and continue. Never
+report bundled MCPs as "not installed" — they ship with claude-universe.
 
 ## Standard Mode
 
@@ -271,25 +272,21 @@ on a medium project.
 Launch ALL tool calls across all selected areas **in parallel** (multiple tool calls
 in a single message). The table in Argument Parsing shows which tools to run per area.
 
-**Important — deferred tools are not the same as unavailable.** Claude Code uses
-ToolSearch to defer tool schemas when many plugins are installed, keeping context
-lean. A tool that's not in your current tool list may simply be deferred, not
-missing. **Always attempt to invoke the tool** — the first call promotes a deferred
-tool into the live list. Only classify an area as unavailable if the invocation
-returns an actual error (not just a schema-not-loaded condition).
+Because this skill uses `context: fork`, you are running in a fresh subagent context
+with a tool manifest that includes every MCP tool listed in `allowed-tools`. You
+should be able to invoke every bundled MCP tool (`shieldkit_*`, `testkit_*`,
+`lenskit_*`, `timewarp_*`, `alignkit_local_*`) directly without ToolSearch deferral
+concerns.
 
-**When an MCP tool call fails:**
-1. Retry the call once — transient promotion failures can self-heal
-2. If still failing, check whether other tools from the same server (e.g., both
-   `shieldkit_scan` and `shieldkit_status`) also fail. If all of them fail, the
-   server itself is unreachable.
-3. Only then mark the area as "MCP unreachable — retry with /orbit deep to
-   dispatch the agent directly, or check `/plugin` Errors tab for details."
+**If an MCP tool call actually fails** (returns an error rather than just being
+absent from the manifest), that indicates a runtime startup failure of the MCP
+server itself. In that case, report the area as "MCP unreachable — check `/plugin`
+Errors tab for details" and continue with the other areas.
 
 **Never suggest installing a plugin that's already part of claude-universe.**
 The Navigate/Diagnose/Shield/Survey/Timewarp MCP servers ship bundled with this
-plugin. If they fail to start, the plugin is installed but the MCP server
-subprocess had a startup problem — that's a runtime issue, not a missing install.
+plugin. If they fail, the plugin is installed but the MCP subprocess had a startup
+problem — that's a runtime issue, not a missing install.
 
 ### Step 2: Verify and Interpret (the intelligence layer)
 
@@ -379,15 +376,14 @@ hotspot AND accelerating". If nothing stands out, omit this section.}
 - `/orbit pr` if the user is about to merge a branch
 - A specific system command (e.g. `/security-review`) for a single file
 
-If an area was genuinely unreachable (not just deferred — see Step 1 guidance),
-suggest checking `/plugin` Errors tab rather than telling the user to install
-something. The Navigate/Diagnose/Shield/Survey/Timewarp MCPs ship with the plugin.}
+If an area was unreachable (MCP server startup failure), suggest checking the
+`/plugin` Errors tab rather than telling the user to install something. The
+Navigate/Diagnose/Shield/Survey/Timewarp MCPs ship bundled with the plugin.}
 ```
 
-If an area is genuinely unreachable (after retrying and confirming it's not a
-deferred tool), note it as "MCP unreachable — check /plugin Errors tab" rather
-than "skipped (MCP unavailable)". Never say "not installed" for any of the five
-bundled systems.
+If an area is unreachable, note it as "MCP unreachable — check `/plugin` Errors
+tab" rather than "skipped (MCP unavailable)". Never say "not installed" for any
+of the five bundled systems.
 
 ## Deep Mode
 
@@ -477,14 +473,13 @@ critical code, then structural improvements.}
   job is to extract the key findings, not reproduce the entire output.
 - **Cross-cutting is the unique value.** Individual agents can't see across domains.
   The synthesis section is where `/orbit` provides insight no single tool can.
-- **Be honest about gaps.** If an agent or MCP tool was genuinely unavailable after
-  a retry, say so. Don't fabricate results for missing areas.
-- **Deferred ≠ unavailable.** Claude Code uses ToolSearch to defer MCP tool schemas
-  when many plugins are installed. A tool not in your live tool list can still be
-  invoked — the first call promotes it. ALWAYS attempt each tool before concluding
-  an area is unreachable. Never report a bundled MCP server as "not installed" —
-  they all ship with claude-universe. If a server fails to start at runtime, that's
-  a plugin runtime issue (check `/plugin` Errors tab), not a missing install.
+- **Be honest about gaps.** If an MCP tool call returns an error, say so. Don't
+  fabricate results for missing areas.
+- **Never report bundled MCPs as "not installed".** The Navigate/Diagnose/Shield/
+  Survey/Timewarp MCP servers all ship with claude-universe. This skill uses
+  `context: fork` so it runs in a fresh subagent context with all MCP tools
+  available in its manifest — deferred-tool issues should not occur. If a tool
+  fails, it's a runtime issue (check `/plugin` Errors tab), not a missing install.
 - **Quick is a glance, Standard is a check, Deep is an audit.** Pick the right level:
   Quick for "is anything broken right now", Standard for "what should I know about
   this codebase", Deep for "comprehensive audit with cross-cutting findings".
