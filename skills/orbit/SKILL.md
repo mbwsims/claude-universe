@@ -1,13 +1,11 @@
 ---
 name: orbit
 description: >-
-  This skill should be used when the user asks to "review the whole project", "full project
-  review", "audit everything", "orbit the project", "orbit security and tests", "quick orbit",
-  "run all agents", "check everything", "review security and tests together", "review my PR",
-  "is my PR ready", "check my branch", "pr review", "orbit pr", mentions "/orbit" or "/orbit pr",
-  or wants a combined assessment across any combination of security, tests, code quality,
-  evolution, and instructions. Supports PR mode for diff-aware branch analysis, scoping to
-  specific areas, and quick mode for fast MCP-only health checks.
+  Run when the user mentions "/orbit", "/orbit pr", "/orbit deep", "/orbit quick",
+  "review the whole project", "audit everything", "is my PR ready", "review my PR",
+  or wants a combined assessment across security, tests, code quality, evolution, or
+  instructions. Supports quick glance, standard dashboard (default), full agent deep
+  audit, and PR mode for diff-aware branch review.
 allowed-tools:
   - Read
   - Glob
@@ -255,7 +253,11 @@ glance. Triggered by the `quick` keyword. Launch all status tool calls **in para
 Run `/orbit` for a fuller dashboard with detailed findings, or `/orbit deep` for a full audit.
 ```
 
-Skip any area whose MCP tools are unavailable — note it as "skipped (MCP unavailable)."
+**Deferred tools are not unavailable.** Claude Code may defer MCP tool schemas via
+ToolSearch when many plugins are installed. A tool not in the live tool list can
+still be invoked — the first call promotes it. Always attempt each tool before
+concluding an area is unavailable. If an area genuinely can't be reached, note it
+as "MCP unreachable — check /plugin Errors tab" rather than "not installed".
 
 ## Standard Mode
 
@@ -268,6 +270,26 @@ on a medium project.
 
 Launch ALL tool calls across all selected areas **in parallel** (multiple tool calls
 in a single message). The table in Argument Parsing shows which tools to run per area.
+
+**Important — deferred tools are not the same as unavailable.** Claude Code uses
+ToolSearch to defer tool schemas when many plugins are installed, keeping context
+lean. A tool that's not in your current tool list may simply be deferred, not
+missing. **Always attempt to invoke the tool** — the first call promotes a deferred
+tool into the live list. Only classify an area as unavailable if the invocation
+returns an actual error (not just a schema-not-loaded condition).
+
+**When an MCP tool call fails:**
+1. Retry the call once — transient promotion failures can self-heal
+2. If still failing, check whether other tools from the same server (e.g., both
+   `shieldkit_scan` and `shieldkit_status`) also fail. If all of them fail, the
+   server itself is unreachable.
+3. Only then mark the area as "MCP unreachable — retry with /orbit deep to
+   dispatch the agent directly, or check `/plugin` Errors tab for details."
+
+**Never suggest installing a plugin that's already part of claude-universe.**
+The Navigate/Diagnose/Shield/Survey/Timewarp MCP servers ship bundled with this
+plugin. If they fail to start, the plugin is installed but the MCP server
+subprocess had a startup problem — that's a runtime issue, not a missing install.
 
 ### Step 2: Verify and Interpret (the intelligence layer)
 
@@ -355,10 +377,17 @@ hotspot AND accelerating". If nothing stands out, omit this section.}
 {Based on findings, suggest the most useful follow-up:
 - `/orbit deep {area}` for areas with concerning signals
 - `/orbit pr` if the user is about to merge a branch
-- A specific system command (e.g. `/security-review`) for a single file}
+- A specific system command (e.g. `/security-review`) for a single file
+
+If an area was genuinely unreachable (not just deferred — see Step 1 guidance),
+suggest checking `/plugin` Errors tab rather than telling the user to install
+something. The Navigate/Diagnose/Shield/Survey/Timewarp MCPs ship with the plugin.}
 ```
 
-Skip any area whose MCP tools are unavailable — note it as "skipped (MCP unavailable)."
+If an area is genuinely unreachable (after retrying and confirming it's not a
+deferred tool), note it as "MCP unreachable — check /plugin Errors tab" rather
+than "skipped (MCP unavailable)". Never say "not installed" for any of the five
+bundled systems.
 
 ## Deep Mode
 
@@ -448,8 +477,14 @@ critical code, then structural improvements.}
   job is to extract the key findings, not reproduce the entire output.
 - **Cross-cutting is the unique value.** Individual agents can't see across domains.
   The synthesis section is where `/orbit` provides insight no single tool can.
-- **Be honest about gaps.** If an agent or MCP tool was unavailable, say so. Don't
-  fabricate results for missing areas.
+- **Be honest about gaps.** If an agent or MCP tool was genuinely unavailable after
+  a retry, say so. Don't fabricate results for missing areas.
+- **Deferred ≠ unavailable.** Claude Code uses ToolSearch to defer MCP tool schemas
+  when many plugins are installed. A tool not in your live tool list can still be
+  invoked — the first call promotes it. ALWAYS attempt each tool before concluding
+  an area is unreachable. Never report a bundled MCP server as "not installed" —
+  they all ship with claude-universe. If a server fails to start at runtime, that's
+  a plugin runtime issue (check `/plugin` Errors tab), not a missing install.
 - **Quick is a glance, Standard is a check, Deep is an audit.** Pick the right level:
   Quick for "is anything broken right now", Standard for "what should I know about
   this codebase", Deep for "comprehensive audit with cross-cutting findings".
