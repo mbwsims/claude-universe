@@ -2,7 +2,7 @@
 
 Teach Claude Code to think systematically.
 
-5 systems of systematic intelligence, 20 commands, 1 universe.
+5 layers of systematic intelligence, 20 commands, 1 universe.
 
 [claudeuniverse.com](https://claudeuniverse.com)
 
