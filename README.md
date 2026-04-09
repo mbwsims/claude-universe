@@ -2,7 +2,7 @@
 
 Teach Claude Code to think systematically.
 
-5 layer of systematic intelligence, 19 commands, 1 universe.
+5 systems of systematic intelligence, 20 commands, 1 universe.
 
 [claudeuniverse.com](https://claudeuniverse.com)
 
@@ -18,6 +18,13 @@ Run these separately once inside a Claude Code session (`claude` in your termina
 
 
 The plugin is available in every session after that.
+
+
+## Start here
+
+`/orbit` sweeps the whole project — security, tests, code quality, evolution, and
+instructions — in parallel. Use `/orbit quick` for a fast health check or
+`/orbit security tests` to focus on specific areas.
 
 
 ## The Systems
@@ -72,7 +79,7 @@ plugin's `.mcp.json` configuration.
 - Support for more languages coming soon...
 
 **Skill-guided analysis** (Claude reads and reasons about code):
-- **Any language** — all 19 commands work with any language Claude can read
+- **Any language** — all 20 commands work with any language Claude can read
 
 The MCP servers provide structured data that skills use to guide analysis. When MCP
 servers aren't available (e.g., in restricted environments), every skill falls back
