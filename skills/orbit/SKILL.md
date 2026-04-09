@@ -304,6 +304,12 @@ For each area, identify the top 2-3 concerning findings from the MCP results, th
 valid from the tool output alone, don't read the file. The goal is verification,
 not re-analysis. Total file reads should stay under 10-15 across all areas.
 
+**Verify by reading, not by executing.** Use Read, Grep, and Glob only during
+verification. Do NOT write or run ad-hoc scripts (Python, Node, shell one-liners)
+to test regex behavior, execute exploit payloads, or validate sanitizer logic.
+This triggers permission prompts and isn't needed — read the code and reason
+about it.
+
 ### Step 3: Cross-Reference
 
 Look across areas for connections the individual tools can't see:

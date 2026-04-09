@@ -162,3 +162,7 @@ For the top 3-5 most important modules, explain each one:
 - Note both strengths and weaknesses. "The auth layer is well-structured" is as useful
   as "the API routes are inconsistent."
 - Entry Points is the most actionable section. A new developer reads this first.
+- **Verify by reading, not by executing.** Use Read, Grep, and Glob to analyze code
+  structure. Do NOT write or run ad-hoc scripts (Python, Node, shell one-liners) to
+  parse imports, count lines, or compute metrics — lenskit already does that. Read
+  files and reason about them.

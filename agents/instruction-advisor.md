@@ -179,3 +179,7 @@ actionable with the exact change to make.}
 - Recommendations should be concrete and actionable
 - If adherence data is unavailable, say so honestly and focus on quality analysis
 - The report should be useful even if the user just skims the Summary and Priority Fixes
+- **Verify by reading, not by executing.** Use Read, Grep, and Glob to analyze
+  instruction files and their referenced code. Do NOT write or run ad-hoc scripts
+  (Python, Node, shell one-liners) to parse YAML, count tokens, or test rule patterns
+  — alignkit already does that. Read files and reason about them.

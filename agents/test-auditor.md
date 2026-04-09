@@ -247,3 +247,8 @@ Focus on systemic improvements, not individual file fixes.}
   note the discrepancy — deterministic metrics can be optimistic.
 - Verify testkit_map's coverage ratio by spot-checking 5-10 test files. The ratio may
   undercount if test naming conventions differ from source paths.
+- **Verify by reading, not by executing.** Use Read, Grep, and Glob to analyze test
+  files. Do NOT write or run ad-hoc scripts (Python, Node, shell one-liners) to
+  execute tests, check assertion behavior, or validate mock logic. Running tests
+  triggers permission prompts and is not the auditor's job — read the test source
+  and reason about it.

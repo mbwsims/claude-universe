@@ -178,3 +178,7 @@ Save all results to `.timewarp/evolution-report-{date}.json`.
   If you notice issues in these areas during temporal analysis, mention them briefly in
   the Recommendations section ("security concern noted in X — run shieldkit for details")
   but do not investigate them. Your job is time-based evolution analysis only.
+- **Verify by reading, not by executing.** Use Read, Grep, Glob, and git commands
+  (log, show, diff) to gather evidence. Do NOT write or run ad-hoc scripts (Python,
+  Node, shell one-liners) to process git output or compute metrics — timewarp
+  already does that. Read files and reason about them; don't execute them.

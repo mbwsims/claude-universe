@@ -75,6 +75,24 @@ cannot detect.
 - Check for secrets in code and configuration
 - Review error handling for information disclosure
 
+#### Verify by reading, not by executing
+
+When verifying findings, use Read, Grep, and Glob only. Do NOT write or run ad-hoc
+scripts (Python, Node, shell one-liners) to test regex behavior, exploit payloads,
+or sanitizer logic. This triggers unnecessary permission prompts and can't actually
+prove exploitability because the test environment doesn't match production.
+
+Instead, verify by:
+- **Reading the actual code** and reasoning about what it does
+- **Using Grep** to find related call sites, similar patterns, or sanitization points
+- **Tracing imports and function references** to understand data flow
+- **Citing specific file:line locations** as evidence
+
+If a finding requires running code to confirm (e.g., "does this regex match this
+payload?"), write it as a hypothesis in the report with the specific payload and
+expected behavior, and recommend the developer verify in a test environment. Do
+not execute the test yourself.
+
 ### Phases 3–6 are REQUIRED
 
 These phases are mandatory regardless of whether shieldkit-mcp found findings.
