@@ -11,7 +11,7 @@
       "name": "universe",
       "source": "./",
       "description": "Teach Claude Code to think systematically. 19 commands and 5 agents for instruction quality, test depth, security, codebase structure, and code evolution.",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "author": {
         "name": "Matthew Sims"
       },
