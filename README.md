@@ -37,8 +37,7 @@ instructions — in parallel. Use `/orbit quick` for a fast health check or
 | **Survey** | Codebase intelligence | `/trace` `/hotspots` `/impact` `/explain` `/map` |
 | **Timewarp** | Temporal intelligence | `/recap` `/drift` `/dissect` `/forecast` `/rewind` |
 
-Commands are prefixed with `universe:` (e.g. `/universe:scan`). You can also just
-describe what you need in plain English, the right command activates automatically.
+You can also just describe what you need in plain English, the right command should activate automatically.
 
 ## What each system does
 
