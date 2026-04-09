@@ -3,10 +3,11 @@ name: orbit
 description: >-
   This skill should be used when the user asks to "review the whole project", "full project
   review", "audit everything", "orbit the project", "orbit security and tests", "quick orbit",
-  "run all agents", "check everything", "review security and tests together", mentions "/orbit",
+  "run all agents", "check everything", "review security and tests together", "review my PR",
+  "is my PR ready", "check my branch", "pr review", "orbit pr", mentions "/orbit" or "/orbit pr",
   or wants a combined assessment across any combination of security, tests, code quality,
-  evolution, and instructions. Supports scoping to specific areas and quick mode for fast
-  MCP-only health checks.
+  evolution, and instructions. Supports PR mode for diff-aware branch analysis, scoping to
+  specific areas, and quick mode for fast MCP-only health checks.
 allowed-tools:
   - Read
   - Glob
@@ -27,7 +28,7 @@ allowed-tools:
   - mcp__alignkit_local__alignkit_local_status
   - mcp__alignkit_local__alignkit_local_lint
   - mcp__alignkit_local__alignkit_local_check
-argument-hint: "[scope: all|security|tests|code|evolution|instructions] [quick]"
+argument-hint: "[pr [--base branch] | scope: all|security|tests|code|evolution|instructions] [quick]"
 ---
 
 # Orbit
@@ -39,11 +40,17 @@ collects results, and synthesizes a unified report with cross-cutting observatio
 
 Parse the user's input to determine **mode** and **scope**:
 
-**Mode:**
-- `quick` keyword present → **Quick mode** (MCP tools only, fast dashboard)
-- No `quick` keyword → **Deep mode** (full agent dispatch with all phases)
+**Mode** — check for `pr` keyword FIRST, then fall through:
+- `pr` keyword present → **PR mode** (diff-aware branch analysis — see PR Mode below)
+- `quick` keyword present (without `pr`) → **Quick mode** (MCP tools only, fast dashboard)
+- Neither → **Deep mode** (full agent dispatch with all phases)
 
-**Scope** — match any of these keywords (multiple allowed):
+**PR mode arguments** (only when `pr` detected):
+- `--base {branch}` → compare against that branch instead of `main`
+- `quick` → MCP-only fast scan, skip deep analysis on flagged items
+- Scope keywords are **ignored** in PR mode — it checks all systems based on file type
+
+**Scope** (only for Quick and Deep modes) — match any of these keywords (multiple allowed):
 
 | Keyword | Aliases | Deep: Agent | Quick: MCP tools |
 |---------|---------|-------------|-----------------|
@@ -54,7 +61,164 @@ Parse the user's input to determine **mode** and **scope**:
 | `instructions` | `rules`, `navigate`, `claude-md` | instruction-advisor | `alignkit_local_status` + `alignkit_local_lint` |
 | `all` | (no args also defaults to all) | all 5 agents | all status + primary tools |
 
-If no scope keywords are found and no arguments given, ask the user what they want to review.
+If no scope keywords are found and no arguments given, default to all areas.
+
+## PR Mode
+
+Analyzes only the files changed on the current branch vs. a base branch. Runs focused
+checks through all 5 systems on just the diff. This is the daily-driver command — fast,
+scoped, answers "is my PR ready?"
+
+### Step 1: Gather the diff
+
+Run:
+
+```bash
+git diff --name-status main...HEAD
+```
+
+(Replace `main` with the `--base` value if provided.)
+
+If the command fails (e.g., branch has no common ancestor with base), tell the user and
+suggest they specify the correct base branch with `--base`.
+
+Parse the output and classify each file:
+
+**Source files** — any file not matching test or instruction patterns below.
+
+**Test files** — match any of: `*.test.*`, `*.spec.*`, files under `__tests__/`, `test_*.py`,
+`*_test.py`, `*_test.go`, files under `tests/` whose name starts with `test_`.
+
+**Instruction files** — match any of: `CLAUDE.md`, `.claude.local.md`, files under
+`.claude/rules/`, `.claude/agents/`, `.claude/skills/`.
+
+Filter out deleted files (status `D`). Treat renamed files (status `R`) as modified.
+Ignore copy (`C`) and type-change (`T`) statuses if they appear. Track counts of added
+(`A`) vs modified (`M`) for the report header.
+
+If there are no changed files (branch is up to date with base), say so and exit.
+
+### Step 2: Quick scan (MCP calls)
+
+For each changed file, run the appropriate MCP tools. **Launch all calls in parallel**
+(multiple tool calls in a single message).
+
+| File type | MCP tool | What it checks |
+|-----------|----------|----------------|
+| Source file | `shieldkit_scan` with `file` param | New vulnerabilities |
+| Source file | `lenskit_analyze` with `file` param | Impact — is this a high-coupling hub? |
+| Source file | `timewarp_trends` with `file` param | Accelerating complexity? |
+| Test file | `testkit_analyze` with `file` param | Test quality — shallow assertions, coverage gaps |
+| Instruction file | `alignkit_local_lint` with `file` param | Instruction quality |
+
+After the per-file calls complete, also run:
+- `testkit_map` — to find source files that changed but have NO corresponding test file
+  changes. Flag untested modifications.
+- `alignkit_local_check` — to check if any changes violate documented rules.
+
+For newly added files (status `A`), skip `timewarp_trends` — there is no history to analyze.
+
+If any MCP tool fails or is unavailable, note it as "skipped" in the report and continue
+with the tools that do work.
+
+### Step 3: Deep analysis (skip if `quick`)
+
+If the user passed `quick`, skip this step entirely and go to Step 4.
+
+For items flagged in Step 2, do targeted deeper analysis. This is NOT dispatching full
+agents — it's inline, file-scoped reads on flagged items only:
+
+- **Shield findings** → Read the flagged file. Trace the data flow from user input to the
+  vulnerability site. Is the input actually user-controlled? Is there sanitization upstream?
+  Classify as confirmed, likely, or false positive.
+
+- **Test gaps** → Read the source file that lacks test changes. What does it do? Is it
+  logic that genuinely needs tests, or is it configuration/wiring? If it's auth, payment,
+  or data mutation logic, flag as high priority.
+
+- **Impact concerns** → For files where `lenskit_analyze` shows high coupling (many
+  importers), use Grep to find the actual import sites. Are the changes to the file's
+  public interface, or internal-only? Internal changes with high coupling are fine.
+
+- **Rule violations** → Read the rule that was violated and the code that violates it.
+  Is the violation real? Does the code need to change, or does the rule need updating?
+
+### Step 4: Synthesize the PR readiness report
+
+Produce this output:
+
+```
+# PR Review — {branch-name} → {base-branch}
+
+{n} files changed ({added} added, {modified} modified, {deleted} deleted)
+
+## Readiness
+
+| Check | Status | Finding |
+|-------|--------|---------|
+| Security | {pass/warn/fail} | {one-line summary or "No issues"} |
+| Test coverage | {pass/warn/fail} | {one-line summary or "All changes tested"} |
+| Code quality | {pass/warn/fail} | {one-line summary or "No concerns"} |
+| Complexity trends | {pass/warn/fail} | {one-line summary or "Stable"} |
+| Rule conformance | {pass/warn/fail} | {one-line summary or "All rules followed"} |
+
+## Issues
+
+{Ordered by severity. Each cites a specific changed file and line.}
+
+### Critical
+
+1. **{Issue}** — `{file}:{line}`
+   {What's wrong and how to fix it}
+
+### Warning
+
+1. **{Issue}** — `{file}:{line}`
+   {What's wrong and how to fix it}
+
+### Info
+
+1. **{Issue}** — `{file}:{line}`
+   {Observation, not blocking}
+
+{Omit severity sections with no issues.}
+
+## Missing Tests
+
+{Source files that were modified but have no corresponding test file changes.
+Order by criticality:
+- HIGH: auth, payment, security, data mutation logic
+- MEDIUM: business logic, API handlers
+- LOW: config, types, utilities
+
+If all modified source files have corresponding test changes, say "All modified source
+files have corresponding test changes."}
+
+## Good Patterns
+
+{What the PR does well — acknowledge secure patterns, thorough tests, good structure.
+If nothing stands out, omit this section entirely rather than manufacturing praise.}
+
+## Verdict
+
+{One sentence: "Ready to merge" / "Ready after addressing N issues" / "Needs work: {what}"}
+```
+
+**Status assignment rules:**
+- `pass` — no findings, or only informational notes
+- `warn` — findings exist but none are critical/blocking
+- `fail` — critical findings that should be fixed before merge
+
+### PR Mode Guidelines
+
+- **Scope is the point.** Only analyze changed files. Never expand to the full project.
+- **Parallel MCP calls.** Launch all per-file tool calls in a single message, not sequentially.
+- **Be specific.** Every issue must cite a file and line from the diff. No generic advice.
+- **Deep mode is targeted.** Step 3 reads flagged files — it does NOT dispatch agents or
+  run full project sweeps.
+- **Acknowledge good work.** If the PR is clean, say so. Don't manufacture issues.
+- **Quick is fast.** When `quick` is passed, produce the report from MCP data alone. Users
+  run quick to get a 30-second answer, not a 5-minute analysis.
 
 ## Quick Mode
 
@@ -174,3 +338,5 @@ critical code, then structural improvements.}
   signals, suggest running deep mode on those areas.
 - **Default to all.** If the user just says `/orbit` with no arguments, default to
   all areas rather than asking. They can narrow scope after seeing the results.
+- **PR mode is diff-scoped.** `/orbit pr` analyzes only changed files on the branch.
+  See the PR Mode section for PR-specific workflow and guidelines.

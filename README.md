@@ -130,16 +130,12 @@ codebases where batch analysis and quantitative scoring justify the tooling.
 
 ## Automatic checks
 
-A combined hook runs after every file edit, detecting the file type and running the
-appropriate check:
+A hook runs after every file edit to lint instruction files (CLAUDE.md, rules,
+agents, skills). If you modify an instruction file, it surfaces the 1-3 most
+important quality issues. For everything else, it stays silent.
 
-- **Instruction files** — lints for quality issues
-- **Test files** — flags shallow assertions and missing error tests
-- **Security-critical files** — spots missing auth, injection risks, ownership gaps
-- **High-impact files** — warns when editing files with many dependents
-- **Trending files** — flags files with accelerating complexity growth
-
-All checks are 1-2 sentences. They nudge, not nag.
+For comprehensive checks across security, tests, code quality, and evolution,
+use `/orbit pr` before merging — it analyzes only your changed files.
 
 
 ## Navigate standalone
