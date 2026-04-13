@@ -65,6 +65,12 @@ const MEDIUM_CRITICALITY_PATTERNS = [
   /database/i, /db/i, /query/i,
   /cache/i,
   /queue/i, /worker/i, /job/i,
+  // Entry points and integration hubs
+  /\bbackground\b/i, /\bserver\b/i, /\bgateway\b/i, /\bmain\b/i,
+  // Communication / messaging layers
+  /\bprotocol\b/i, /\bmessaging\b/i, /\btransport\b/i,
+  // State and data flow
+  /\bstorage\b/i, /\bstate\b/i, /\bmigrat/i,
 ];
 
 export function classifyCriticality(filePath: string): { priority: 'high' | 'medium' | 'low'; reason: string } {
@@ -149,6 +155,20 @@ export function inferSourcePath(testPath: string, cwd?: string): string | null {
   if (dir.startsWith('test') || dir.startsWith('tests')) {
     const srcDir = dir.replace(/^tests?/, 'src');
     candidates.push(join(srcDir, sourceName));
+
+    // Try tests/ -> lib/ directory mirror (common in projects that use lib/ instead of src/)
+    const libDir = dir.replace(/^tests?/, 'lib');
+    candidates.push(join(libDir, sourceName));
+
+    // Try tests/ -> root directory mirror (e.g., test/scoring/foo.test.ts -> scoring/foo.ts)
+    const rootDir = dir.replace(/^tests?\/?/, '');
+    if (rootDir) {
+      candidates.push(join(rootDir, sourceName));
+    }
+
+    // Try tests/ -> app/ directory mirror
+    const appDir = dir.replace(/^tests?/, 'app');
+    candidates.push(join(appDir, sourceName));
   }
 
   // If cwd provided, verify existence and return first match

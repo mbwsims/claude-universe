@@ -159,7 +159,9 @@ describe('computeOverallGrade', () => {
 
   it('handles mix of null and non-null dimensions correctly', () => {
     // When a dimension is null, it is excluded from the weighted average
-    // (not counted as zero -- it simply reduces the denominator)
+    // (not counted as zero -- it simply reduces the denominator).
+    // However, when fewer than 3 of 4 dimensions are measured, the grade
+    // is capped at A- to signal incomplete assessment confidence.
     const grade = computeOverallGrade({
       assertionDepth: null,
       inputCoverage: null,
@@ -168,8 +170,9 @@ describe('computeOverallGrade', () => {
       specClarity: null,
       independence: null,
     });
-    // Only errorTesting is non-null. A = 4.0. Average = 4.0 / 1 = 4.0 -> A
-    expect(grade).toBe('A');
+    // Only errorTesting is non-null (1 of 4). Average = 4.0 -> A, but
+    // confidence cap reduces to A- since < 3 dimensions are measured.
+    expect(grade).toBe('A-');
   });
 
   it('caps at C when mock health is D or worse (excessive mock setup)', () => {

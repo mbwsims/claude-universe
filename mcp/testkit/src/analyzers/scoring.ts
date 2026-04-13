@@ -141,6 +141,15 @@ export function computeOverallGrade(dimensions: DimensionScores): Grade {
 
   let overall = valueToGrade(totalValue / totalWeight);
 
+  // Confidence cap: when fewer than 3 of 4 measurable dimensions have data,
+  // cap the grade to acknowledge incomplete assessment. This prevents grade
+  // inflation when e.g. only assertionDepth and mockHealth are measured (both
+  // easily get 'A') but errorTesting (the highest-weighted dimension) is null.
+  const measuredCount = weights.filter(({ key }) => dimensions[key] !== null).length;
+  if (measuredCount < 3 && GRADE_VALUES[overall] > GRADE_VALUES['A-']) {
+    overall = 'A-';
+  }
+
   // Grade caps from the scoring rubric
   // Only F (no error tests at all) triggers the C cap.
   // D means SOME error tests exist -- it drags down the average but doesn't hard-cap.

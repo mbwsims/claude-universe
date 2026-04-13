@@ -244,6 +244,35 @@ async function analyzeFileTrend(
     samples.push({ date, lines, functions });
   }
 
+  // If standard sampling failed (project too young for the requested period),
+  // fall back to using actual commit dates from git log as sample points.
+  if (samples.length < 2) {
+    const logArgs = ['log', '--format=%H %ci', '--reverse', '--', file];
+    const logResult = await gitRun(logArgs, cwd);
+    if (logResult.ok) {
+      const commits = logResult.stdout.trim().split('\n').filter(Boolean);
+      if (commits.length >= 2) {
+        // Sample first, middle, and last commits
+        const indices = [0, Math.floor(commits.length / 2), commits.length - 1];
+        const uniqueIndices = [...new Set(indices)];
+        samples.length = 0; // clear previous attempts
+        for (const idx of uniqueIndices) {
+          const parts = commits[idx].split(' ');
+          const hash = parts[0];
+          const date = parts[1]; // YYYY-MM-DD from %ci
+          const content = await getFileAtCommit(hash, file, cwd);
+          if (content !== null) {
+            samples.push({
+              date,
+              lines: content.split('\n').length,
+              functions: countFunctions(content),
+            });
+          }
+        }
+      }
+    }
+  }
+
   if (samples.length < 2) return null;
 
   const earliest = samples[0];

@@ -46,6 +46,12 @@ const CLASSIFICATION_PATTERNS: Array<{ type: RuleType; patterns: RegExp[] }> = [
       /\bin .+\/ directory/i,
       /\bfile.+\blocation/i,
       /\bco-?locate/i,
+      /\bnever modify\b.+\b(files?|directory|folder)\b/i,
+      /\bnever delete\b.+\b(files?|directory|folder|session)\b/i,
+      /\bpreserve\b.+\b(directory|structure|files?)\b/i,
+      /\buse the existing\b.+\bdirectory\b/i,
+      /\bnever\b.+\bcleanup\b/i,
+      /\bcreate\b.+\bdirector(y|ies)\b/i,
     ],
   },
   {
