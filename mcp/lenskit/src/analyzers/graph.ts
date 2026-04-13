@@ -445,13 +445,18 @@ export async function analyzeGraph(cwd: string): Promise<GraphResult> {
 
     const rawImports = extractImports(content);
     const deps = adjacency.get(file) ?? [];
+    const seenEdges = new Set<string>();
 
     for (const imp of rawImports) {
       const resolved = resolveImport(imp.path, file, fileSet, tsconfigPaths);
       if (resolved && resolved !== file) {
-        edges.push({ from: file, to: resolved });
-        deps.push(resolved);
-        importerCount.set(resolved, (importerCount.get(resolved) ?? 0) + 1);
+        const edgeKey = `${file}\0${resolved}`;
+        if (!seenEdges.has(edgeKey)) {
+          seenEdges.add(edgeKey);
+          edges.push({ from: file, to: resolved });
+          deps.push(resolved);
+          importerCount.set(resolved, (importerCount.get(resolved) ?? 0) + 1);
+        }
       }
     }
 

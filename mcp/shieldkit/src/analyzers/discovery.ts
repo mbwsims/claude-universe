@@ -19,6 +19,13 @@ const IGNORE_PATTERNS = [
   '**/.next/**',
   '**/.nuxt/**',
   '**/test-fixtures/**',
+  // Vendored / third-party files that produce false positives
+  '**/*.min.js',
+  '**/*.min.mjs',
+  '**/*.bundle.js',
+  '**/*.wasm.mjs',
+  '**/*.wasm.js',
+  '**/public/ort/**',
 ];
 
 const SOURCE_EXTENSIONS = new Set([
