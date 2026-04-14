@@ -127,18 +127,6 @@ single-file analysis, they're often sufficient. MCP servers matter most on large
 codebases where batch analysis and quantitative scoring justify the tooling.
 
 
-## PR guard
-
-When you ask Claude to create a pull request, a hook catches the `gh pr create`
-command and asks whether you want to run `/orbit pr` first. Reply **yes** to
-review the diff for security issues, test coverage gaps, impact, and rule
-conformance before the PR is opened, or **proceed** to create the PR without it.
-
-The hook is silent for every other Bash command — it only activates at PR
-creation time, which is the right moment to catch issues before code leaves
-your branch.
-
-
 ## Navigate standalone
 
 The Navigate system is also available as a standalone plugin:
