@@ -1,0 +1,21 @@
+{
+  "command": "/security-review",
+  "intent": "Review a specific file or change set for exploitability.",
+  "shouldTrigger": [
+    "Security review this route handler.",
+    "Check this code for exploits.",
+    "Use /security-review on the payment webhook changes.",
+    "Find security bugs in this diff."
+  ],
+  "shouldNotTrigger": [
+    "Scan the entire repo for vulnerabilities.",
+    "Give me a normal code review of this PR.",
+    "Map the architecture of the service.",
+    "Write tests for this sanitizer."
+  ],
+  "smokeWorkflow": [
+    "User provides a file, directory, or small change set.",
+    "Skill runs the targeted security scan if available, then traces untrusted input through validation, authorization, processing, and output.",
+    "Skill returns exploit-focused findings with severity, attack path, and concrete fixes."
+  ]
+}

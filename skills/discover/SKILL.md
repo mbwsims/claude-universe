@@ -1,11 +1,10 @@
 ---
 name: discover
 description: >-
-  This skill should be used when the user asks to "discover conventions", "find conventions",
-  "infer rules from code", "what conventions does my project follow", "reverse engineer my rules",
-  "discover patterns", "what rules should I add", "analyze my codebase for conventions",
-  "generate rules from code", mentions "/discover", or wants to find unwritten conventions
-  in their codebase that should become instruction rules.
+  Use when the user wants to infer reusable project conventions from existing code and turn
+  them into instruction rules: "discover conventions", "infer rules from code", "what rules
+  should I add", "generate rules from this codebase", or "/discover". This is for convention
+  mining, not for checking rule adherence or explaining how a specific module works.
 allowed-tools:
   - Read
   - Glob
@@ -90,23 +89,12 @@ Format discoveries as a numbered list with evidence. Group by category.
 1. **{Pattern name}** — {brief description of what's consistent}
    Suggested rule: "{concrete, paste-ready rule text}"
    Evidence: {specific files, counts, or grep results}
-
-2. ...
-
-### Code Structure
-
-3. **{Pattern name}** — ...
-
-### Error Handling
-
-4. ...
 ```
 
 **For each discovery, include:**
 - A short descriptive title
 - The suggested rule in quotes (ready to paste into CLAUDE.md)
 - Specific evidence: file paths, line numbers, counts, or grep results
-- Note any exceptions found
 - A value tag: **high**, **medium**, or **low**
 
 **Value filtering — this is critical:**
@@ -199,13 +187,13 @@ When adding rules, place them in the most appropriate location:
 - **Respect exceptions**: If a convention has legitimate exceptions (e.g., "no default exports
   except Next.js pages"), capture the exception in the rule.
 - **Count, don't guess**: Always cite specific numbers. "All 12 API routes" is credible.
-  "The project generally follows..." is vague.
+  "12 of 14 API routes follow..." is credible. Avoid unsupported summaries.
 
 ## Related Skills
 
 - **`/lint-rules`** — After adding discovered conventions to CLAUDE.md, use `/lint-rules` to check
   the overall quality of the instruction file
-- **`/check-rules`** — Use to verify whether discovered conventions are actually being followed
+- **`/check-rules`** — Use to verify whether the resulting rules are actually being followed
 
 ## Additional Resources
 

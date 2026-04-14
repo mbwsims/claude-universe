@@ -4,13 +4,13 @@
     "name": "Matthew Sims"
   },
   "metadata": {
-    "description": "Teach Claude Code to think systematically."
+    "description": "Project-wide PR readiness, targeted test authoring, security review, architecture tracing, and code evolution analysis for Claude Code."
   },
   "plugins": [
     {
       "name": "universe",
       "source": "./",
-      "description": "Teach Claude Code to think systematically. 19 commands and 5 agents for instruction quality, test depth, security, codebase structure, and code evolution.",
+      "description": "Project-wide PR readiness, targeted test authoring, security review, architecture tracing, and code evolution analysis for Claude Code.",
       "version": "0.8.1",
       "author": {
         "name": "Matthew Sims"

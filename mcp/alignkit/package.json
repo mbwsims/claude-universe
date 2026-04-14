@@ -4,7 +4,8 @@
   "description": "MCP server for local instruction quality analysis and conformance checking",
   "type": "module",
   "bin": {
-    "alignkit-local-mcp": "./bin/mcp-server.mjs"
+    "alignkit-local-mcp": "./bin/mcp-server.mjs",
+    "alignkit-local-validate-skills": "./bin/validate-skills.mjs"
   },
   "files": [
     "dist",
@@ -17,7 +18,8 @@
     "build": "tsc && esbuild dist/mcp/server.js --bundle --platform=node --format=esm --banner:js=\"import{createRequire as __cjsReq}from'module';const require=__cjsReq(import.meta.url);\" --outfile=dist/server.bundle.mjs",
     "dev": "tsc --watch",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "validate:repo": "npm run build && node ./bin/validate-skills.mjs"
   },
   "author": {
     "name": "Matt Sims",

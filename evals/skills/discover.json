@@ -1,0 +1,21 @@
+{
+  "command": "/discover",
+  "intent": "Infer conventions from an existing codebase and turn them into reusable instruction rules.",
+  "shouldTrigger": [
+    "Discover the conventions this codebase actually follows.",
+    "Infer rules from the code and tell me what should go into CLAUDE.md.",
+    "Use /discover to find unwritten project conventions.",
+    "What conventions should I add as instruction rules?"
+  ],
+  "shouldNotTrigger": [
+    "Check whether the current rules are being followed.",
+    "Explain how this module works.",
+    "Lint my instruction file for quality problems.",
+    "Show me what changed recently."
+  ],
+  "smokeWorkflow": [
+    "User asks for convention mining from the codebase.",
+    "Skill samples representative files, compares observed patterns against existing rules, and filters for high-value conventions only.",
+    "Skill returns paste-ready rule suggestions with evidence and exceptions."
+  ]
+}

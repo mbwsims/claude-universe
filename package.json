@@ -3,6 +3,7 @@
   "version": "0.8.1",
   "private": true,
   "scripts": {
+    "test:skills": "cd mcp/alignkit && npm run validate:repo -- ../..",
     "test": "npm run test:alignkit && npm run test:testkit && npm run test:shieldkit && npm run test:lenskit && npm run test:timewarp",
     "test:alignkit": "cd mcp/alignkit && npx vitest run --passWithNoTests",
     "test:testkit": "cd mcp/testkit && npx vitest run --passWithNoTests",

@@ -1,0 +1,25 @@
+{
+  "command": "/orbit",
+  "intent": "Run a broad repo-wide or PR-wide readiness sweep across multiple quality domains.",
+  "shouldTrigger": [
+    "Run /orbit on this repo and tell me what needs attention.",
+    "Is this PR ready overall? Use /orbit pr.",
+    "Give me a combined security, tests, and architecture review of this project.",
+    "Do a project-wide audit before I open the pull request."
+  ],
+  "shouldNotTrigger": [
+    "Security review this one auth handler.",
+    "Explain what this module does.",
+    "Write tests for src/lib/date.ts.",
+    "Trace the checkout flow from route to database."
+  ],
+  "smokeWorkflow": [
+    "User asks for /orbit pr against the current branch.",
+    "Skill gathers the diff, runs the relevant MCP scans in parallel, and deepens only flagged items.",
+    "Skill returns one readiness report covering security, tests, code quality, evolution, and rule conformance."
+  ],
+  "comparisonNotes": {
+    "withoutSkill": "User has to separately ask for security, tests, architecture, and instruction conformance, then manually combine the results.",
+    "withSkill": "A single command produces a unified readiness report with cross-cutting findings and a verdict."
+  }
+}

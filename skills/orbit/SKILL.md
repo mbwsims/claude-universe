@@ -1,11 +1,10 @@
 ---
 name: orbit
 description: >-
-  Run when the user mentions "/orbit", "/orbit pr", "/orbit deep", "/orbit quick",
-  "review the whole project", "audit everything", "is my PR ready", "review my PR",
-  or wants a combined assessment across security, tests, code quality, evolution, or
-  instructions. Supports quick glance, standard dashboard (default), full agent deep
-  audit, and PR mode for diff-aware branch review.
+  Run for repo-wide or diff-wide readiness sweeps: "/orbit", "/orbit pr", "/orbit deep",
+  "/orbit quick", "audit this project", "project-wide review", "is this PR ready overall",
+  or "combined security, tests, codebase, evolution, and instruction review". Use this for
+  broad multi-system assessment, not for a single-file review or a one-domain question.
 allowed-tools:
   - Read
   - Glob
@@ -147,8 +146,8 @@ agents — it's inline, file-scoped reads on flagged items only:
   Classify as confirmed, likely, or false positive.
 
 - **Test gaps** → Read the source file that lacks test changes. What does it do? Is it
-  logic that genuinely needs tests, or is it configuration/wiring? If it's auth, payment,
-  or data mutation logic, flag as high priority.
+  logic that genuinely needs tests, or is it configuration/wiring? Flag business-critical
+  mutation logic as high priority.
 
 - **Impact concerns** → For files where `lenskit_analyze` shows high coupling (many
   importers), use Grep to find the actual import sites. Are the changes to the file's
@@ -187,13 +186,11 @@ Produce this output:
 
 ### Warning
 
-1. **{Issue}** — `{file}:{line}`
-   {What's wrong and how to fix it}
+Use the same entry format as Critical, but for non-blocking issues that still need action.
 
 ### Info
 
-1. **{Issue}** — `{file}:{line}`
-   {Observation, not blocking}
+Use the same entry format as Critical, but for observations that are useful context only.
 
 {Omit severity sections with no issues.}
 

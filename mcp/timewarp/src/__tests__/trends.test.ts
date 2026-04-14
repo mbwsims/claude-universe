@@ -1,10 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 
 // We test detectGrowthPattern via a test-only export. See Step 3.
 import { detectGrowthPatternForTest, detectChurnPatternForTest, analyzeFileTrendForTest, analyzeTrends, countFunctionsForTest } from '../analyzers/trends.js';
 import { join } from 'node:path';
+import { ensureFixtureGitHistory } from '../../../shared/test-fixture-git.js';
 
 const FIXTURE_DIR = join(import.meta.dirname, '..', '..', '..', 'test-fixtures');
+
+beforeAll(async () => {
+  await ensureFixtureGitHistory(FIXTURE_DIR);
+});
 
 describe('detectGrowthPattern — flat threshold', () => {
   it('classifies <15% total growth over 6 months as flat', () => {

@@ -37,7 +37,7 @@ for refactoring: you need to understand the history before you can safely simpli
 Read the file now. Assess:
 - Total lines, function count, nesting depth
 - What's the most complex section? (deepest nesting, longest function, most branches)
-- What does this complexity serve? (business rules, error handling, compatibility, etc.)
+- Which obligations make that complexity necessary? (business rules, error handling, compatibility, etc.)
 
 **Function-level tracking:** If a specific function was requested, isolate its evolution:
 1. Find the function in the current file (by name, signature, or line range)
@@ -49,6 +49,9 @@ Read the file now. Assess:
 ### 3. Walk the History
 
 Find the structural commits — the ones that significantly changed the file's shape:
+
+If `timewarp_history` is available, call it first to get the commit frequency, author mix,
+and most-changed-file context before diving into raw git output.
 
 ```bash
 # All commits touching this file, with stats
@@ -152,7 +155,7 @@ This prevents accidentally creating nested directories in the cache.
 
 - **`/drift`** — Understand if the file's purpose has shifted (explains WHY it got complex)
 - **`/rewind`** — See a specific historical version in detail
-- **lenskit `/explain`** — Deep explanation of the current code
+- **lenskit `/explain`** — Explain the current code and its constraints in detail
 
 ## Additional Resources
 

@@ -1,7 +1,7 @@
 {
   "name": "universe",
   "version": "0.8.1",
-  "description": "Teach Claude Code to think systematically. 19 commands and 5 agents for instruction quality, test depth, security, codebase structure, and code evolution.",
+  "description": "Project-wide PR readiness, targeted test authoring, security review, architecture tracing, and code evolution analysis for Claude Code.",
   "author": {
     "name": "Matthew Sims",
     "url": "https://github.com/mbwsims"

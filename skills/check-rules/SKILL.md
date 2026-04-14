@@ -24,8 +24,7 @@ argument-hint: "[file]"
 Verify whether the project's instruction rules are actually being followed. Works in two modes:
 
 - **Conformance mode** (default, no dependencies): Reads the codebase directly and checks each
-  rule against the current code with specific evidence (file paths, line numbers, grep results).
-  Answers: "Does the code match the rules right now?"
+  rule against the current code. Answers: "Does the code match the rules right now?"
 
 - **Adherence mode** (with alignkit npm package): Analyzes Claude Code session history to track
   rule compliance across sessions over time, with trend data and persistent history.
@@ -45,7 +44,7 @@ the codebase currently complies with each rule by reading the code directly.
 
 **Conformance check procedure:**
 
-1. Find instruction files using Glob (CLAUDE.md, .claude/rules/*.md) and extract all rules
+1. Find instruction files with Glob (CLAUDE.md, .claude/rules/*.md)
 2. Classify each rule by verification strategy:
 
    | Rule Type | How to Verify | Example |
@@ -56,7 +55,7 @@ the codebase currently complies with each rule by reading the code directly.
    | **Naming convention** | List files and grep declarations | "PascalCase components" → list component files, check names |
    | **Architecture boundary** | Grep for cross-boundary imports | "No db imports in components" → grep component dir for db imports |
    | **Config requirement** | Read config files directly | "Strict TypeScript" → read tsconfig.json strict field |
-   | **Style/behavioral** | Mark as Unverifiable | "Write clean code" → cannot verify from code alone |
+   | **Style/behavioral** | Mark as Unverifiable | "Keep code clean" → cannot verify from code alone |
 
 3. For each verifiable rule, search the codebase with Read, Glob, and Grep. Collect:
    - **Evidence count**: how many files/instances checked
@@ -76,7 +75,7 @@ the codebase currently complies with each rule by reading the code directly.
 |------|---------|----------|
 | "Use absolute imports" | Conforms | 0 relative imports in 34 source files |
 | "Tests next to source" | Violates | 3 test files in wrong location (list below) |
-| "Write meaningful names" | Unverifiable | Style rule — requires human review |
+| "Use meaningful names" | Unverifiable | Style rule — requires human review |
 
 ### Violations
 
@@ -203,7 +202,7 @@ current lint + conformance snapshot instead of a trend.
 
 ## Related Skills
 
-- **`/discover`** — Use to find conventions that should become rules
+- **`/discover`** — Use to find missing conventions that should become rules
 - **`/lint-rules`** — Use to improve the quality of rules before checking adherence
 
 ## Additional Resources

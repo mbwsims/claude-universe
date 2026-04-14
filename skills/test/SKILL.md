@@ -1,11 +1,10 @@
 ---
 name: test
 description: >-
-  This skill should be used when the user asks to "write tests", "test this", "add tests",
-  "generate tests for", "test this function", "test this module", "test this file",
-  "help me test", mentions "/test", or wants to generate high-quality tests for their code.
-  This skill produces tests that catch real bugs through systematic input space analysis
-  and deep assertions — not just happy path coverage.
+  Use when the user wants new tests authored for a specific file, function, or module:
+  "write tests", "add tests", "generate tests for", "test this function", "test this file",
+  or "/test". This skill writes high-quality tests; it is not the default for running an
+  existing test suite, debugging a failing test run, or reviewing current tests.
 allowed-tools:
   - Read
   - Glob

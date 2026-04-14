@@ -1,0 +1,25 @@
+{
+  "command": "/test",
+  "intent": "Author new tests for a specific file, function, or module.",
+  "shouldTrigger": [
+    "Write tests for src/services/user-service.ts.",
+    "Add tests for the parseDate function.",
+    "Generate a test file for this module.",
+    "Use /test on src/lib/auth.ts."
+  ],
+  "shouldNotTrigger": [
+    "Run the test suite and tell me what failed.",
+    "Review whether these existing tests are good.",
+    "Plan the test matrix for this module before writing code.",
+    "Why is this vitest run failing in CI?"
+  ],
+  "smokeWorkflow": [
+    "User names a concrete source file or function.",
+    "Skill detects the test framework, maps existing tests, and analyzes the target contract.",
+    "Skill writes a test file or extends an existing one, then runs the narrowest practical test command."
+  ],
+  "comparisonNotes": {
+    "withoutSkill": "User must explain what to test, which edge cases matter, and how deep the assertions should be.",
+    "withSkill": "The skill infers framework, target, and input-space coverage, then writes the tests directly."
+  }
+}

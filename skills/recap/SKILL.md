@@ -34,13 +34,16 @@ neglected. A developer returning from vacation runs this and is caught up in 2 m
 - "this month" → `--since="{YYYY-MM}-01"`
 - "since Monday" → calculate the most recent Monday date
 - Month names ("march", "february") → `--since="{YYYY}-{MM}-01" --until="{YYYY}-{MM+1}-01"`
-- "last N days" → `--since="{N} days ago"`
+- "last 7 days", "last 30 days" → `--since="{N} days ago"`
 - ISO dates ("2025-01-01") → pass through directly to `--since`
 
 ### 2. Gather History
 
 **With timewarp-mcp (preferred):** Call `timewarp_history` with the period to get structured
 commit data — counts, authors, file changes, commit classifications.
+
+If the most active files need extra trajectory context, call `timewarp_trends` on those
+files before finalizing the focus-area summary.
 
 **Without timewarp-mcp:** Run git log manually:
 ```bash
@@ -84,11 +87,9 @@ reports (did recent changes worsen any drift?).
 
 ### Features
 - {feature description} ({files involved})
-- ...
 
 ### Fixes
 - {bug description} ({files involved})
-- ...
 
 ### Refactors
 - {refactor description} ({files involved})

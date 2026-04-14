@@ -1,8 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 import { gitRun } from './git-utils.js';
 import { join } from 'node:path';
+import { ensureFixtureGitHistory } from './test-fixture-git.js';
 
 const FIXTURE_DIR = join(import.meta.dirname, '..', 'test-fixtures');
+
+beforeAll(async () => {
+  await ensureFixtureGitHistory(FIXTURE_DIR);
+});
 
 describe('gitRun', () => {
   it('returns ok with stdout for valid git command', async () => {

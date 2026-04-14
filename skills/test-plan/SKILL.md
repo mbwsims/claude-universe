@@ -34,6 +34,9 @@ Useful for:
 If `testkit_map` is available, call it to understand which functions already have tests
 and which need plans. This avoids planning for code that's already well-tested.
 
+If relevant tests already exist, call `testkit_analyze` on those files to find shallow
+assertions, missing error coverage, and other gaps that the new plan should close.
+
 If `testkit_map` is unavailable, note: "Running without testkit-mcp — discovering test
 coverage manually. Install the testkit MCP server for automated coverage mapping." Then
 manually Glob for existing test files and read them to understand current coverage.
@@ -95,7 +98,7 @@ Based on the code archetype (see `skills/test/references/test-architecture.md`):
 Explicitly state:
 - What to mock (external systems: database, network, filesystem, clock)
 - What NOT to mock (your own modules, internal logic)
-- Whether integration testing is preferable to mocking
+- Whether integration testing is required instead of mocking
 
 ### 6. Present the Plan
 

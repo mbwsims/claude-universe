@@ -1,11 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 
 // classifyMessage is not exported, so we test it indirectly by exporting a test helper.
 // We add a named export for testing only. See Step 3.
 import { classifyMessageForTest, computeMonthsDiffForTest, analyzeHistory, classifyWithFileFallbackForTest } from '../analyzers/history.js';
 import { join } from 'node:path';
+import { ensureFixtureGitHistory } from '../../../shared/test-fixture-git.js';
 
 const FIXTURE_DIR = join(import.meta.dirname, '..', '..', '..', 'test-fixtures');
+
+beforeAll(async () => {
+  await ensureFixtureGitHistory(FIXTURE_DIR);
+});
 
 describe('classifyMessage', () => {
   describe('feature classification', () => {

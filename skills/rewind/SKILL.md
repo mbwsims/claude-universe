@@ -34,7 +34,8 @@ decisions, and which were accumulated patches.
 **With timewarp-mcp (preferred):** Call `timewarp_history` with the file and period to get
 structured commit data — this tells you total commits, classifications, and authors for the
 file during the rewind period. Use this to understand the volume and nature of changes before
-diving into individual commits.
+diving into individual commits. If `timewarp_trends` is available, use it to note whether
+the file is still on a growth/churn trajectory today.
 
 **Rename detection:** Before looking up the historical version, check if the file was
 renamed: `git log --follow --diff-filter=R --format="%H %s" -- {file}`. If a rename
