@@ -22,9 +22,16 @@ The plugin is available in every session after that.
 
 ## Start here
 
-`/orbit` sweeps the whole project — security, tests, code quality, evolution, and
-instructions — in parallel. Use `/orbit quick` for a fast health check or
-`/orbit security tests` to focus on specific areas.
+Run `/orbit` to sweep the whole project across security, tests, code quality, evolution, and instructions. A 60-second dashboard with verified findings.
+
+| Mode | When to use |
+|------|------------|
+| `/orbit` | Daily check on a project — fast dashboard with real findings |
+| `/orbit pr` | Before opening a pull request — diff-aware review of just your changes |
+| `/orbit deep` | Comprehensive audit — dispatches all 5 agents in parallel (~5 min) |
+| `/orbit quick` | 10-second glance — status tools only |
+
+You can also scope it: `/orbit security tests` runs only those areas.
 
 
 ## The Systems
