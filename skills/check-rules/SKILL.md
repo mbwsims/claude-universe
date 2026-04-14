@@ -44,7 +44,7 @@ the codebase currently complies with each rule by reading the code directly.
 
 **Conformance check procedure:**
 
-1. Find instruction files with Glob (CLAUDE.md, .claude/rules/*.md)
+1. Locate any instruction files present in the repo
 2. Classify each rule by verification strategy:
 
    | Rule Type | How to Verify | Example |
@@ -202,7 +202,7 @@ current lint + conformance snapshot instead of a trend.
 
 ## Related Skills
 
-- **`/discover`** — Use to find missing conventions that should become rules
+- **`/discover`** — Use when you need to author missing conventions before auditing adherence
 - **`/lint-rules`** — Use to improve the quality of rules before checking adherence
 
 ## Additional Resources

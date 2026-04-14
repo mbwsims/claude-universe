@@ -41,11 +41,11 @@ obvious when you compare the first version to the current one.
 ### 2. Understand What It IS (Current State)
 
 Read the current code. Document:
-- **Current role:** What job does this module currently serve?
+- **Current mission:** What responsibility is this module carrying today?
 - **Exports:** What does it expose? How many functions/classes/types?
 - **Dependencies now:** What external or cross-layer code does it rely on?
 - **Responsibilities:** List the distinct concerns it handles
-- **Size:** Line count, function count
+- **Footprint:** Line count and top-level callable count
 
 ### 3. Understand What It WAS (Original State)
 
@@ -122,9 +122,9 @@ the target module to quantify that acceleration instead of inferring it from cac
 {Explanation of how and why}
 
 ### Key Drift Commits
-1. **{hash}** ({date}) — {what was added and why}
-2. **{hash}** ({date}) — {what was added and why}
-3. ...
+1. **{hash}** ({date}) — {new concern introduced and why}
+2. **{hash}** ({date}) — {boundary widened or dependency added}
+3. Continue only for materially distinct drift moments.
 
 ### Recommendations
 - {Specific recommendation: split, refactor, accept and document, etc.}

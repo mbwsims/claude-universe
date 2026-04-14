@@ -105,7 +105,10 @@ Classify each change:
    Why: {from commit message / PR context / inferred}
    Lines: +{n} -{n}
 
-2. **{Change description}** ...
+2. **{Another major change}** (commit {hash}, {date})
+   Type: {classification}
+   Why: {why it happened}
+   Lines: +{n} -{n}
 
 ### What Stayed the Same
 {What hasn't changed — core API, fundamental approach, key abstractions.
@@ -122,7 +125,7 @@ it's under-tested" or "the core algorithm hasn't changed, just the interfaces ar
 - Historical version metadata (commit hash, date, line count, function count)
 - Current version metadata
 - List of annotated changes with classifications
-- "What Stayed the Same" summary
+- Stability summary
 
 **Path sanitization:** Replace `/` with `--` and remove leading dots in the filename.
 Example: `src/services/auth-service.ts` becomes `src--services--auth-service.ts`.

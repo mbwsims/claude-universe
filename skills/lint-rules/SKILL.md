@@ -48,20 +48,22 @@ perform manual analysis instead. This fallback is fully self-contained:
 2. **Read each file and parse rules**: lines starting with `-`, `*`, or `N.` under headings.
    Count total rules. Strip YAML frontmatter (between `---` markers) before parsing.
 
-3. **Collect project context**: read `package.json` (dependencies, scripts), `tsconfig.json`
-   (strict mode, path aliases), and list top-level directories using Glob.
+3. **Collect project context**: read `package.json` (dependencies, scripts), inspect any
+   available config files that shape architecture or tooling, and list top-level directories
+   using Glob.
 
 4. **Run manual diagnostics** on each rule:
-   - **VAGUE**: Flag rules containing "try to", "when possible", "generally", "consider",
-     "as needed", "should probably". Suggest concrete rewrites.
-   - **CONFLICT**: Scan for "always X" paired with "never X" where X overlaps. Note false
-     positives from different scopes.
+   - **VAGUE**: Flag soft, non-committal wording. Suggest concrete rewrites with explicit
+     triggers, actions, and limits.
+   - **CONFLICT**: Scan for instructions that push overlapping actions in opposite directions.
+     Note false positives caused by different scopes.
    - **REDUNDANT**: Flag pairs of rules with >70% word overlap. Suggest merges with token savings.
    - **ORDERING**: Flag tool constraints (run X before Y) appearing after style rules. Suggest
      moving them earlier.
    - **PLACEMENT**: Flag rules in CLAUDE.md that mention specific file patterns (belong in
      `.claude/rules/`) or describe automation (belong as hooks).
-   - **WEAK_EMPHASIS**: Flag tool constraints missing MUST/NEVER/ALWAYS markers.
+   - **WEAK_EMPHASIS**: Flag important tool constraints phrased as optional guidance instead
+     of explicit requirements.
    - **METADATA**: Check agent files for required frontmatter (name, description, model) and
      skill files for required frontmatter (name, description).
 
@@ -78,7 +80,7 @@ perform manual analysis instead. This fallback is fully self-contained:
 **If `alignkit_lint` returns an error or empty result**, check:
 - Whether any instruction files exist (suggest creating CLAUDE.md if none)
 - Whether the `file` argument path is correct
-- Fall back to manual analysis above if the tool is non-functional
+- Use the manual analysis path above if the MCP response is unusable
 
 ### 2. Present the Issues Summary
 
@@ -171,9 +173,9 @@ Present as:
    workflow. Suggested rule: "Run `npx prisma migrate dev` after schema changes.
    Never edit migration files directly."
 
-2. **Test organization** — Tests exist in `__tests__/` but no rule about test
-   co-location or naming. Suggested rule: "Place test files adjacent to source
-   files using `*.test.ts` naming."
+2. **Test organization** — Tests exist in multiple locations but no rule explains where new
+   tests should live or how they should be named. Suggested rule: "Match each package's
+   existing test location and naming pattern."
 ```
 
 Each gap must reference specific evidence from the project (real dependency names, real
@@ -193,11 +195,11 @@ Present as:
 ```
 ### Consolidation Opportunities
 
-1. **Merge 3 rules about imports** (~45 tokens saved)
-   - "Use absolute imports"
-   - "Import from index files"
-   - "No circular imports"
-   → **"Use absolute imports from index files. No circular dependencies."**
+1. **Merge 3 review-report rules** (~30 tokens saved)
+   - "State what changed"
+   - "State what was verified"
+   - "State what remains unverified"
+   → **"Summarize the change, the verification you completed, and any gaps that remain."**
 ```
 
 The merged text must preserve all original constraints.

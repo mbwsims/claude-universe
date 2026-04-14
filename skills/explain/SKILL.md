@@ -44,7 +44,7 @@ If unavailable, gather this context manually from git history in step 2.
 ### 1. Read the Code
 
 Read the target file thoroughly. Understand:
-- **Role**: What job does this module serve in the system?
+- **System purpose**: Why was this file introduced, and which product capability relies on it?
 - **Public API**: What does it export? What's the interface?
 - **Internal structure**: How is it organized? What patterns does it use?
 - **Dependencies**: What does it import? What does it depend on?

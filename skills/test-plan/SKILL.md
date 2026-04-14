@@ -130,7 +130,7 @@ total tests planned.
 ## Guidelines
 
 - The plan should be actionable. Someone should be able to hand it to a developer (or to
-  `/test`) and get a complete test suite written from it.
+  `/test`) and get a complete set of tests written from it.
 - Prioritize ruthlessly. Every function does NOT need adversarial tests. Focus "must" on
   the inputs that are most likely to cause real bugs.
 - **Triviality check:** If the function is trivial (one-liner, no branching, pure getter,

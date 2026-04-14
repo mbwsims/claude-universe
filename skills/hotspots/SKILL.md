@@ -130,7 +130,7 @@ Analyzed {n} files over {timeframe}
 - Changed 24 times in 6 months by 4 different authors
 - 342 lines with 12 exported functions
 - Imported by 18 other files
-- Suggestion: This file does too much. Consider splitting auth verification,
+- Suggestion: This file does too much. Split auth verification,
   session management, and token handling into separate modules.
 
 **#2: src/app/api/orders/route.ts** — High Risk
@@ -152,7 +152,7 @@ For monorepos with multiple packages:
 ## Related Skills
 
 - **`/impact`** — Check blast radius before touching a hotspot
-- **`/map`** — Understand overall architecture context
+- **`/map`** — Inspect surrounding layers before proposing structural changes
 
 ## Guidelines
 

@@ -36,7 +36,7 @@ If unavailable, proceed directly to manual analysis.
 ### 1. Read with Attacker's Eyes
 
 Read the target code. For each function or handler, ask:
-- Where does untrusted input enter?
+- What attacker-controlled data can reach this code?
 - What assumptions does the code make about that input?
 - How can those assumptions be broken?
 - What happens if they are broken?

@@ -145,7 +145,7 @@ agents — it's inline, file-scoped reads on flagged items only:
   vulnerability site. Is the input actually user-controlled? Is there sanitization upstream?
   Classify as confirmed, likely, or false positive.
 
-- **Test gaps** → Read the source file that lacks test changes. What does it do? Is it
+- **Test gaps** → Inspect the changed production file when tests were not updated. What does it do? Is it
   logic that genuinely needs tests, or is it configuration/wiring? Flag business-critical
   mutation logic as high priority.
 

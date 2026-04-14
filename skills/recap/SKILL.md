@@ -30,11 +30,11 @@ neglected. A developer returning from vacation runs this and is caught up in 2 m
   "march", "last 30 days"
 
 **Period parsing guidance:**
-- "last sprint" / "last 2 weeks" → `--since="14 days ago"`
+- Relative sprint-length periods like "last sprint" or "last 2 weeks" → `--since="14 days ago"`
 - "this month" → `--since="{YYYY-MM}-01"`
 - "since Monday" → calculate the most recent Monday date
 - Month names ("march", "february") → `--since="{YYYY}-{MM}-01" --until="{YYYY}-{MM+1}-01"`
-- "last 7 days", "last 30 days" → `--since="{N} days ago"`
+- Relative N-day windows like "last 7 days" or "last 30 days" → `--since="{N} days ago"`
 - ISO dates ("2025-01-01") → pass through directly to `--since`
 
 ### 2. Gather History
@@ -86,13 +86,13 @@ reports (did recent changes worsen any drift?).
 {n} commits by {n} contributors
 
 ### Features
-- {feature description} ({files involved})
+- {capability added} ({files involved})
 
 ### Fixes
-- {bug description} ({files involved})
+- {bug eliminated} ({files involved})
 
 ### Refactors
-- {refactor description} ({files involved})
+- {structural change} ({files involved})
 
 ### Focus Areas
 {Top 3-5 directories by commit count, with what happened in each}

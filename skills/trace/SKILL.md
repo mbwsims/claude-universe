@@ -124,8 +124,7 @@ Storage: {database/API call}
 Response: {what goes back to caller}
 
 ### Branches (if applicable)
-- **Branch A: {condition}** -> {where it goes}
-- **Branch B: {condition}** -> {where it goes}
+- Add one bullet per meaningful branch: **{condition}** -> {where it goes}
 - **Default path**: {which branch is the happy path}
 
 ### Detailed Steps
