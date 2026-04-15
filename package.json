@@ -1,6 +1,6 @@
 {
   "name": "claude-universe-plugin",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "private": true,
   "scripts": {
     "test": "npm run test:alignkit && npm run test:testkit && npm run test:shieldkit && npm run test:lenskit && npm run test:timewarp",

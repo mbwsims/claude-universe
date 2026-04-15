@@ -37,7 +37,7 @@
     },
     "alignkit": {
       "command": "npx",
-      "args": ["-y", "alignkit-mcp@0.3.0"]
+      "args": ["-y", "-p", "alignkit", "alignkit-mcp"]
     }
   }
 }
