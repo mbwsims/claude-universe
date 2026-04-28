@@ -27,7 +27,7 @@ broke 12 others" problem.
 
 Read the target file. Understand what it exports:
 - Functions, classes, types, constants
-- Default export vs named exports
+- Whether consumers depend on a single exported entrypoint or multiple exported symbols
 - What interface does it expose to consumers?
 
 ### 2. Find Direct Dependents
@@ -93,7 +93,7 @@ risk and don't need runtime testing when only implementation changes.
 **Circular dependency handling:** If the graph data shows the target file is part of
 a circular dependency cycle, flag this prominently:
 - Identify all files in the cycle
-- Note that changes to ANY file in the cycle may affect ALL other files in the cycle
+- Explain that changes can propagate around the entire cycle, not just outward from the target
 - Recommend breaking the cycle before making changes (extract shared interface, use
   dependency injection, or restructure to remove the circularity)
 - Circular dependencies make impact analysis unreliable because changes propagate
@@ -103,8 +103,8 @@ a circular dependency cycle, flag this prominently:
 
 Search for tests that cover the target file:
 - Direct test file: `{name}.test.ts`, `{name}.spec.ts`
-- Tests that import the target
-- Integration tests that exercise the target indirectly
+- Tests that import the target directly
+- Higher-level tests that exercise the target through public callers
 
 Note: if there are NO tests covering the target, that's a critical finding — changes
 are unprotected.
@@ -174,5 +174,5 @@ For each export from the target file:
 - Note the difference between implementation changes (safe — internal logic, same API)
   and interface changes (risky — signature, return type, behavior change).
 - If the file has zero dependents, it's a leaf node — changes are safe by default.
-- If the file has zero test coverage, flag this prominently. Any change to untested code
-  is higher risk.
+- If no tests exercise the target, flag that gap prominently. Any change to untested code is
+  higher risk.

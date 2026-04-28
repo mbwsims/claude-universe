@@ -56,7 +56,9 @@ For framework-specific patterns (Django, FastAPI, Spring Boot, etc.), see the re
 
 **With lenskit-mcp (preferred):** Call `lenskit_graph` to get the full dependency graph
 with layer classifications, circular dependencies, hub files, and layer violations
-pre-computed. Use this data directly for the module map and observations sections.
+pre-computed. Use this data directly for the module map and observations sections. For the
+highest-risk or highest-centrality files, call `lenskit_analyze` to add risk-score and
+coupling detail to the observations.
 
 **Note on tsconfig path aliases:** If the project uses tsconfig path aliases (e.g.,
 `@/utils/helpers` mapping to `src/utils/helpers`), lenskit resolves these automatically.

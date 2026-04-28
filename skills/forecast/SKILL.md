@@ -33,7 +33,8 @@ already painful. Forecast catches it while there's still time to intervene.
 
 **With timewarp-mcp (preferred):** Call `timewarp_trends` to get computed growth rates,
 acceleration data, and churn trends for all source files. This provides precise time-series
-data sampled at intervals.
+data sampled at intervals. Then call `timewarp_history` on the top concerning files to add
+commit-count and author-context before writing recommendations.
 
 **Without timewarp-mcp:** Compute manually by sampling git history:
 ```bash
@@ -93,9 +94,7 @@ These columns map directly to `timewarp_trends` output: `growth.pattern`, `growt
 ### Detailed Analysis
 
 **#1: src/lib/auth.ts** — Complexity Accelerating
-- 6 months ago: 180 lines, 8 functions
-- 3 months ago: 240 lines, 11 functions
-- Now: 310 lines, 15 functions
+- Sample trend: 180 lines / 8 functions → 240 lines / 11 functions → 310 lines / 15 functions
 - Growth is accelerating — added more in the last 3 months than the previous 3
 - Recommendation: Split before it crosses 400 lines. Auth verification, session
   management, and token handling could be separate modules.

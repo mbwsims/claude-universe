@@ -1,10 +1,10 @@
 ---
 name: security-review
 description: >-
-  This skill should be used when the user asks to "security review this code", "review for
-  security", "is this code safe", "check for exploits", "security code review", "find
-  security bugs", "pen test this", mentions "/security-review", or wants a security-focused
-  code review of specific files or changes.
+  Use when the user wants a security-focused review of specific files or changes:
+  "security review this code", "check for exploits", "find security bugs", "pen test this",
+  or "/security-review". This is for exploitability review of targeted code, not a broad
+  whole-project scan or a general-purpose code review.
 allowed-tools:
   - Read
   - Glob
@@ -36,7 +36,7 @@ If unavailable, proceed directly to manual analysis.
 ### 1. Read with Attacker's Eyes
 
 Read the target code. For each function or handler, ask:
-- Where does untrusted input enter?
+- What attacker-controlled data can reach this code?
 - What assumptions does the code make about that input?
 - How can those assumptions be broken?
 - What happens if they are broken?

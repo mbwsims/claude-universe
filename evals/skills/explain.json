@@ -1,0 +1,21 @@
+{
+  "command": "/explain",
+  "intent": "Give a deep explanation of a specific file, module, or implementation flow with history context.",
+  "shouldTrigger": [
+    "Explain this module and why it's structured this way.",
+    "Walk me through src/services/auth-service.ts.",
+    "Use /explain on this file.",
+    "Help me understand this implementation and its history."
+  ],
+  "shouldNotTrigger": [
+    "What changed across the codebase this month?",
+    "Map the whole architecture.",
+    "Trace the checkout request from route to storage.",
+    "Is this pull request ready overall?"
+  ],
+  "smokeWorkflow": [
+    "User points to a specific file or module.",
+    "Skill reads the code, uses graph/history context where relevant, and identifies purpose, structure, dependencies, and tradeoffs.",
+    "Skill returns a focused explanation with file-level reasoning rather than a repo-wide survey."
+  ]
+}

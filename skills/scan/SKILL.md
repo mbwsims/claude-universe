@@ -135,7 +135,7 @@ order by exploitability (externally reachable > internal only).
 - **Include false-positive reasoning.** If something looks like a vulnerability but isn't
   (e.g., parameterized query that uses string interpolation for table names only), explain
   why it's safe.
-- **Note what's secure.** A scan that only lists problems is incomplete. Note areas that
+- **Call out existing protections.** A scan that only lists problems is incomplete. Note areas that
   are well-protected — this builds confidence and helps prioritize.
 
 ## Related Skills

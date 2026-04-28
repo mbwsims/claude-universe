@@ -27,8 +27,7 @@ obvious when you compare the first version to the current one.
 ### 1. Identify Target
 
 - **No argument:** Auto-detect. Use `timewarp_history` (if available) or git log to find
-  files whose scope has changed the most — large increases in line count and commit
-  frequency relative to their original size. Analyze the top 3 most-drifted modules.
+  files whose scope appears to have changed the most. Analyze the top 3 most-drifted modules.
   If MCP is unavailable, pick the 3 largest files in core source directories and analyze
   those.
 - **With argument:** Analyze the specified module or directory.
@@ -42,11 +41,11 @@ obvious when you compare the first version to the current one.
 ### 2. Understand What It IS (Current State)
 
 Read the current code. Document:
-- **Purpose now:** What does this module currently do?
+- **Current mission:** What responsibility is this module carrying today?
 - **Exports:** What does it expose? How many functions/classes/types?
-- **Imports:** What does it depend on? How many external dependencies?
+- **Dependencies now:** What external or cross-layer code does it rely on?
 - **Responsibilities:** List the distinct concerns it handles
-- **Size:** Line count, function count
+- **Footprint:** Line count and top-level callable count
 
 ### 3. Understand What It WAS (Original State)
 
@@ -97,7 +96,8 @@ ones. For the top 3-5 drift commits, note WHAT was added and WHY (from commit me
 
 Read `.timewarp/` for existing forecast or trend data on this module. If forecast shows
 this module's complexity is accelerating, note it — drift + growth acceleration is a
-strong signal that intervention is needed.
+strong signal that intervention is needed. If `timewarp_trends` is available, call it for
+the target module to quantify that acceleration instead of inferring it from cached files alone.
 
 ### 7. Present and Save
 
@@ -122,9 +122,9 @@ strong signal that intervention is needed.
 {Explanation of how and why}
 
 ### Key Drift Commits
-1. **{hash}** ({date}) — {what was added and why}
-2. **{hash}** ({date}) — {what was added and why}
-3. ...
+1. **{hash}** ({date}) — {new concern introduced and why}
+2. **{hash}** ({date}) — {boundary widened or dependency added}
+3. Continue only for materially distinct drift moments.
 
 ### Recommendations
 - {Specific recommendation: split, refactor, accept and document, etc.}

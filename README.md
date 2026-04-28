@@ -1,38 +1,78 @@
 # Claude Universe
 
-Teach Claude Code to think systematically.
+Project-wide PR readiness, targeted test authoring, security review, architecture tracing,
+and code evolution analysis for Claude Code.
 
-5 layers of systematic intelligence, 20 commands, 1 universe.
+Claude Universe packages 20 commands across 5 systems so you can answer questions like:
+
+- Is this PR ready overall?
+- What tests should exist, and can Claude write them?
+- Is this code exploitable?
+- What is the blast radius of this change?
+- Which files are drifting or getting worse over time?
 
 [claudeuniverse.com](https://claudeuniverse.com)
 
-Run these separately once inside a Claude Code session (`claude` in your terminal):
+## Start here
 
-```
+Use these entry points first:
+
+| Command | Outcome |
+|---------|---------|
+| `/orbit` | Repo-wide health sweep across tests, security, codebase risk, evolution, and instructions |
+| `/orbit pr` | Diff-aware PR readiness review focused on changed files |
+| `/test` | New tests written for a file, function, or module |
+| `/security-review` | Attacker-minded review of a specific file or change set |
+| `/trace` | End-to-end feature/data flow from entry point to storage |
+
+You can also scope `/orbit`, for example `/orbit security tests`.
+
+## Install
+
+Run these once inside a Claude Code session:
+
+```text
 /plugin marketplace add mbwsims/claude-universe
 ```
 
-```
+```text
 /plugin install universe@claude-universe
 ```
 
+After that, the plugin is available in every session.
 
-The plugin is available in every session after that.
+## Why Skills + MCP
 
+Claude Universe combines two layers:
 
-## Start here
+- **Skills** define the workflow: when to use a command, what steps to follow, and how to
+  reason about the result.
+- **Bundled MCP servers** provide deterministic analysis: dependency graphs, risk scores,
+  security checks, test metrics, and temporal history.
 
-Run `/orbit` to sweep the whole project across security, tests, code quality, evolution, and instructions. A 60-second dashboard with verified findings.
+That split matters. The MCP layer gives Claude computed data it cannot reliably derive by
+reading files one at a time, while the skills layer turns that data into repeatable reviews,
+traces, and recommendations.
 
-| Mode | When to use |
-|------|------------|
-| `/orbit` | Daily check on a project — fast dashboard with real findings |
-| `/orbit pr` | Before opening a pull request — diff-aware review of just your changes |
-| `/orbit deep` | Comprehensive audit — dispatches all 5 agents in parallel (~5 min) |
-| `/orbit quick` | 10-second glance — status tools only |
+Every command still has a manual fallback using Read, Glob, Grep, and Bash when MCP data is
+unavailable.
 
-You can also scope it: `/orbit security tests` runs only those areas.
+## Validation
 
+This repo now ships a dedicated skill validation path:
+
+```bash
+npm run test:skills
+```
+
+It validates the checked-in `skills/**/SKILL.md` inventory for:
+
+- required frontmatter
+- tool-declaration drift between `allowed-tools` and the skill body
+- warning-level lint/conformance issues reported for review
+
+Trigger and smoke-review fixtures for the highest-priority commands live under
+[`evals/skills/`](./evals/skills/README.md).
 
 ## The Systems
 
@@ -44,57 +84,26 @@ You can also scope it: `/orbit security tests` runs only those areas.
 | **Survey** | Codebase intelligence | `/trace` `/hotspots` `/impact` `/explain` `/map` |
 | **Timewarp** | Temporal intelligence | `/recap` `/drift` `/dissect` `/forecast` `/rewind` |
 
-You can also just describe what you need in plain English, the right command should activate automatically.
+## What Each System Does
 
-## What each system does
+**Navigate** extracts the rules the project actually follows, lints instruction quality, and
+checks whether the codebase conforms to those rules.
 
-**Navigate** — Extract the standards. Discover your project's unwritten conventions,
-lint instruction quality, and check whether the codebase actually follows the rules.
+**Diagnose** writes stronger tests, reviews existing tests, and plans coverage using input-space
+analysis and assertion-depth checks.
 
-**Diagnose** — Pressure the behavior. Write tests that catch real bugs through input
-space analysis and deep assertions, not just happy path coverage.
+**Shield** looks for exploitability: vulnerabilities, threat models, and security-focused code
+review.
 
-**Shield** — Model the attacks. Find vulnerabilities, build STRIDE threat models,
-and trace untrusted input through code to determine exploitability.
+**Survey** maps architecture, traces feature flows, identifies hotspots, and estimates blast
+radius before code changes land.
 
-**Survey** — See the blast radius. Trace features through layers, find hotspots,
-map architecture, and understand impact before changing code.
-
-**Timewarp** — Trace the evolution. Detect architectural drift, forecast which files
-are about to become problems, and recap recent changes across the codebase.
-
-
-## How it works
-
-Each command combines two layers: MCP servers handle the quantitative
-analysis (pattern matching, dependency graphs, scoring), and skills guide
-Claude's reasoning with structured methodology and domain expertise. The
-skills are what make the output consistently deeper than asking Claude
-the same question directly.
-
-For enhanced instruction tracking across sessions, the external [alignkit](https://github.com/mbwsims/alignkit) MCP
-server provides session-based adherence data. It activates automatically via the
-plugin's `.mcp.json` configuration.
-
-
-## Language support
-
-**MCP server analysis** (deterministic pattern matching, dependency graphs, trend computation):
-- **JavaScript / TypeScript** — full support including tsconfig path alias resolution
-- **Python** — function detection, import parsing, test frameworks (pytest, unittest), security patterns (f-string injection, dangerous functions)
-- Support for more languages coming soon...
-
-**Skill-guided analysis** (Claude reads and reasons about code):
-- **Any language** — all 20 commands work with any language Claude can read
-
-The MCP servers provide structured data that skills use to guide analysis. When MCP
-servers aren't available (e.g., in restricted environments), every skill falls back
-to manual analysis using Glob, Grep, and Read.
-
+**Timewarp** uses history and trend analysis to explain recent changes, detect drift, and flag
+files that are on concerning trajectories.
 
 ## Agents
 
-Each system includes an autonomous agent for comprehensive analysis:
+Each system includes an autonomous agent for deeper analysis:
 
 | Agent | System | Purpose |
 |-------|--------|---------|
@@ -104,41 +113,37 @@ Each system includes an autonomous agent for comprehensive analysis:
 | codebase-analyst | Survey | Architecture mapping with health assessment |
 | evolution-analyst | Timewarp | Temporal health report with drift and forecasting |
 
+## MCP Servers
 
-## MCP servers
-
-Five bundled MCP servers provide deterministic analysis and activate automatically
-with zero setup:
+Five bundled MCP servers activate automatically:
 
 | System | What it computes |
-|--------|-----------------|
-| Navigate | Instruction parsing, diagnostic detection, conformance checking |
-| Diagnose | Shallow assertion detection, error coverage ratios, mock health, test mapping |
+|--------|------------------|
+| Navigate | Instruction parsing, diagnostics, conformance checking |
+| Diagnose | Shallow assertions, error coverage, mock health, test mapping |
 | Shield | SQL injection, hardcoded secrets, missing auth, CORS, dangerous functions |
 | Survey | Dependency graphs, file metrics, churn analysis, coupling, risk scoring |
-| Timewarp | Commit history analysis, growth/churn trend computation |
+| Timewarp | Commit history, growth trends, churn trends |
 
-Every command works without MCP servers. Each has a manual fallback using Glob,
-Grep, and Read. But MCP servers add a layer that Claude's reasoning alone can't
-replicate:
+These servers matter most on large codebases where batch analysis and computed metrics are
+worth more than asking Claude to inspect files manually.
 
-- **Deterministic** — same patterns checked the same way every time, not dependent
-  on what Claude notices in a given run
-- **Batch** — scores every file in a project in one pass with shared indexes, instead
-  of Claude reading files one at a time and burning context
-- **Computed** — growth rate acceleration, entropy-based secret detection, weighted
-  risk scores. Metrics Claude won't compute manually.
+## Language Support
 
-The fallbacks however are a real safety net, not a degraded mode. For small projects or
-single-file analysis, they're often sufficient. MCP servers matter most on larger
-codebases where batch analysis and quantitative scoring justify the tooling.
+**MCP server analysis**
 
+- **JavaScript / TypeScript** — full support, including tsconfig path alias resolution
+- **Python** — function detection, import parsing, test framework detection, and security patterns
 
-## Navigate standalone
+**Skill-guided analysis**
+
+- **Any language Claude can read** — the command methodologies still apply even when MCP data
+  falls back to manual analysis
+
+## Related Plugin
 
 The Navigate system is also available as a standalone plugin:
 [alignkit](https://github.com/mbwsims/alignkit-plugin)
-
 
 ## License
 

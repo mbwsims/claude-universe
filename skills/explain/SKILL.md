@@ -1,10 +1,10 @@
 ---
 name: explain
 description: >-
-  This skill should be used when the user asks to "explain this code", "explain this module",
-  "what does this do", "why is it structured this way", "help me understand this",
-  "walk me through this file", "what's the history of this", mentions "/explain", or wants
-  a deep explanation of a module or file combining code reading with git history.
+  Use when the user wants a deep explanation of a specific file, module, or implementation
+  flow: "explain this code", "walk me through this file", "why is this structured this way",
+  or "/explain". Best for focused code understanding with history context, not for repo-wide
+  architecture mapping, recent-change summaries, or generic "what happened?" requests.
 allowed-tools:
   - Read
   - Glob
@@ -44,7 +44,7 @@ If unavailable, gather this context manually from git history in step 2.
 ### 1. Read the Code
 
 Read the target file thoroughly. Understand:
-- **Purpose**: What problem does this module solve?
+- **System purpose**: Why was this file introduced, and which product capability relies on it?
 - **Public API**: What does it export? What's the interface?
 - **Internal structure**: How is it organized? What patterns does it use?
 - **Dependencies**: What does it import? What does it depend on?
@@ -145,7 +145,7 @@ might need to change in tandem. This is the highest-value section.}
 
 ## Related Skills
 
-- **`/impact`** — Check blast radius before changing the module
+- **`/impact`** — Estimate the change surface before editing the module
 - **`/hotspots`** — See if this module is a high-risk area
 
 ## Additional Resources

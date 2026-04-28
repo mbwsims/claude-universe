@@ -1,10 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 import { analyzeHistory } from '../analyzers/history.js';
 import { analyzeTrends } from '../analyzers/trends.js';
 import { discoverSourceFiles } from '../analyzers/discovery.js';
 import { join } from 'node:path';
+import { ensureFixtureGitHistory } from '../../../shared/test-fixture-git.js';
 
 const FIXTURE_DIR = join(import.meta.dirname, '..', '..', '..', 'test-fixtures');
+
+beforeAll(async () => {
+  await ensureFixtureGitHistory(FIXTURE_DIR);
+});
 
 describe('integration — fixture project', () => {
   describe('history analysis', () => {

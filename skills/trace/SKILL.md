@@ -35,6 +35,9 @@ Use this data throughout the trace to:
 - Verify layer classifications match your manual assessment
 - Find hub files that the trace passes through (high-impact nodes)
 
+For the files at the center of the flow, call `lenskit_analyze` to add coupling and risk
+context so you can flag especially fragile handoff points.
+
 This step takes seconds and saves minutes of manual grep work.
 
 If `lenskit_graph` is unavailable, build the import chain manually: for each file in
@@ -121,8 +124,7 @@ Storage: {database/API call}
 Response: {what goes back to caller}
 
 ### Branches (if applicable)
-- **Branch A: {condition}** -> {where it goes}
-- **Branch B: {condition}** -> {where it goes}
+- Add one bullet per meaningful branch: **{condition}** -> {where it goes}
 - **Default path**: {which branch is the happy path}
 
 ### Detailed Steps

@@ -46,7 +46,7 @@ modified test file). Specify a file to review a different one."
 ### 2. Read the Test and Its Source
 
 Read both:
-1. The test file
+1. The review target spec
 2. The code under test (infer from imports, file naming, or directory structure)
 
 Understanding the source code's contract is essential for evaluating whether the tests
@@ -64,7 +64,7 @@ distinctions). Consult `references/smell-catalog.md` for detection patterns and
 - Each shallow assertion is a potential false-pass
 
 **Dimension 2: Input Coverage**
-- Does the test suite cover more than the happy path?
+- Does the reviewed file cover more than the happy path?
 - Check: are there tests for empty input, null, boundary values, invalid input?
 - Compare against input space categories: canonical, empty, boundary, null, invalid,
   adversarial. Each parameter should have test coverage for at least the "must" categories
@@ -78,7 +78,7 @@ distinctions). Consult `references/smell-catalog.md` for detection patterns and
 **Dimension 4: Mock Health**
 - Are mocks minimal (external boundaries only) or pervasive (mocking internal modules)?
 - Do mocks preserve the contract of the mocked dependency (realistic return shapes)?
-- What percentage of the test file is mock setup vs actual assertions?
+- What percentage of the spec is mock setup vs actual assertions?
 
 **Dimension 5: Specification Clarity**
 - Do test names read as requirements? ("rejects empty email with ValidationError")
@@ -140,8 +140,8 @@ concrete — specific input values, specific expected outputs, specific error ty
 - Grade honestly. Most test files Claude reviews will score B or C — that's expected.
   A-grade test suites are rare.
 - Every finding must cite a specific line number or specific missing test case.
-- Don't flag style issues (formatting, import ordering) — this is about bug-catching quality.
-- If the test file is genuinely good (comprehensive coverage, deep assertions), say so.
+- Don't spend findings on stylistic cleanup — this review is about bug-catching quality.
+- If the reviewed spec is genuinely good (comprehensive coverage, deep assertions), say so.
   Don't invent problems.
 - The grade should be useful: someone should be able to look at "C+" and know "functional
   but has gaps that could let bugs through."
@@ -149,7 +149,7 @@ concrete — specific input values, specific expected outputs, specific error ty
 ## Related Skills
 
 - **`/test`** — Use to fix issues found in the review
-- **`/test-plan`** — Use to identify what's missing from the test suite
+- **`/test-plan`** — Use to identify missing coverage categories before adding tests
 
 ## Additional Resources
 

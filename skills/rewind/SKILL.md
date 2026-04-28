@@ -34,7 +34,8 @@ decisions, and which were accumulated patches.
 **With timewarp-mcp (preferred):** Call `timewarp_history` with the file and period to get
 structured commit data — this tells you total commits, classifications, and authors for the
 file during the rewind period. Use this to understand the volume and nature of changes before
-diving into individual commits.
+diving into individual commits. If `timewarp_trends` is available, use it to note whether
+the file is still on a growth/churn trajectory today.
 
 **Rename detection:** Before looking up the historical version, check if the file was
 renamed: `git log --follow --diff-filter=R --format="%H %s" -- {file}`. If a rename
@@ -104,7 +105,10 @@ Classify each change:
    Why: {from commit message / PR context / inferred}
    Lines: +{n} -{n}
 
-2. **{Change description}** ...
+2. **{Another major change}** (commit {hash}, {date})
+   Type: {classification}
+   Why: {why it happened}
+   Lines: +{n} -{n}
 
 ### What Stayed the Same
 {What hasn't changed — core API, fundamental approach, key abstractions.
@@ -121,7 +125,7 @@ it's under-tested" or "the core algorithm hasn't changed, just the interfaces ar
 - Historical version metadata (commit hash, date, line count, function count)
 - Current version metadata
 - List of annotated changes with classifications
-- "What Stayed the Same" summary
+- Stability summary
 
 **Path sanitization:** Replace `/` with `--` and remove leading dots in the filename.
 Example: `src/services/auth-service.ts` becomes `src--services--auth-service.ts`.

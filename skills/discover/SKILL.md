@@ -1,11 +1,10 @@
 ---
 name: discover
 description: >-
-  This skill should be used when the user asks to "discover conventions", "find conventions",
-  "infer rules from code", "what conventions does my project follow", "reverse engineer my rules",
-  "discover patterns", "what rules should I add", "analyze my codebase for conventions",
-  "generate rules from code", mentions "/discover", or wants to find unwritten conventions
-  in their codebase that should become instruction rules.
+  Use when the user wants to infer reusable project conventions from existing code and turn
+  them into instruction rules: "discover conventions", "infer rules from code", "what rules
+  should I add", "generate rules from this codebase", or "/discover". This is for convention
+  mining, not for checking rule adherence or explaining how a specific module works.
 allowed-tools:
   - Read
   - Glob
@@ -56,7 +55,7 @@ Read a representative sample of source files across the project. Do not read eve
 sample strategically:
 
 - 8-12 source files from different directories and purposes
-- 2-3 test files (if they exist)
+- A couple of representative test files (if they exist)
 - 2-3 config/setup files
 - API routes or handlers (if they exist)
 
@@ -90,33 +89,21 @@ Format discoveries as a numbered list with evidence. Group by category.
 1. **{Pattern name}** — {brief description of what's consistent}
    Suggested rule: "{concrete, paste-ready rule text}"
    Evidence: {specific files, counts, or grep results}
-
-2. ...
-
-### Code Structure
-
-3. **{Pattern name}** — ...
-
-### Error Handling
-
-4. ...
 ```
 
 **For each discovery, include:**
 - A short descriptive title
 - The suggested rule in quotes (ready to paste into CLAUDE.md)
 - Specific evidence: file paths, line numbers, counts, or grep results
-- Note any exceptions found
 - A value tag: **high**, **medium**, or **low**
 
 **Value filtering — this is critical:**
 
 Before including a convention, ask: "If Claude violated this, would it cause a real problem?"
 
-- **High value**: Violations cause bugs, inconsistency, or architectural damage. Architecture
-  boundaries (components must not import from db), security patterns (auth guards, ownership
-  checks), API contracts (error response shapes), import conventions that affect build/tooling.
-  **Always include these.**
+- **High value**: Include conventions whose violation would cause bugs, architectural damage,
+  security regressions, or tooling breakage. Typical examples are layer boundaries, ownership
+  checks, API response contracts, and build-sensitive import rules.
 
 - **Medium value**: Violations cause inconsistency but not breakage. Naming conventions,
   type organization, export style. Include these but mark as medium.
@@ -138,7 +125,7 @@ When no instruction files exist, this is a greenfield opportunity. Focus on the 
 conventions first:
 1. Architecture boundaries (import restrictions, layer separation)
 2. Error handling patterns (consistent shapes, validation approaches)
-3. Testing conventions (framework, file location, assertion style)
+3. Testing conventions (framework, package-specific file placement, assertion style)
 
 After presenting discoveries, offer to create a new CLAUDE.md with the selected rules
 organized by category. Use this structure:
@@ -152,7 +139,7 @@ organized by category. Use this structure:
 {naming, import, export rules}
 
 ## Testing
-{test framework, file location, assertion rules}
+{test framework, package-specific placement, assertion rules}
 
 ## Workflow
 {tool constraints, process rules}
@@ -196,16 +183,16 @@ When adding rules, place them in the most appropriate location:
 - **Actionable rules only**: Every suggested rule must be something Claude can act on.
   "The codebase uses React" is a fact, not a convention. "Use functional components with
   hooks — no class components" is actionable.
-- **Respect exceptions**: If a convention has legitimate exceptions (e.g., "no default exports
-  except Next.js pages"), capture the exception in the rule.
-- **Count, don't guess**: Always cite specific numbers. "All 12 API routes" is credible.
-  "The project generally follows..." is vague.
+- **Respect exceptions**: If a convention has legitimate exceptions, capture the boundary
+  explicitly in the rule instead of pretending the pattern is universal.
+- **Count, don't guess**: Cite exact sample counts or grep totals so the recommendation is
+  auditable. Avoid unsupported summaries.
 
 ## Related Skills
 
 - **`/lint-rules`** — After adding discovered conventions to CLAUDE.md, use `/lint-rules` to check
   the overall quality of the instruction file
-- **`/check-rules`** — Use to verify whether discovered conventions are actually being followed
+- **`/check-rules`** — Use to verify whether the adopted rules still match the codebase
 
 ## Additional Resources
 
