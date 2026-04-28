@@ -11,7 +11,7 @@
       "name": "universe",
       "source": "./",
       "description": "Project-wide PR readiness, targeted test authoring, security review, architecture tracing, and code evolution analysis for Claude Code.",
-      "version": "0.8.1",
+      "version": "0.8.2",
       "author": {
         "name": "Matthew Sims"
       },
